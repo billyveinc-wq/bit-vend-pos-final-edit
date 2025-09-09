@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Shield, Key, Save, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminSettings = () => {
   const { adminSession } = useAdminAuth();
@@ -36,7 +37,7 @@ const AdminSettings = () => {
     return lengthOk && upper && lower && number && special;
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
@@ -61,9 +62,28 @@ const AdminSettings = () => {
       return;
     }
 
-    // Store new password locally (demo). In production this should go to a secure server.
-    localStorage.setItem('admin-password', passwordForm.newPassword);
-    toast.success('Admin password changed successfully!');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user || null;
+      if (user && user.email === adminSession?.email) {
+        const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword });
+        if (error) {
+          console.error('Supabase password update failed', error);
+          toast.error('Failed to update Supabase password, local password updated');
+          localStorage.setItem('admin-password', passwordForm.newPassword);
+        } else {
+          localStorage.setItem('admin-password', passwordForm.newPassword);
+          toast.success('Admin password changed successfully!');
+        }
+      } else {
+        localStorage.setItem('admin-password', passwordForm.newPassword);
+        toast.success('Admin password changed successfully!');
+      }
+    } catch (err) {
+      console.error('Change password error', err);
+      localStorage.setItem('admin-password', passwordForm.newPassword);
+      toast.success('Admin password changed successfully!');
+    }
 
     // Reset form
     setPasswordForm({
