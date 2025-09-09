@@ -174,7 +174,7 @@ const ReportsTable: React.FC = () => {
   };
 
   const handleViewReport = (reportId: string) => {
-    navigate(`/report-view/${reportId}`);
+    navigate(`/dashboard/report-view/${reportId}`);
   };
 
   const handleGenerateReport = (reportId: string) => {
