@@ -586,6 +586,7 @@ const SuperAdmin = () => {
               <TableRow className="bg-blue-500 hover:bg-blue-500">
                 <TableHead className="text-white font-semibold">Username</TableHead>
                 <TableHead className="text-white font-semibold">Email</TableHead>
+                <TableHead className="text-white font-semibold">Promo Code</TableHead>
                 <TableHead className="text-white font-semibold">Role</TableHead>
                 <TableHead className="text-white font-semibold">Status</TableHead>
                 <TableHead className="text-white font-semibold">Last Login</TableHead>
@@ -598,6 +599,7 @@ const SuperAdmin = () => {
                 <TableRow key={user.id}>
                   <TableCell className="font-medium text-foreground">{user.username}</TableCell>
                   <TableCell className="text-foreground">{user.email}</TableCell>
+                  <TableCell className="text-foreground">{(user as any).promoCode || '-'}</TableCell>
                   <TableCell>
                     <Badge variant={getRoleBadge(user.role)}>
                       {user.role.replace('_', ' ')}
