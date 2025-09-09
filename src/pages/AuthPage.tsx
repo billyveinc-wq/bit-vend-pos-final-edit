@@ -75,22 +75,39 @@ const AuthPage = () => {
     try {
       // Check if this is an admin login
       if (email === 'admn.bitvend@gmail.com') {
-        // Admin authentication
-        if (password === 'admin123') {
-          // Store admin session
+        // First, try authenticating with Supabase (in case admin is a Supabase user)
+        try {
+          const { error: supErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (!supErr) {
+            // successful Supabase auth -> create local admin session and redirect
+            localStorage.setItem('admin-session', JSON.stringify({
+              email: email,
+              loginTime: new Date().toISOString(),
+              role: 'super_admin'
+            }));
+            toast.success('Admin login successful! Redirecting to admin dashboard...');
+            navigate('/dashboard/superadmin');
+            return;
+          }
+        } catch (err) {
+          console.warn('Supabase admin login attempt failed', err);
+        }
+
+        // Fallback: check local stored admin password (for local/demo admin)
+        const stored = localStorage.getItem('admin-password') || 'admin123';
+        if (password === stored) {
           localStorage.setItem('admin-session', JSON.stringify({
             email: email,
             loginTime: new Date().toISOString(),
             role: 'super_admin'
           }));
-
           toast.success('Admin login successful! Redirecting to admin dashboard...');
           navigate('/dashboard/superadmin');
           return;
-        } else {
-          toast.error('Invalid admin credentials');
-          return;
         }
+
+        toast.error('Invalid admin credentials');
+        return;
       }
       
       // Regular user authentication via Supabase
