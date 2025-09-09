@@ -111,14 +111,39 @@ const SuperAdmin = () => {
     return colors[status];
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingUser) {
-      toast.success('User updated successfully!');
-    } else {
-      toast.success('User created successfully!');
+    try {
+      if (!editingUser) {
+        // If a promo code is provided, create it in Supabase
+        if ((formData as any).promoCode) {
+          try {
+            const { data, error } = await supabase.from('promo_codes').insert({
+              name: (formData as any).influencerName || (formData as any).username,
+              code: (formData as any).promoCode,
+              discount: (formData as any).promoDiscount || 0
+            }).select().single();
+            if (error) {
+              console.warn('Promo insert error', error);
+            } else if (data) {
+              setPromoCodes(prev => [data, ...prev]);
+              toast.success('Promo code created and attached to user');
+            }
+          } catch (err) {
+            console.error('Error creating promo', err);
+            toast.error('Failed to create promo code');
+          }
+        }
+        toast.success('User created successfully!');
+      } else {
+        toast.success('User updated successfully!');
+      }
+    } catch (err) {
+      console.error('handleSubmit error', err);
+      toast.error('Unexpected error');
+    } finally {
+      resetForm();
     }
-    resetForm();
   };
 
   const resetForm = () => {
