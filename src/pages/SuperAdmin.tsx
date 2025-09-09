@@ -366,6 +366,58 @@ const SuperAdmin = () => {
         </Card>
       </div>
 
+      {/* Promo Codes */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Promo Codes</CardTitle>
+            <div className="flex items-center gap-4">
+              <Button onClick={() => setPromoDialogOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                New Promo
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {promoCodes.length === 0 ? (
+            <div className="text-muted-foreground">No promo codes created yet.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Discount</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {promoCodes.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.code}</TableCell>
+                    <TableCell>{p.name}</TableCell>
+                    <TableCell>{p.discount}%</TableCell>
+                    <TableCell>{new Date(p.createdAt).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(p.code)}>
+                          Copy
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeletePromo(p.id)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
       {/* User Management */}
       <Card>
         <CardHeader>
