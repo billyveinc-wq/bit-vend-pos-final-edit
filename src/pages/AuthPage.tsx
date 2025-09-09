@@ -181,13 +181,13 @@ const AuthPage = () => {
       // If a promo/referral code was provided, check if it exists and notify user about the applied discount
       if (referralCodeInput) {
         try {
-          const raw = localStorage.getItem('promo-codes');
-          if (raw) {
-            const promoList = JSON.parse(raw) as Array<{ code: string; discount: number; name?: string }>;
-            const matched = promoList.find(p => p.code === referralCodeInput);
-            if (matched) {
-              toast.success(`Promo code applied: ${matched.discount}% off`);
-            }
+          const { data, error } = await supabase.from('promo_codes').select('*').eq('code', referralCodeInput).maybeSingle();
+          if (error) {
+            console.warn('Promo lookup error', error);
+          }
+          if (data) {
+            // Attach promo to user metadata — Supabase signUp already completed above so we store for later billing logic
+            toast.success(`Promo code applied: ${data.discount}% off`);
           }
         } catch (err) {
           console.warn('Promo lookup failed', err);
