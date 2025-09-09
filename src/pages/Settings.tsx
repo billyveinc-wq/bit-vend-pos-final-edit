@@ -40,7 +40,8 @@ import {
   Copy,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Package,
+  FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 
