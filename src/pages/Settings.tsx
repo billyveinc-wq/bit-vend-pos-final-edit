@@ -551,7 +551,26 @@ const Settings = () => {
           return (
             <Card>
               <CardHeader>
-                <CardTitle>Operating Hours</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Locations & Branches</CardTitle>
+                  <Button 
+                    onClick={() => {
+                      const newLocation = { 
+                        id: Date.now().toString(), 
+                        name: `Location ${locations.length + 1}`, 
+                        address: '', 
+                        isActive: true 
+                      };
+                      setLocations(prev => [...prev, newLocation]);
+                      toast.success('New location added');
+                    }}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Location
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {Object.entries(operatingHours).map(([day, hours]) => (
@@ -599,10 +618,62 @@ const Settings = () => {
                       <Badge variant="secondary">Closed</Badge>
                     )}
                   </div>
+                {locations.map((location, index) => (
+                  <div key={location.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                    <div className="flex-1 grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Location Name</Label>
+                        <Input
+                          value={location.name}
+                          onChange={(e) => {
+                            const newLocations = [...locations];
+                            newLocations[index] = { ...location, name: e.target.value };
+                            setLocations(newLocations);
+                          }}
+                          placeholder="Location name"
+                        />
+                      </div>
+                      <div>
+                        <Label>Address</Label>
+                        <Input
+                          value={location.address}
+                          onChange={(e) => {
+                            const newLocations = [...locations];
+                            newLocations[index] = { ...location, address: e.target.value };
+                            setLocations(newLocations);
+                          }}
+                          placeholder="Location address"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={location.isActive}
+                        onCheckedChange={(checked) => {
+                          const newLocations = [...locations];
+                          newLocations[index] = { ...location, isActive: checked };
+                          setLocations(newLocations);
+                        }}
+                      />
+                      <Label>Active</Label>
+                      {locations.length > 1 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setLocations(prev => prev.filter(l => l.id !== location.id));
+                            toast.success('Location removed');
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 ))}
                 <Button onClick={() => showSaveToast()} className="bg-save hover:bg-save-hover text-save-foreground">
                   <Save className="h-4 w-4 mr-2" />
-                  Save Hours
+                  Save Locations
                 </Button>
               </CardContent>
             </Card>
