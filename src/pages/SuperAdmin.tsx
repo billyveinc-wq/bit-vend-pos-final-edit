@@ -205,10 +205,11 @@ const SuperAdmin = () => {
           <p className="text-muted-foreground">System administration and user management</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button onClick={() => setPromoDialogOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">Promo Code</Button>
           <Button onClick={() => setManagePassOpen(true)} className="bg-save hover:bg-save-hover text-save-foreground">Manage Password</Button>
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="bg-save hover:bg-save-hover text-save-foreground">
                 <Plus className="w-4 h-4 mr-2" />
                 Add User
               </Button>
