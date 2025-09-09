@@ -66,9 +66,15 @@ interface UserInvitation {
   expiresAt: string;
 }
 
+interface ReceiptTemplate {
+  id: string;
+  name: string;
+  description: string;
+  isDefault: boolean;
+}
 const Settings = () => {
   const { subscription, hasFeature } = useSubscription();
-  const { currentBusiness, updateBusiness } = useBusiness();
+  const { businesses, currentBusiness, updateBusiness, addBusiness, deleteBusiness } = useBusiness();
   const { settings, updateSetting } = useSettings();
   
   // User Management State
@@ -83,6 +89,34 @@ const Settings = () => {
     role: '',
     sendWelcomeEmail: true
   });
+
+  // Business Management State
+  const [isAddBusinessDialogOpen, setIsAddBusinessDialogOpen] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState<any>(null);
+  const [searchBusinesses, setSearchBusinesses] = useState('');
+  const [newBusinessForm, setNewBusinessForm] = useState({
+    businessName: '',
+    businessType: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'US',
+    taxId: '',
+    businessLicense: ''
+  });
+
+  // Receipt Templates State
+  const [receiptTemplates] = useState<ReceiptTemplate[]>([
+    { id: 'classic-receipt', name: 'Classic Receipt', description: 'Traditional receipt layout', isDefault: true },
+    { id: 'modern-receipt', name: 'Modern Receipt', description: 'Clean modern design', isDefault: false },
+    { id: 'minimal-receipt', name: 'Minimal Receipt', description: 'Simple minimal layout', isDefault: false },
+    { id: 'detailed-receipt', name: 'Detailed Receipt', description: 'Comprehensive receipt with all details', isDefault: false },
+    { id: 'thermal-receipt', name: 'Thermal Receipt', description: 'Optimized for thermal printers', isDefault: false }
+  ]);
+  const [selectedTemplate, setSelectedTemplate] = useState(settings.receiptTemplate || 'classic-receipt');
 
   // Available roles based on subscription plan
   const availableRoles = [
@@ -111,6 +145,70 @@ const Settings = () => {
   // Logo upload state
   const [logoPreview, setLogoPreview] = useState<string | null>(currentBusiness?.logoUrl || null);
 
+  // Business Management Functions
+  const handleAddBusiness = () => {
+    if (!newBusinessForm.businessName || !newBusinessForm.businessType) {
+      toast.error('Please fill in business name and type');
+      return;
+    }
+
+    addBusiness(newBusinessForm);
+    toast.success('Business added successfully!');
+    setIsAddBusinessDialogOpen(false);
+    resetNewBusinessForm();
+  };
+
+  const handleEditBusiness = (business: any) => {
+    setEditingBusiness(business);
+    setNewBusinessForm({
+      businessName: business.businessName,
+      businessType: business.businessType,
+      phone: business.phone || '',
+      email: business.email || '',
+      address: business.address || '',
+      city: business.city || '',
+      state: business.state || '',
+      postalCode: business.postalCode || '',
+      country: business.country || 'US',
+      taxId: business.taxId || '',
+      businessLicense: business.businessLicense || ''
+    });
+    setIsAddBusinessDialogOpen(true);
+  };
+
+  const handleDeleteBusiness = (businessId: string) => {
+    if (businesses.length <= 1) {
+      toast.error('Cannot delete the last business');
+      return;
+    }
+    
+    if (confirm('Are you sure you want to delete this business?')) {
+      try {
+        deleteBusiness(businessId);
+        toast.success('Business deleted successfully!');
+      } catch (error) {
+        toast.error('Cannot delete the last business');
+      }
+    }
+  };
+
+  const resetNewBusinessForm = () => {
+    setNewBusinessForm({
+      businessName: '',
+      businessType: '',
+      phone: '',
+      email: '',
+      address: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'US',
+      taxId: '',
+      businessLicense: ''
+    });
+    setEditingBusiness(null);
+  };
+
   const handleBusinessSave = () => {
     if (!businessForm.businessName || !businessForm.businessType) {
       toast.error('Please fill in business name and type');
@@ -122,8 +220,14 @@ const Settings = () => {
         ...businessForm,
         logoUrl: logoPreview || undefined
       });
-      showSaveToast('Business information saved successfully!');
+      toast.success('Business information saved successfully!');
     }
+  };
+
+  const handleReceiptTemplateChange = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    updateSetting('receiptTemplate', templateId);
+    toast.success('Receipt template updated successfully!');
   };
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,7 +241,7 @@ const Settings = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
-        showUploadToast('Logo uploaded successfully!');
+        toast.success('Logo uploaded successfully!');
       };
       reader.readAsDataURL(file);
     }
@@ -262,6 +366,10 @@ const Settings = () => {
     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchUsers.toLowerCase())
   );
 
+  const filteredBusinesses = businesses.filter(business =>
+    business.businessName.toLowerCase().includes(searchBusinesses.toLowerCase()) ||
+    business.businessType.toLowerCase().includes(searchBusinesses.toLowerCase())
+  );
   const maxUsers = subscription?.plan_id === 'starter' ? 1 : 
                    subscription?.plan_id === 'standard' ? 5 : 
                    subscription?.plan_id === 'pro' ? 15 : 999;
@@ -276,8 +384,9 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="business" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="business">Business</TabsTrigger>
+          <TabsTrigger value="receipts">Receipts</TabsTrigger>
           <TabsTrigger value="users">Users & Roles</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -286,11 +395,233 @@ const Settings = () => {
 
         {/* Business Settings */}
         <TabsContent value="business" className="space-y-6">
+          {/* Business List */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Business Locations ({businesses.length})
+                </CardTitle>
+                <Dialog open={isAddBusinessDialogOpen} onOpenChange={setIsAddBusinessDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2" onClick={() => resetNewBusinessForm()}>
+                      <Plus className="h-4 w-4" />
+                      Add Business
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingBusiness ? 'Edit Business' : 'Add New Business'}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="newBusinessName">Business Name *</Label>
+                          <Input
+                            id="newBusinessName"
+                            value={newBusinessForm.businessName}
+                            onChange={(e) => setNewBusinessForm(prev => ({ ...prev, businessName: e.target.value }))}
+                            placeholder="Business Name"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="newBusinessType">Business Type *</Label>
+                          <Select value={newBusinessForm.businessType} onValueChange={(value) => setNewBusinessForm(prev => ({ ...prev, businessType: value }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="retail">Retail Store</SelectItem>
+                              <SelectItem value="restaurant">Restaurant</SelectItem>
+                              <SelectItem value="grocery">Grocery Store</SelectItem>
+                              <SelectItem value="pharmacy">Pharmacy</SelectItem>
+                              <SelectItem value="electronics">Electronics Store</SelectItem>
+                              <SelectItem value="clothing">Clothing Store</SelectItem>
+                              <SelectItem value="service">Service Business</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="newPhone">Phone</Label>
+                          <Input
+                            id="newPhone"
+                            value={newBusinessForm.phone}
+                            onChange={(e) => setNewBusinessForm(prev => ({ ...prev, phone: e.target.value }))}
+                            placeholder="+1 555-0123"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="newEmail">Email</Label>
+                          <Input
+                            id="newEmail"
+                            type="email"
+                            value={newBusinessForm.email}
+                            onChange={(e) => setNewBusinessForm(prev => ({ ...prev, email: e.target.value }))}
+                            placeholder="business@example.com"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="newAddress">Address</Label>
+                        <Input
+                          id="newAddress"
+                          value={newBusinessForm.address}
+                          onChange={(e) => setNewBusinessForm(prev => ({ ...prev, address: e.target.value }))}
+                          placeholder="123 Business Street"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="newCity">City</Label>
+                          <Input
+                            id="newCity"
+                            value={newBusinessForm.city}
+                            onChange={(e) => setNewBusinessForm(prev => ({ ...prev, city: e.target.value }))}
+                            placeholder="New York"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="newState">State</Label>
+                          <Input
+                            id="newState"
+                            value={newBusinessForm.state}
+                            onChange={(e) => setNewBusinessForm(prev => ({ ...prev, state: e.target.value }))}
+                            placeholder="NY"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="newPostalCode">Postal Code</Label>
+                          <Input
+                            id="newPostalCode"
+                            value={newBusinessForm.postalCode}
+                            onChange={(e) => setNewBusinessForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                            placeholder="10001"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button onClick={editingBusiness ? () => {
+                          if (editingBusiness && currentBusiness) {
+                            updateBusiness(editingBusiness.id, newBusinessForm);
+                            toast.success('Business updated successfully!');
+                            setIsAddBusinessDialogOpen(false);
+                            resetNewBusinessForm();
+                          }
+                        } : handleAddBusiness} className="flex-1">
+                          {editingBusiness ? 'Update' : 'Add'} Business
+                        </Button>
+                        <Button variant="outline" onClick={() => setIsAddBusinessDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Search Businesses */}
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search businesses..."
+                    value={searchBusinesses}
+                    onChange={(e) => setSearchBusinesses(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-blue-500 hover:bg-blue-500">
+                    <TableHead className="text-white font-semibold">Business Name</TableHead>
+                    <TableHead className="text-white font-semibold">Type</TableHead>
+                    <TableHead className="text-white font-semibold">Contact</TableHead>
+                    <TableHead className="text-white font-semibold">Location</TableHead>
+                    <TableHead className="text-white font-semibold">Status</TableHead>
+                    <TableHead className="text-white font-semibold">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredBusinesses.map((business) => (
+                    <TableRow key={business.id} className={currentBusiness?.id === business.id ? 'bg-primary/5' : ''}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Building2 className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{business.businessName}</p>
+                            {currentBusiness?.id === business.id && (
+                              <Badge variant="outline" className="text-xs">Current</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {business.businessType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {business.phone && <div>{business.phone}</div>}
+                          {business.email && <div className="text-muted-foreground">{business.email}</div>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {business.city && business.state ? `${business.city}, ${business.state}` : '-'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default">Active</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditBusiness(business)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          {businesses.length > 1 && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteBusiness(business.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Current Business Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Business Information
+                Current Business Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -469,7 +800,7 @@ const Settings = () => {
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={handleBusinessSave} className="bg-save hover:bg-save-hover text-save-foreground">
+                <Button onClick={handleBusinessSave}>
                   <Save className="h-4 w-4 mr-2" />
                   Save Business Information
                 </Button>
@@ -478,6 +809,66 @@ const Settings = () => {
           </Card>
         </TabsContent>
 
+        {/* Receipt Templates */}
+        <TabsContent value="receipts" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Receipt Templates
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Choose the default receipt template for your business. This will be used for all sales transactions.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {receiptTemplates.map((template) => (
+                    <Card 
+                      key={template.id}
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        selectedTemplate === template.id ? 'ring-2 ring-primary border-primary' : ''
+                      }`}
+                      onClick={() => handleReceiptTemplateChange(template.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold">{template.name}</h3>
+                            {selectedTemplate === template.id && (
+                              <Badge variant="default">Selected</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{template.description}</p>
+                          
+                          {/* Template Preview */}
+                          <div className="bg-muted/50 p-3 rounded border text-xs">
+                            <div className="text-center space-y-1">
+                              <div className="font-bold">Your Business Name</div>
+                              <div className="text-muted-foreground">Receipt Preview</div>
+                              <div className="border-t border-dashed my-2"></div>
+                              <div className="flex justify-between">
+                                <span>Sample Item</span>
+                                <span>$10.00</span>
+                              </div>
+                              <div className="border-t border-dashed my-2"></div>
+                              <div className="flex justify-between font-bold">
+                                <span>Total</span>
+                                <span>$10.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         {/* Users & Roles */}
         <TabsContent value="users" className="space-y-6">
           {!hasFeature('multi_user_accounts') ? (
@@ -833,7 +1224,7 @@ const Settings = () => {
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={() => showSaveToast('Notification preferences saved!')} className="bg-save hover:bg-save-hover text-save-foreground">
+                <Button onClick={() => toast.success('Notification preferences saved!')}>
                   <Save className="h-4 w-4 mr-2" />
                   Save Preferences
                 </Button>
@@ -881,7 +1272,7 @@ const Settings = () => {
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={() => showSaveToast('Security settings saved!')} className="bg-save hover:bg-save-hover text-save-foreground">
+                <Button onClick={() => toast.success('Security settings saved!')}>
                   <Save className="h-4 w-4 mr-2" />
                   Save Security Settings
                 </Button>
