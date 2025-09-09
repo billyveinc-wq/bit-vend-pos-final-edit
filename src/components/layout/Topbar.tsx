@@ -392,20 +392,30 @@ const Topbar: React.FC<TopbarProps> = ({
             <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
               System Settings
             </DropdownMenuItem>
-            {isAdmin && (
-              <DropdownMenuItem onClick={() => {
+
+            {/* Show only one logout option depending on session type to avoid duplicate actions */}
+            {isAdmin ? (
+              <DropdownMenuItem onClick={async () => {
+                // Clear local admin session and also ensure Supabase session is cleared
                 adminLogout();
+                try {
+                  await supabase.auth.signOut();
+                } catch (err) {
+                  // ignore sign out errors for supabase if no session exists
+                  console.warn('Supabase signOut error during admin logout:', err);
+                }
                 window.location.href = '/';
               }}>
-                Logout as Admin
+                Logout
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = '/';
+              }}>
+                Logout
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={async () => {
-              await supabase.auth.signOut();
-              window.location.href = '/';
-            }}>
-              Logout
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
