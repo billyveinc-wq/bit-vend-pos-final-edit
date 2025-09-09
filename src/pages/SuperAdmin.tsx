@@ -140,6 +140,60 @@ const SuperAdmin = () => {
     toast.success('User deleted successfully!');
   };
 
+  // Promo codes state
+  const [promoDialogOpen, setPromoDialogOpen] = useState(false);
+  const [promoName, setPromoName] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState<number>(10);
+  const [promoCodes, setPromoCodes] = useState<Array<{id: number; name: string; code: string; discount: number; createdAt: string}>>([]);
+
+  useEffect(() => {
+    // Load promo codes from localStorage
+    try {
+      const raw = localStorage.getItem('promo-codes');
+      if (raw) setPromoCodes(JSON.parse(raw));
+    } catch (err) {
+      console.warn('Failed to load promo codes', err);
+    }
+  }, []);
+
+  const savePromoCodes = (codes: any[]) => {
+    localStorage.setItem('promo-codes', JSON.stringify(codes));
+    setPromoCodes(codes);
+  };
+
+  const generateCode = (length = 8) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    return result;
+  };
+
+  const handleCreatePromo = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!promoName) {
+      toast.error('Please enter a name for this promo');
+      return;
+    }
+    if (![10,20,30,40,50].includes(promoDiscount)) {
+      toast.error('Please select a valid discount');
+      return;
+    }
+    const code = generateCode(8);
+    const newPromo = { id: Date.now(), name: promoName, code, discount: promoDiscount, createdAt: new Date().toISOString() };
+    const updated = [newPromo, ...promoCodes];
+    savePromoCodes(updated);
+    toast.success(`Promo ${code} created (${promoDiscount}% off)`);
+    setPromoDialogOpen(false);
+    setPromoName('');
+    setPromoDiscount(10);
+  };
+
+  const handleDeletePromo = (id: number) => {
+    const updated = promoCodes.filter(p => p.id !== id);
+    savePromoCodes(updated);
+    toast.success('Promo code deleted');
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
       <div className="flex items-center justify-between">
@@ -147,78 +201,84 @@ const SuperAdmin = () => {
           <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
           <p className="text-muted-foreground">System administration and user management</p>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    required
-                  />
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setPromoDialogOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+            <Plus className="w-4 h-4 mr-2" />
+            Generate Promo Code
+          </Button>
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={formData.role} onValueChange={(value: SystemUser['role']) => setFormData({ ...formData, role: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="super_admin">Super Admin</SelectItem>
+                        <SelectItem value="moderator">Moderator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={formData.status} onValueChange={(value: SystemUser['status']) => setFormData({ ...formData, status: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value: SystemUser['role']) => setFormData({ ...formData, role: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="super_admin">Super Admin</SelectItem>
-                      <SelectItem value="moderator">Moderator</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={resetForm} className="bg-cancel hover:bg-cancel-hover text-cancel-foreground">
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-save hover:bg-save-hover text-save-foreground">
+                    {editingUser ? 'Update User' : 'Create User'}
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value: SystemUser['status']) => setFormData({ ...formData, status: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="suspended">Suspended</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={resetForm} className="bg-cancel hover:bg-cancel-hover text-cancel-foreground">
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-save hover:bg-save-hover text-save-foreground">
-                  {editingUser ? 'Update User' : 'Create User'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* System Metrics */}
