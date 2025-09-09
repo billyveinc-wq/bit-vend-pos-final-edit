@@ -237,14 +237,14 @@ const Topbar: React.FC<TopbarProps> = ({
               </div>
             ))}
             <DropdownMenuItem 
-              onClick={() => navigate('/settings?section=business&subsection=business-info&mode=add')}
+              onClick={() => navigate('/dashboard/settings?section=business&subsection=business-info&mode=add')}
               className="border-t mt-1 pt-2"
             >
               <Plus size={16} className="mr-2" />
               Add New Business
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => navigate('/settings?section=business&subsection=business-info')}
+              onClick={() => navigate('/dashboard/settings?section=business&subsection=business-info')}
             >
               <Settings size={16} className="mr-2" />
               Business Settings
