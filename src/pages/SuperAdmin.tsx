@@ -315,6 +315,56 @@ const SuperAdmin = () => {
               </form>
             </DialogContent>
           </Dialog>
+
+          <Dialog open={managePassOpen} onOpenChange={setManagePassOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Change Admin Password</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const { currentPassword, newPassword, confirmPassword } = managePassForm;
+                if (!currentPassword || !newPassword || !confirmPassword) { toast.error('Fill all fields'); return; }
+                if (newPassword !== confirmPassword) { toast.error('New passwords do not match'); return; }
+                if (newPassword.length < 8) { toast.error('Password must be at least 8 characters'); return; }
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  const user = session?.user || null;
+                  if (user && user.email === 'admn.bitvend@gmail.com') {
+                    const { error } = await supabase.auth.updateUser({ password: newPassword });
+                    if (error) { toast.error('Failed to update Supabase password'); console.error(error); }
+                    else { toast.success('Password updated in Supabase'); localStorage.setItem('admin-password', newPassword); }
+                  } else {
+                    localStorage.setItem('admin-password', newPassword);
+                    toast.success('Local admin password updated');
+                  }
+                } catch (err) {
+                  console.error('Manage password error', err);
+                  toast.error('Failed to update password');
+                } finally {
+                  setManagePassOpen(false);
+                  setManagePassForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                }
+              }} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="mp-current">Current Password</Label>
+                  <Input id="mp-current" type="password" value={managePassForm.currentPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, currentPassword: e.target.value }))} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mp-new">New Password</Label>
+                  <Input id="mp-new" type="password" value={managePassForm.newPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, newPassword: e.target.value }))} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mp-confirm">Confirm New Password</Label>
+                  <Input id="mp-confirm" type="password" value={managePassForm.confirmPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, confirmPassword: e.target.value }))} required />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setManagePassOpen(false)}>Cancel</Button>
+                  <Button type="submit" className="bg-save hover:bg-save-hover text-save-foreground">Change Password</Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
