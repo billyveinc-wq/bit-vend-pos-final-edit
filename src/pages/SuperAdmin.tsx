@@ -59,6 +59,9 @@ const SuperAdmin = () => {
   });
   const [managePassOpen, setManagePassOpen] = useState(false);
   const [managePassForm, setManagePassForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [showManageCurrent, setShowManageCurrent] = useState(false);
+  const [showManageNew, setShowManageNew] = useState(false);
+  const [showManageConfirm, setShowManageConfirm] = useState(false);
 
   const [systemUsers] = useState<SystemUser[]>([]);
 
@@ -305,7 +308,7 @@ const SuperAdmin = () => {
           </Dialog>
 
           <Dialog open={managePassOpen} onOpenChange={setManagePassOpen}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Change Admin Password</DialogTitle>
               </DialogHeader>
@@ -336,15 +339,24 @@ const SuperAdmin = () => {
               }} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="mp-current">Current Password</Label>
-                  <Input id="mp-current" type="password" value={managePassForm.currentPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, currentPassword: e.target.value }))} required />
+                  <div className="relative">
+                    <Input id="mp-current" type={showManageCurrent ? "text" : "password"} value={managePassForm.currentPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, currentPassword: e.target.value }))} required />
+                    <button type="button" onClick={() => setShowManageCurrent(!showManageCurrent)} className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors">{showManageCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="mp-new">New Password</Label>
-                  <Input id="mp-new" type="password" value={managePassForm.newPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, newPassword: e.target.value }))} required />
+                  <div className="relative">
+                    <Input id="mp-new" type={showManageNew ? "text" : "password"} value={managePassForm.newPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, newPassword: e.target.value }))} required />
+                    <button type="button" onClick={() => setShowManageNew(!showManageNew)} className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors">{showManageNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="mp-confirm">Confirm New Password</Label>
-                  <Input id="mp-confirm" type="password" value={managePassForm.confirmPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, confirmPassword: e.target.value }))} required />
+                  <div className="relative">
+                    <Input id="mp-confirm" type={showManageConfirm ? "text" : "password"} value={managePassForm.confirmPassword} onChange={(e) => setManagePassForm(prev => ({ ...prev, confirmPassword: e.target.value }))} required />
+                    <button type="button" onClick={() => setShowManageConfirm(!showManageConfirm)} className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors">{showManageConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setManagePassOpen(false)}>Cancel</Button>
@@ -355,7 +367,7 @@ const SuperAdmin = () => {
           </Dialog>
 
           <Dialog open={promoDialogOpen} onOpenChange={setPromoDialogOpen}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create Promo Code</DialogTitle>
               </DialogHeader>
