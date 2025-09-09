@@ -50,6 +50,11 @@ const ExpenseCategory = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name) {
+      toast.error('Please enter a category name');
+      return;
+    }
+    
     if (editingCategory) {
       setExpenseCategories(prev => prev.map(category =>
         category.id === editingCategory.id

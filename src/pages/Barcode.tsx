@@ -35,7 +35,11 @@ const Barcode = () => {
       return;
     }
     
-    toast.success(`Printing ${printQuantity} barcode(s) for ${selectedProductData?.name}`);
+    // Simulate printing process
+    setTimeout(() => {
+      toast.success(`Successfully printed ${printQuantity} barcode(s) for ${selectedProductData?.name}`);
+    }, 1000);
+    toast.info(`Sending ${printQuantity} barcode(s) to printer...`);
   };
 
   const handleDownloadBarcode = () => {
@@ -44,7 +48,16 @@ const Barcode = () => {
       return;
     }
     
-    toast.success(`Downloading barcode for ${selectedProductData?.name}`);
+    // Create a simple barcode file download simulation
+    const element = document.createElement('a');
+    const file = new Blob([`Barcode for ${selectedProductData?.name}\nSKU: ${selectedProductData?.sku}\nBarcode: ${selectedProductData?.barcode || 'Generated'}`], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `barcode-${selectedProductData?.sku || selectedProductData?.name}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    toast.success(`Barcode downloaded for ${selectedProductData?.name}`);
   };
 
   const generateBarcode = () => {

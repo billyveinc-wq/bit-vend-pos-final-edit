@@ -54,6 +54,11 @@ const Brands = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name) {
+      toast.error('Please enter a brand name');
+      return;
+    }
+    
     if (editingBrand) {
       setBrands(prev => prev.map(brand =>
         brand.id === editingBrand.id
@@ -65,6 +70,7 @@ const Brands = () => {
       const newBrand: Brand = {
         id: Date.now().toString(),
         ...formData,
+        logoUrl: logoPreview || undefined,
         productCount: 0,
         createdAt: new Date().toISOString()
       };

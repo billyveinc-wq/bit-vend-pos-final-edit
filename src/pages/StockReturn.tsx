@@ -84,6 +84,7 @@ const StockReturn = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+
     if (!formData.productId || !formData.quantity || !formData.reason || !formData.supplier) {
       toast.error('Please fill in all required fields');
       return;
@@ -94,7 +95,6 @@ const StockReturn = () => {
       toast.error('Product not found');
       return;
     }
-
     const newReturn: StockReturn = {
       id: Date.now().toString(),
       productId: parseInt(formData.productId),

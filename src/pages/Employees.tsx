@@ -76,6 +76,11 @@ const Employees = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.position) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
     if (editingEmployee) {
       setEmployees(prev => prev.map(employee =>
         employee.id === editingEmployee.id

@@ -82,6 +82,7 @@ const Payroll = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+
     if (!formData.employeeId || !formData.baseSalary) {
       toast.error('Please fill in all required fields');
       return;
@@ -92,7 +93,6 @@ const Payroll = () => {
       toast.error('Employee not found');
       return;
     }
-
     const { grossPay, netPay } = calculatePayroll();
 
     const newRecord: PayrollRecord = {

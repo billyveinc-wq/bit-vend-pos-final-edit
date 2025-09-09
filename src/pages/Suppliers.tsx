@@ -69,6 +69,11 @@ const Suppliers = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name) {
+      toast.error('Please enter a supplier name');
+      return;
+    }
+    
     if (editingSupplier) {
       setSuppliers(prev => prev.map(supplier =>
         supplier.id === editingSupplier.id

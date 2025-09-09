@@ -59,6 +59,7 @@ const StockAdjustment = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+
     if (!formData.productId || !formData.quantity || !formData.reason) {
       toast.error('Please fill in all required fields');
       return;
@@ -69,7 +70,6 @@ const StockAdjustment = () => {
       toast.error('Product not found');
       return;
     }
-
     const newAdjustment: StockAdjustment = {
       id: Date.now().toString(),
       productId: parseInt(formData.productId),

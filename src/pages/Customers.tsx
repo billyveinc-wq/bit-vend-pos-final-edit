@@ -63,6 +63,11 @@ const Customers = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name) {
+      toast.error('Please enter a customer name');
+      return;
+    }
+    
     if (editingCustomer) {
       setCustomers(prev => prev.map(customer =>
         customer.id === editingCustomer.id

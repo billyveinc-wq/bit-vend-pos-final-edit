@@ -71,6 +71,7 @@ const Users = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+
     if (!formData.username || !formData.email || !formData.firstName || !formData.lastName || !formData.role) {
       toast.error('Please fill in all required fields');
       return;
@@ -80,7 +81,6 @@ const Users = () => {
       toast.error('Password and confirm password must match');
       return;
     }
-
     const selectedRole = roles.find(r => r.id === formData.role);
 
     if (editingUser) {

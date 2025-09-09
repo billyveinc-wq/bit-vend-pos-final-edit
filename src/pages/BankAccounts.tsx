@@ -56,6 +56,11 @@ const BankAccounts = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.accountName || !formData.accountNumber || !formData.bankName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
     if (editingAccount) {
       setBankAccounts(prev => prev.map(account =>
         account.id === editingAccount.id

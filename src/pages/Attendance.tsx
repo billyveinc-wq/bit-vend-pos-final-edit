@@ -35,6 +35,11 @@ const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [formData, setFormData] = useState({
+    employee: '',
+    status: 'present' as AttendanceRecord['status'],
+    notes: ''
+  });
 
   const filteredRecords = attendanceRecords.filter(record =>
     record.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,6 +67,22 @@ const Attendance = () => {
   };
 
   const handleMarkAttendance = () => {
+    if (!formData.employee) {
+      toast.error('Please select an employee');
+      return;
+    }
+    
+    const newRecord: AttendanceRecord = {
+      id: Date.now().toString(),
+      employeeId: formData.employee,
+      employeeName: 'Selected Employee',
+      date: new Date().toISOString().split('T')[0],
+      checkIn: new Date().toLocaleTimeString(),
+      status: 'present',
+      createdAt: new Date().toISOString()
+    };
+    
+    setAttendanceRecords(prev => [...prev, newRecord]);
     toast.success('Attendance marked successfully!');
     setIsDialogOpen(false);
   };
@@ -90,10 +111,10 @@ const Attendance = () => {
                 <Label htmlFor="employee">Employee</Label>
                 <Input
                   id="employee"
-                  placeholder="Select employee"
-                  disabled
+                  placeholder="Enter employee name"
+                  value={formData.employee}
+                  onChange={(e) => setFormData(prev => ({ ...prev, employee: e.target.value }))}
                 />
-                <p className="text-xs text-muted-foreground mt-1">Add employees first to mark attendance</p>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>

@@ -94,6 +94,11 @@ const Roles = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name) {
+      toast.error('Please enter a role name');
+      return;
+    }
+    
     if (editingRole) {
       setRoles(prev => prev.map(role =>
         role.id === editingRole.id

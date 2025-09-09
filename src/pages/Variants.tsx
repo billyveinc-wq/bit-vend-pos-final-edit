@@ -62,6 +62,7 @@ const Variants = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+
     if (!formData.productId || !formData.variantName || !formData.variantValue) {
       toast.error('Please fill in all required fields');
       return;
@@ -72,7 +73,6 @@ const Variants = () => {
       toast.error('Product not found');
       return;
     }
-
     if (editingVariant) {
       setVariants(prev => prev.map(variant =>
         variant.id === editingVariant.id

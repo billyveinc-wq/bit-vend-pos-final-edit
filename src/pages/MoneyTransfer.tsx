@@ -72,6 +72,7 @@ const MoneyTransfer = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+
     if (!formData.fromAccount || !formData.toAccount || !formData.amount) {
       toast.error('Please fill in all required fields');
       return;
@@ -81,7 +82,6 @@ const MoneyTransfer = () => {
       toast.error('From and To accounts cannot be the same');
       return;
     }
-
     const newTransfer: MoneyTransfer = {
       id: Date.now().toString(),
       ...formData,

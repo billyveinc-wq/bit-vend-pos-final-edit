@@ -96,7 +96,6 @@ const Income = () => {
       description: income.description || '',
       paymentMethod: income.paymentMethod
     });
-    setIsDialogOpen(true);
   };
 
   const handleDelete = () => {
