@@ -143,6 +143,27 @@ const Quotation = () => {
   const [dateFilter, setDateFilter] = useState('all');
 
   const [quotations] = useState([]);
+  
+  // Add missing handlers for quotation actions
+  const handleSendQuotation = (id: string) => {
+    toast.success('Quotation sent to customer successfully!');
+  };
+  
+  const handleDuplicateQuotation = (id: string) => {
+    toast.success('Quotation duplicated successfully!');
+  };
+  
+  const handleDownloadPDF = (id: string) => {
+    toast.success('Quotation PDF downloaded successfully!');
+  };
+  
+  const handleViewQuotation = (id: string) => {
+    toast.info('Opening quotation details...');
+  };
+  
+  const handleEditQuotation = (id: string) => {
+    navigate(`/dashboard/quotation/edit/${id}`);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {

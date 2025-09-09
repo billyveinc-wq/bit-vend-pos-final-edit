@@ -175,7 +175,7 @@ const Index: React.FC = () => {
               <Button
                 variant="outline"
                 className="mt-4"
-                onClick={() => navigate('/products')}
+                onClick={() => navigate('/dashboard/products')}
               >
                 Manage Products
               </Button>
