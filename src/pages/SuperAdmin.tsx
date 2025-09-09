@@ -648,39 +648,6 @@ const SuperAdmin = () => {
         </CardContent>
       </Card>
 
-      {/* Promo Dialog */}
-      <Dialog open={promoDialogOpen} onOpenChange={setPromoDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create Promo Code</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); handleCreatePromo(); }} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="promoName">Promo Name</Label>
-              <Input id="promoName" value={promoName} onChange={(e) => setPromoName(e.target.value)} placeholder="E.g. Summer Sale" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promoDiscount">Discount</Label>
-              <Select value={String(promoDiscount)} onValueChange={(v) => setPromoDiscount(Number(v))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10%</SelectItem>
-                  <SelectItem value="20">20%</SelectItem>
-                  <SelectItem value="30">30%</SelectItem>
-                  <SelectItem value="40">40%</SelectItem>
-                  <SelectItem value="50">50%</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setPromoDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-save hover:bg-save-hover text-save-foreground">Create</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
     </div>
   );
