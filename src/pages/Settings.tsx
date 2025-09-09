@@ -27,6 +27,7 @@ import {
   Save,
   Upload,
   X,
+  Upload,
   Plus,
   Edit2,
   Trash2,
@@ -978,6 +979,70 @@ const Settings = () => {
                         </Select>
                       </div>
 
+                    {/* Business Logo Upload */}
+                    <div>
+                      <Label>Business Logo</Label>
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center overflow-hidden">
+                          {businessFormData.logoUrl ? (
+                            <img 
+                              src={businessFormData.logoUrl} 
+                              alt="Business logo"
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            <Building2 className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => document.getElementById('business-logo-upload')?.click()}
+                              className="gap-2"
+                            >
+                              <Upload className="h-4 w-4" />
+                              {businessFormData.logoUrl ? 'Change Logo' : 'Upload Logo'}
+                            </Button>
+                            {businessFormData.logoUrl && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setBusinessFormData(prev => ({ ...prev, logoUrl: '' }))}
+                                className="text-red-600 hover:text-red-700 gap-2"
+                              >
+                                <X className="h-4 w-4" />
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                          <input
+                            id="business-logo-upload"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const result = event.target?.result as string;
+                                  setBusinessFormData(prev => ({ ...prev, logoUrl: result }));
+                                  toast.success('Logo uploaded successfully!');
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Recommended: 200x200px, PNG or JPG, max 2MB
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                       <div className="flex items-center space-x-2">
                         <Switch
                           checked={inviteForm.sendWelcomeEmail}
