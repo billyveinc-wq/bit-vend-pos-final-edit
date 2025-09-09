@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,6 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react';
-import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 
 interface SystemUser {
