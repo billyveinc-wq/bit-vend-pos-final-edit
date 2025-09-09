@@ -26,6 +26,8 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
 // Create a new quotation page component
 const NewQuotationPage = () => {
   const navigate = useNavigate();
