@@ -68,9 +68,12 @@ const SuperAdmin = () => {
   const [systemUsers] = useState<SystemUser[]>([]);
 
   // Tabs and registrations state
-  const [activeTab, setActiveTab] = useState<'promo' | 'registrations'>('promo');
+  const [activeTab, setActiveTab] = useState<'promo' | 'registrations' | 'system'>('promo');
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+
+  const [systemUsersList, setSystemUsersList] = useState<any[]>([]);
+  const [loadingSystemUsers, setLoadingSystemUsers] = useState(false);
 
   const systemMetrics: SystemMetric[] = [
     { name: 'CPU Usage', value: '23%', status: 'healthy', icon: Cpu },
