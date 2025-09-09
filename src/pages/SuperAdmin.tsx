@@ -67,6 +67,11 @@ const SuperAdmin = () => {
 
   const [systemUsers] = useState<SystemUser[]>([]);
 
+  // Tabs and registrations state
+  const [activeTab, setActiveTab] = useState<'promo' | 'registrations'>('promo');
+  const [registrations, setRegistrations] = useState<any[]>([]);
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+
   const systemMetrics: SystemMetric[] = [
     { name: 'CPU Usage', value: '23%', status: 'healthy', icon: Cpu },
     { name: 'Memory Usage', value: '67%', status: 'warning', icon: MemoryStick },
