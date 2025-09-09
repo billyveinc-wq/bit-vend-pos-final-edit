@@ -378,7 +378,7 @@ const Settings = () => {
     // Clear edit mode when changing sections
     params.delete('edit');
     params.delete('mode');
-    setSearchParams(params);
+    // Reset form and return to business list
   };
 
   const handleSubsectionChange = (newSubsection: string) => {
@@ -488,6 +488,7 @@ const Settings = () => {
       country: 'US',
       phone: '',
       isMain: false
+    setActiveBusinessSubsection('business-info'); // Return to business list
     });
     toast.success('Location added successfully!');
   };
