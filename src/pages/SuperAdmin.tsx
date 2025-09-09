@@ -186,6 +186,65 @@ const SuperAdmin = () => {
     load();
   }, []);
 
+  // Load registrations (users + subscriptions + promotions)
+  useEffect(() => {
+    const loadRegistrations = async () => {
+      setLoadingRegistrations(true);
+      try {
+        // Try to fetch users from auth.users. This may be restricted depending on your Supabase RLS.
+        let { data: users, error: usersErr } = await supabase
+          .from('users')
+          .select('id, email, user_metadata, created_at, last_sign_in_at');
+
+        if (usersErr) {
+          console.warn('Could not fetch auth.users directly:', usersErr);
+          // Fallback to system_users table if present
+          const { data: systemUsers, error: suErr } = await supabase.from('system_users').select('*');
+          if (suErr) {
+            console.warn('Could not fetch system_users fallback:', suErr);
+            users = [] as any;
+          } else {
+            users = systemUsers as any;
+          }
+        }
+
+        const userIds = (users || []).map((u: any) => u.id).filter(Boolean);
+
+        const { data: subs } = await supabase.from('user_subscriptions').select('*').in('user_id', userIds || []);
+        const { data: plans } = await supabase.from('subscription_plans').select('*');
+        const { data: ups } = await supabase.from('user_promotions').select('*, promo_code:promo_codes(id, code, influencer_name)').in('user_id', userIds || []);
+
+        const regs = (users || []).map((u: any) => {
+          const sub = (subs || []).find((s: any) => s.user_id === u.id);
+          const plan = (plans || []).find((p: any) => p.id === sub?.plan_id);
+          const up = (ups || []).find((p: any) => p.user_id === u.id);
+
+          return {
+            id: u.id,
+            email: u.email || u.user_email || '-',
+            fullName: u.user_metadata?.full_name || u.user_metadata?.fullName || '-',
+            companyName: u.user_metadata?.company_name || u.user_metadata?.company || '-',
+            planName: plan?.name || (sub?.plan_id || 'starter'),
+            planExpires: sub?.expires_at || null,
+            subscriptionStatus: sub?.status || 'free',
+            promoCode: up?.promo_code?.code || up?.promo_code_id || (u.user_metadata?.referral_code || '-') ,
+            influencerName: up?.promo_code?.influencer_name || up?.influencer_name || (u.user_metadata?.referral_name || '-') ,
+            createdAt: u.created_at || u.createdAt || '-',
+            lastLogin: u.last_sign_in_at || u.lastLogin || '-',
+          };
+        });
+
+        setRegistrations(regs);
+      } catch (err) {
+        console.error('Failed loading registrations', err);
+        setRegistrations([]);
+      } finally {
+        setLoadingRegistrations(false);
+      }
+    };
+    loadRegistrations();
+  }, []);
+
   const generatePromoCode = async () => {
     for (let i = 0; i < 5; i++) {
       const num = Math.floor(Math.random() * 10000);
