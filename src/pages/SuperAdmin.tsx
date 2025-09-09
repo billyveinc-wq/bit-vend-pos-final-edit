@@ -508,159 +508,142 @@ const SuperAdmin = () => {
         </Card>
       </div>
 
-      {/* Promo Codes */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Promo Codes</CardTitle>
-            <div className="flex items-center gap-4">
-              {/* Promo creation is now handled when creating a user (generate promo in Add User dialog) */}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {promoCodes.length === 0 ? (
-            <div className="text-muted-foreground">No promo codes created yet.</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Discount</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {promoCodes.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium">{p.code}</TableCell>
-                    <TableCell>{p.name}</TableCell>
-                    <TableCell>{p.discount}%</TableCell>
-                    <TableCell>{p.created_at ? new Date(p.created_at).toLocaleString() : '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(p.code)}>
-                          Copy
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeletePromo(p.id)}>
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {/* Main Tabs: Promo / Registrations */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="promo">Promo Codes</TabsTrigger>
+          <TabsTrigger value="registrations">Registrations</TabsTrigger>
+        </TabsList>
 
-      {/* User Management */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>System Users</CardTitle>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
+        <TabsContent value="promo">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Promo Codes</CardTitle>
+                <div className="flex items-center gap-4">
+                </div>
               </div>
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Filter by role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-blue-500 hover:bg-blue-500">
-                <TableHead className="text-white font-semibold">Username</TableHead>
-                <TableHead className="text-white font-semibold">Email</TableHead>
-                <TableHead className="text-white font-semibold">Promo Code</TableHead>
-                <TableHead className="text-white font-semibold">Role</TableHead>
-                <TableHead className="text-white font-semibold">Status</TableHead>
-                <TableHead className="text-white font-semibold">Last Login</TableHead>
-                <TableHead className="text-white font-semibold">Created</TableHead>
-                <TableHead className="text-white font-semibold">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium text-foreground">{user.username}</TableCell>
-                  <TableCell className="text-foreground">{user.email}</TableCell>
-                  <TableCell className="text-foreground">{(user as any).promoCode || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={getRoleBadge(user.role)}>
-                      {user.role.replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadge(user.status)}>
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-foreground">{user.lastLogin}</TableCell>
-                  <TableCell className="text-foreground">{user.createdAt}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete User</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete user "{user.username}"? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(user.id)}>
+            </CardHeader>
+            <CardContent>
+              {promoCodes.length === 0 ? (
+                <div className="text-muted-foreground">No promo codes created yet.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Discount</TableHead>
+                      <TableHead>Influencer</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {promoCodes.map((p) => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">{p.code}</TableCell>
+                        <TableCell>{p.name}</TableCell>
+                        <TableCell>{p.discount}%</TableCell>
+                        <TableCell>{(p as any).influencer_name || '-'}</TableCell>
+                        <TableCell>{p.created_at ? new Date(p.created_at).toLocaleString() : '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(p.code)}>
+                              Copy
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDeletePromo(p.id)}>
                               Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No users found matching your criteria.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="registrations">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Registrations & Companies</CardTitle>
+                <div className="flex items-center gap-4">
+                  <Input placeholder="Search registrations..." onChange={(e) => setSearchTerm(e.target.value)} className="w-64" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingRegistrations ? (
+                <div className="text-muted-foreground">Loading registrations...</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-blue-500 hover:bg-blue-500">
+                      <TableHead className="text-white font-semibold">Email</TableHead>
+                      <TableHead className="text-white font-semibold">Company</TableHead>
+                      <TableHead className="text-white font-semibold">Plan</TableHead>
+                      <TableHead className="text-white font-semibold">Expires</TableHead>
+                      <TableHead className="text-white font-semibold">Promo Code</TableHead>
+                      <TableHead className="text-white font-semibold">Influencer</TableHead>
+                      <TableHead className="text-white font-semibold">Last Login</TableHead>
+                      <TableHead className="text-white font-semibold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {registrations.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-foreground">{r.email}</TableCell>
+                        <TableCell className="text-foreground">{r.companyName || '-'}</TableCell>
+                        <TableCell className="text-foreground">{r.planName}</TableCell>
+                        <TableCell className="text-foreground">{r.planExpires ? new Date(r.planExpires).toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-foreground">{r.promoCode || '-'}</TableCell>
+                        <TableCell className="text-foreground">{r.influencerName || '-'}</TableCell>
+                        <TableCell className="text-foreground">{r.lastLogin || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">Delete</Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                                  <AlertDialogDescription>Are you sure you want to delete this user account? This will remove related subscriptions and promotions but cannot delete auth user without service key.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={async () => {
+                                    try {
+                                      // remove subscriptions and promotions for user
+                                      await supabase.from('user_subscriptions').delete().eq('user_id', r.id);
+                                      await supabase.from('user_promotions').delete().eq('user_id', r.id);
+                                      await supabase.from('system_users').delete().eq('id', r.id);
+                                      toast.success('User related data removed. To fully delete auth user, use Supabase dashboard (service role required).');
+                                      // refresh list
+                                      setRegistrations(prev => prev.filter(x => x.id !== r.id));
+                                    } catch (err) {
+                                      console.error('Delete registration error', err);
+                                      toast.error('Failed to remove user data');
+                                    }
+                                  }}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* System Alerts */}
       <Card>
