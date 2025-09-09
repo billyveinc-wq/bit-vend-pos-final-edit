@@ -83,9 +83,9 @@ const AuthPage = () => {
             loginTime: new Date().toISOString(),
             role: 'super_admin'
           }));
-          
+
           toast.success('Admin login successful! Redirecting to admin dashboard...');
-          navigate('/dashboard');
+          navigate('/dashboard/superadmin');
           return;
         } else {
           toast.error('Invalid admin credentials');
@@ -166,8 +166,20 @@ const AuthPage = () => {
         return;
       }
 
+      // If this is the reserved admin email, create an admin session locally and redirect to admin dashboard
+      if (email === 'admn.bitvend@gmail.com') {
+        localStorage.setItem('admin-session', JSON.stringify({
+          email: email,
+          loginTime: new Date().toISOString(),
+          role: 'super_admin'
+        }));
+        toast.success('Admin account created! Redirecting to admin dashboard...');
+        navigate('/dashboard/superadmin');
+        return;
+      }
+
       toast.success('Account created! Please check your email to confirm your account.');
-      
+
       // Show success message
       setCurrentMode('signin');
     } catch (error) {
