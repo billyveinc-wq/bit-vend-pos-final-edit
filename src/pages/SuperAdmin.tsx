@@ -697,6 +697,21 @@ const SuperAdmin = () => {
                 <CardTitle>Registrations & Companies</CardTitle>
                 <div className="flex items-center gap-4">
                   <Input placeholder="Search registrations..." onChange={(e) => setSearchTerm(e.target.value)} className="w-64" />
+                  <Button onClick={async () => {
+                    const adminKey = localStorage.getItem('admin-api-key') || '';
+                    if (!adminKey) { toast.error('Admin key not set — open Admin Key and paste your ADMIN_API_KEY'); return; }
+                    try {
+                      const resp = await fetch('/admin/sync-users', { method: 'POST', headers: { 'x-admin-key': adminKey } });
+                      if (!resp.ok) throw new Error('Sync failed');
+                      const j = await resp.json();
+                      toast.success(`Synced ${j.count || 0} users to system_users`);
+                      // reload registrations
+                      window.location.reload();
+                    } catch (err) {
+                      console.error('Sync users error', err);
+                      toast.error('Failed to sync users; ensure admin server is running and admin key is correct');
+                    }
+                  }}>Sync Users</Button>
                 </div>
               </div>
             </CardHeader>
