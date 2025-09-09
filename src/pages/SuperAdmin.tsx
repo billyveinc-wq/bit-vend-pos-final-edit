@@ -190,13 +190,13 @@ const SuperAdmin = () => {
     if (!promoName) { toast.error('Please enter a name for this promo'); return; }
     if (![10,20,30,40,50].includes(promoDiscount)) { toast.error('Please select a valid discount'); return; }
     try {
-      const code = await generatePromoCode();
+      const code = promoCode || await generatePromoCode();
       const { data, error } = await supabase.from('promo_codes').insert({ name: promoName, code, discount: promoDiscount, influencer_name: promoInfluencer }).select().single();
       if (error) { console.error('Error inserting promo code:', error); toast.error('Failed to create promo code'); return; }
       setPromoCodes(prev => [data, ...prev]);
       toast.success(`Promo ${data.code} created (${data.discount}% off)`);
       setPromoDialogOpen(false);
-      setPromoName(''); setPromoDiscount(10); setPromoInfluencer('');
+      setPromoName(''); setPromoDiscount(10); setPromoInfluencer(''); setPromoCode('');
     } catch (err) {
       console.error('Create promo error', err); toast.error('Failed to create promo code');
     }
