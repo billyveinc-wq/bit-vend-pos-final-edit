@@ -577,9 +577,10 @@ const SuperAdmin = () => {
 
       {/* Main Tabs: Promo / Registrations */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="promo">Promo Codes</TabsTrigger>
           <TabsTrigger value="registrations">Registrations</TabsTrigger>
+          <TabsTrigger value="system">System Users</TabsTrigger>
         </TabsList>
 
         <TabsContent value="promo">
