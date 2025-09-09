@@ -26,12 +26,11 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Create a new quotation page component
 const NewQuotationPage = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [formData, setFormData] = useState({
     customer: '',
     email: '',
@@ -142,7 +141,6 @@ const Quotation = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
-  const { toast } = useToast();
 
   const [quotations] = useState([]);
 
