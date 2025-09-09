@@ -77,15 +77,19 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       setIsLoading(true);
       
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error('Error fetching user:', userError);
+      // First get the session to avoid AuthSessionMissingError when no session exists
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.warn('Error fetching session:', sessionError);
         setSubscription(null);
         setFeatures(DEFAULT_FEATURES);
         return;
       }
-      
+
+      const user = session?.user || null;
+
       if (!user) {
+        // No authenticated user
         setSubscription(null);
         setFeatures(DEFAULT_FEATURES);
         return;
