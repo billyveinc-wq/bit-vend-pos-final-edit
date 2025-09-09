@@ -26,7 +26,9 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SystemUser {
   id: number;
