@@ -618,6 +618,7 @@ const Settings = () => {
                       <Badge variant="secondary">Closed</Badge>
                     )}
                   </div>
+                ))}
                 {locations.map((location, index) => (
                   <div key={location.id} className="flex items-center gap-4 p-4 border rounded-lg">
                     <div className="flex-1 grid grid-cols-2 gap-4">
