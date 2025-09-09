@@ -24,7 +24,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { Search, Package, Plus, Edit, Trash2, Filter, Eye, FileDown, Upload, FileSpreadsheet } from 'lucide-react';
+import { Search, Package, Plus, Edit, Trash2, Filter, Eye, FileDown, Upload as LucideUpload, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -424,7 +424,7 @@ const Products = () => {
             onClick={handleImportExcel}
             className="bg-blue-500 hover:bg-blue-600 text-white gap-2 transition-all duration-200 hover:scale-95 active:scale-90"
           >
-            <Upload className="h-4 w-4" />
+            <LucideUpload className="h-4 w-4" />
             Import
           </Button>
         </div>

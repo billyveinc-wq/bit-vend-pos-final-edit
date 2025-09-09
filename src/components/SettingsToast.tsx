@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Save, Upload } from 'lucide-react';
+import { CheckCircle, Save, Upload as LucideUpload } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const showSuccessToast = (message: string, icon?: React.ReactNode) => {
@@ -19,7 +19,7 @@ export const showSaveToast = (message: string = 'Settings saved successfully!') 
 };
 
 export const showUploadToast = (message: string = 'Image uploaded successfully!') => {
-  showSuccessToast(message, <Upload className="w-4 h-4 text-blue-500" />);
+  showSuccessToast(message, <LucideUpload className="w-4 h-4 text-blue-500" />);
 };
 
 export const showAutoSaveToast = () => {
