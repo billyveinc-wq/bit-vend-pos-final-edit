@@ -489,7 +489,7 @@ const SuperAdmin = () => {
                     <TableCell className="font-medium">{p.code}</TableCell>
                     <TableCell>{p.name}</TableCell>
                     <TableCell>{p.discount}%</TableCell>
-                    <TableCell>{new Date(p.createdAt).toLocaleString()}</TableCell>
+                    <TableCell>{p.created_at ? new Date(p.created_at).toLocaleString() : '-'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(p.code)}>
