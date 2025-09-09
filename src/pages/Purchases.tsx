@@ -285,15 +285,13 @@ const Purchases = () => {
       </div>
 
       {filteredPurchases.length === 0 && (
-        {filteredPurchases.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Purchase Orders Found</h3>
-              <p className="text-muted-foreground">No purchase orders match your current filters.</p>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardContent className="text-center py-12">
+            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Purchase Orders Found</h3>
+            <p className="text-muted-foreground">No purchase orders match your current filters.</p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
