@@ -680,18 +680,32 @@ const SuperAdmin = () => {
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Delete Account</AlertDialogTitle>
-                                  <AlertDialogDescription>Are you sure you want to delete this user account? This will remove related subscriptions and promotions but cannot delete auth user without service key.</AlertDialogDescription>
+                                  <AlertDialogDescription>Are you sure you want to delete this user account? This will remove related subscriptions and promotions and attempt to delete the auth user via the secure admin endpoint.</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction onClick={async () => {
                                     try {
-                                      // remove subscriptions and promotions for user
+                                      // Attempt to call admin server to fully delete auth user
+                                      const adminKey = localStorage.getItem('admin-api-key') || '';
+                                      const resp = await fetch('/admin/delete-user', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                                        body: JSON.stringify({ userId: r.id })
+                                      });
+
+                                      if (resp.ok) {
+                                        toast.success('User fully deleted from Auth and related tables');
+                                        setRegistrations(prev => prev.filter(x => x.id !== r.id));
+                                        return;
+                                      }
+
+                                      // If admin endpoint failed or is not available, fallback to deleting public data
                                       await supabase.from('user_subscriptions').delete().eq('user_id', r.id);
                                       await supabase.from('user_promotions').delete().eq('user_id', r.id);
+                                      await supabase.from('company_users').delete().eq('user_id', r.id);
                                       await supabase.from('system_users').delete().eq('id', r.id);
-                                      toast.success('User related data removed. To fully delete auth user, use Supabase dashboard (service role required).');
-                                      // refresh list
+                                      toast.success('User related data removed. Admin endpoint unavailable or failed; auth user may still exist.');
                                       setRegistrations(prev => prev.filter(x => x.id !== r.id));
                                     } catch (err) {
                                       console.error('Delete registration error', err);
@@ -701,6 +715,79 @@ const SuperAdmin = () => {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="system">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>System Users</CardTitle>
+                <div>
+                  <Button onClick={async () => {
+                    setLoadingSystemUsers(true);
+                    try {
+                      const { data, error } = await supabase.from('system_users').select('*');
+                      if (error) throw error;
+                      setSystemUsersList(data || []);
+                      toast.success('System users loaded');
+                    } catch (err) {
+                      console.error('Load system users error', err);
+                      toast.error('Failed to load system users');
+                    } finally { setLoadingSystemUsers(false); }
+                  }}>Refresh</Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingSystemUsers ? (
+                <div className="text-muted-foreground">Loading system users...</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-blue-500 hover:bg-blue-500">
+                      <TableHead className="text-white font-semibold">ID</TableHead>
+                      <TableHead className="text-white font-semibold">Email</TableHead>
+                      <TableHead className="text-white font-semibold">Company ID</TableHead>
+                      <TableHead className="text-white font-semibold">Created</TableHead>
+                      <TableHead className="text-white font-semibold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {systemUsersList.map((su) => (
+                      <TableRow key={su.id}>
+                        <TableCell className="text-foreground">{su.id}</TableCell>
+                        <TableCell className="text-foreground">{su.email}</TableCell>
+                        <TableCell className="text-foreground">{su.company_id || '-'}</TableCell>
+                        <TableCell className="text-foreground">{su.created_at || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="destructive" size="sm" onClick={async () => {
+                              if (!confirm('Delete this system user and related data?')) return;
+                              try {
+                                const adminKey = localStorage.getItem('admin-api-key') || '';
+                                const resp = await fetch('/admin/delete-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey }, body: JSON.stringify({ userId: su.id }) });
+                                if (resp.ok) {
+                                  setSystemUsersList(prev => prev.filter(x => x.id !== su.id));
+                                  toast.success('User deleted via admin endpoint');
+                                } else {
+                                  await supabase.from('system_users').delete().eq('id', su.id);
+                                  setSystemUsersList(prev => prev.filter(x => x.id !== su.id));
+                                  toast.success('System user removed (auth user may still exist)');
+                                }
+                              } catch (err) {
+                                console.error('Delete system user error', err);
+                                toast.error('Failed to delete system user');
+                              }
+                            }}>Delete</Button>
                           </div>
                         </TableCell>
                       </TableRow>
