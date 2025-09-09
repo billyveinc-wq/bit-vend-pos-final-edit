@@ -364,9 +364,18 @@ const SuperAdmin = () => {
                   <Label htmlFor="promoName">Promo Name</Label>
                   <Input id="promoName" value={promoName} onChange={(e) => setPromoName(e.target.value)} placeholder="E.g. Summer Sale" required />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="promoInfluencer">Influencer Name</Label>
-                  <Input id="promoInfluencer" value={promoInfluencer} onChange={(e) => setPromoInfluencer(e.target.value)} placeholder="Influencer name (optional)" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="promoCodeInput">Promo Code</Label>
+                    <div className="flex gap-2">
+                      <Input id="promoCodeInput" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="PROMO0001" />
+                      <Button type="button" onClick={async () => { const code = await generatePromoCode(); setPromoCode(code); }}>Generate</Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="promoInfluencer">Influencer Name</Label>
+                    <Input id="promoInfluencer" value={promoInfluencer} onChange={(e) => setPromoInfluencer(e.target.value)} placeholder="Influencer name (optional)" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="promoDiscount">Discount</Label>
