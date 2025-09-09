@@ -172,11 +172,7 @@ const SuperAdmin = () => {
     toast.success('User deleted successfully!');
   };
 
-  // Promo codes state
-  const [promoDialogOpen, setPromoDialogOpen] = useState(false);
-  const [promoName, setPromoName] = useState('');
-  const [promoDiscount, setPromoDiscount] = useState<number>(10);
-  const [promoCodes, setPromoCodes] = useState<Array<{id: number; name: string; code: string; discount: number; createdAt: string}>>([]);
+  const [promoCodes, setPromoCodes] = useState<Array<{id: number; name: string; code: string; discount: number; created_at?: string}>>([]);
 
   // Load promo codes from Supabase
   useEffect(() => {
@@ -198,48 +194,13 @@ const SuperAdmin = () => {
     load();
   }, []);
 
-  const generateCode = (length = 8) => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-    return result;
-  };
-
-  const handleCreatePromo = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!promoName) {
-      toast.error('Please enter a name for this promo');
-      return;
+  const generatePromoCode = async () => {
+    for (let i = 0; i < 5; i++) {
+      const num = Math.floor(Math.random() * 10000);
+      const code = `PROMO${String(num).padStart(4, '0')}`;
+      if (!promoCodes.find(p => p.code === code)) return code;
     }
-    if (![10,20,30,40,50].includes(promoDiscount)) {
-      toast.error('Please select a valid discount');
-      return;
-    }
-
-    const code = generateCode(8);
-
-    try {
-      const { data, error } = await supabase
-        .from('promo_codes')
-        .insert({ name: promoName, code, discount: promoDiscount })
-        .select()
-        .single();
-      if (error) {
-        console.error('Error inserting promo code:', error);
-        toast.error('Failed to create promo code');
-        return;
-      }
-      const newPromo = data;
-      const updated = [newPromo, ...promoCodes];
-      setPromoCodes(updated);
-      toast.success(`Promo ${newPromo.code} created (${newPromo.discount}% off)`);
-      setPromoDialogOpen(false);
-      setPromoName('');
-      setPromoDiscount(10);
-    } catch (err) {
-      console.error('Create promo error', err);
-      toast.error('Failed to create promo code');
-    }
+    return `PROMO${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
   };
 
   const handleDeletePromo = async (id: number) => {
