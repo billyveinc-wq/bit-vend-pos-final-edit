@@ -465,10 +465,7 @@ const SuperAdmin = () => {
           <div className="flex items-center justify-between">
             <CardTitle>Promo Codes</CardTitle>
             <div className="flex items-center gap-4">
-              <Button onClick={() => setPromoDialogOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                New Promo
-              </Button>
+              {/* Promo creation is now handled when creating a user (generate promo in Add User dialog) */}
             </div>
           </div>
         </CardHeader>
