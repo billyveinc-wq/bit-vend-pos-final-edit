@@ -1,0 +1,770 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Light Theme - Vibrant & Colorful to match dark theme energy */
+    --background: 240 10% 98%; /* #fafbfd - Soft blue-white background */
+    --foreground: 222 47% 11%; /* #0f172a - Deep slate blue text */
+
+    --card: 0 0% 100%; /* #ffffff - Pure white cards with subtle elevation */
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 217 91% 60%; /* #3b82f6 - Vibrant blue primary */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 217 91% 68%; /* Lighter blue on hover */
+
+    --secondary: 147 63% 44%; /* #22c55e - Vibrant green secondary */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 147 64% 52%; /* Lighter green hover */
+
+    --muted: 210 40% 96%; /* #f1f5f9 - Cool gray background */
+    --muted-foreground: 215 16% 47%; /* #64748b - Neutral text */
+
+    --accent: 269 100% 92%; /* #f3e8ff - Light purple accent */
+    --accent-foreground: 269 100% 25%; /* #581c87 - Dark purple text */
+
+    --destructive: 0 84% 60%; /* #ef4444 - Vibrant red */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-hover: 0 84% 68%; /* Lighter red hover */
+
+    --border: 214 32% 91%; /* #e2e8f0 - Subtle borders */
+    --input: 210 40% 98%; /* #f8fafc - Light input background */
+    --input-border: 214 32% 91%; /* #e2e8f0 - Input borders */
+    --ring: 217 91% 60%; /* Blue focus ring */
+
+    --radius: 0.75rem;
+
+    /* Sidebar colors - Light theme with color */
+    --sidebar-background: 220 14% 97%; /* #f9fafb - Light sidebar */
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 269 100% 92%;
+    --sidebar-accent-foreground: 217 91% 60%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Enhanced POS Colors - Vibrant light theme */
+    --success: 142 71% 45%; /* #10b981 - Vibrant emerald */
+    --success-foreground: 0 0% 100%;
+    --success-hover: 142 71% 53%; /* Lighter emerald */
+    
+    --warning: 38 92% 50%; /* #f59e0b - Vibrant amber */
+    --warning-foreground: 0 0% 100%;
+    --warning-hover: 38 92% 58%; /* Lighter amber */
+    
+    /* Universal Save Button - Green for positive actions */
+    --save: 142 71% 45%; /* #10b981 - Vibrant emerald */
+    --save-foreground: 0 0% 100%;
+    --save-hover: 142 71% 53%; /* Lighter emerald */
+    
+    /* Universal Cancel Button - Neutral gray */
+    --cancel: 215 16% 47%; /* #6b7280 - Neutral slate */
+    --cancel-foreground: 0 0% 100%;
+    --cancel-hover: 215 13% 56%; /* Lighter slate */
+    
+    --info: 199 89% 48%; /* #0ea5e9 - Vibrant sky blue */
+    --info-foreground: 0 0% 100%;
+    --info-hover: 199 89% 56%; /* Lighter blue */
+    
+    /* Enhanced interactive colors */
+    --hover-overlay: 217 91% 60% / 0.08; /* Blue overlay */
+    --active-overlay: 217 91% 60% / 0.12; /* Stronger blue overlay */
+    
+    /* Settings Form Background */
+    --settings-form-bg: 0 0% 100%; /* #ffffff */
+    --settings-card-bg: 210 40% 98%; /* #f8fafc */
+    
+    /* Table colors - Colorful light theme */
+    --table-header-bg: 217 91% 60%; /* Blue header background */
+    --table-header-text: 0 0% 100%; /* White text on blue */
+    --table-row-bg: 0 0% 100%; /* #ffffff */
+    --table-row-hover: 217 91% 95%; /* Light blue hover */
+    --table-border: 214 32% 91%; /* #e2e8f0 */
+    
+    /* Light theme - Add missing toggle colors */
+    --toggle-on: 142 71% 45%; /* Same as success - vibrant emerald */
+    --toggle-off: 215 16% 65%; /* Light gray for off state */
+    --text-primary: 222 47% 11%; /* #0f172a - Deep slate */
+    --text-secondary: 215 16% 47%; /* #64748b - Neutral gray */
+    --text-tertiary: 215 20% 65%; /* #94a3b8 - Light gray */
+    --text-placeholder: 215 16% 65%; /* #94a3b8 - Placeholder */
+    --text-disabled: 215 14% 71%; /* Disabled text */
+
+    /* Additional vibrant accent colors for light theme */
+    --accent-orange: 20 91% 56%; /* #f97316 - Vibrant orange */
+    --accent-purple: 269 100% 62%; /* #a855f7 - Vibrant purple */
+    --accent-pink: 330 81% 60%; /* #ec4899 - Vibrant pink */
+    --accent-teal: 172 66% 50%; /* #14b8a6 - Vibrant teal */
+    --accent-indigo: 239 84% 67%; /* #6366f1 - Vibrant indigo */
+  }
+
+  .dark {
+    /* POS Dark Mode Color System */
+    --background: 0 0% 11%; /* #1c1c1c - Main page background */
+    --foreground: 0 0% 100%; /* #ffffff - Headings/Primary text */
+
+    --card: 0 0% 16.5%; /* #2a2a2a - Card/Form/Modal backgrounds */
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 16.5%; /* #2a2a2a */
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 134 61% 41%; /* #28a745 - Primary buttons */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 134 62% 56%; /* #34d058 - Primary button hover */
+
+    --secondary: 0 0% 27%; /* #444444 - Secondary buttons */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 0 0% 33%; /* #555555 - Secondary button hover */
+
+    --muted: 0 0% 16.5%; /* #2a2a2a */
+    --muted-foreground: 0 0% 69%; /* #b0b0b0 - Labels/Secondary text */
+
+    --accent: 0 0% 16.5%; /* #2a2a2a */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 354 70% 54%; /* #dc3545 - Danger buttons */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-hover: 354 70% 61%; /* #e55361 - Danger button hover */
+
+    --border: 0 0% 23%; /* #3a3a3a - Table borders/dividers */
+    --input: 0 0% 16.5%; /* #2a2a2a - Input background */
+    --input-border: 0 0% 23%; /* #3a3a3a - Input border */
+    --ring: 134 61% 41%;
+
+    /* Table specific colors */
+    --table-header-bg: 0 0% 16.5%; /* #2a2a2a */
+    --table-header-text: 0 0% 100%; /* #ffffff */
+    --table-row-bg: 0 0% 16.5%; /* #2a2a2a */
+    --table-row-hover: 0 0% 20%; /* #333333 */
+    --table-border: 0 0% 23%; /* #3a3a3a */
+
+    /* Text colors */
+    --text-primary: 0 0% 100%; /* #ffffff */
+    --text-secondary: 0 0% 69%; /* #b0b0b0 */
+    --text-placeholder: 0 0% 53%; /* #888888 */
+    --text-disabled: 0 0% 40%; /* #666666 */
+
+    /* Toggle/Switch colors */
+    --toggle-on: 134 61% 41%; /* #28a745 */
+    --toggle-off: 208 7% 46%; /* #6c757d */
+
+    /* Progress bar colors */
+    --progress-fill: 134 62% 56%; /* #34d058 */
+    --progress-track: 0 0% 16.5%; /* #2a2a2a */
+
+    /* Sidebar colors */
+    --sidebar-background: 0 0% 11%;
+    --sidebar-foreground: 0 0% 69%;
+    --sidebar-primary: 134 61% 41%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 16.5%;
+    --sidebar-accent-foreground: 0 0% 69%;
+    --sidebar-border: 0 0% 23%;
+    --sidebar-ring: 134 61% 41%;
+    
+    /* Legacy POS Colors for compatibility */
+    --success: 134 61% 41%;
+    --success-foreground: 0 0% 100%;
+    --warning: 49 100% 50%;
+    --warning-foreground: 0 0% 0%;
+    --orange-accent: 25 95% 53%;
+    
+    /* Settings Form Background */
+    --settings-form: 0 0% 11%;
+    --settings-card: 0 0% 16.5%;
+    
+    /* Universal Save Button - Brighter green for dark theme */
+    --save: 142 76% 56%; /* #22c55e - Brighter emerald for dark */
+    --save-foreground: 0 0% 100%;
+    --save-hover: 142 76% 64%; /* Even brighter on hover */
+    
+    /* Universal Cancel Button - Lighter gray for dark theme */
+    --cancel: 215 20% 65%; /* #9ca3af - Lighter slate for visibility */
+    --cancel-foreground: 0 0% 11%; /* Dark text on light gray */
+    --cancel-hover: 215 20% 72%; /* Even lighter on hover */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    @apply h-full overflow-hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Override overflow for landing page */
+  body:has([data-page="landing"]),
+  body:has([data-page="features"]),
+  body:has([data-page="pricing"]),
+  body:has([data-page="contact"]),
+  body:has([data-page="auth"]) {
+    @apply overflow-auto;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Global theme transitions for all elements */
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, color, border-color, box-shadow, transform;
+    transition-duration: 0.3s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Preserve existing transition properties */
+  .transition-all,
+  .transition-colors,
+  .transition-transform {
+    transition-duration: 0.2s !important;
+  }
+
+  /* Fix for horizontal scroll issues */
+  .container {
+    max-width: 100%;
+  }
+
+  /* Prevent horizontal overflow on mobile */
+  @media (max-width: 768px) {
+    * {
+      max-width: 100vw;
+      overflow-x: auto;
+    }
+  }
+}
+
+@layer components {
+  /* Global Thin Scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(0 0% 53%) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 3px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    background-image: linear-gradient(to bottom, transparent 0, transparent 40%, hsl(0 0% 53%) 40%, hsl(0 0% 53%) 60%, transparent 60%, transparent 100%);
+  }
+
+  *::-webkit-scrollbar-thumb:horizontal {
+    background-image: linear-gradient(to right, transparent 0, transparent 40%, hsl(0 0% 53%) 40%, hsl(0 0% 53%) 60%, transparent 60%, transparent 100%);
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Glass Effects */
+  .glass-effect {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: var(--blur-strength);
+    -webkit-backdrop-filter: var(--blur-strength);
+    border: 1px solid hsl(var(--glass-border));
+  }
+  
+  /* POS Sidebar Styling - Always dark in both themes */
+  .pos-sidebar {
+    @apply fixed left-0 top-0 h-full w-64 transition-all duration-300;
+    background: black !important;
+    border-right: 1px solid #374151;
+    z-index: 1040;
+  }
+  
+  .pos-sidebar.collapsed {
+    @apply w-20;
+  }
+
+  /* Ensure white link text inside sidebar in all themes (overrides global light text rules) */
+  .pos-sidebar a,
+  .pos-sidebar a span,
+  .pos-sidebar h3 {
+    color: hsl(0 0% 100%) !important;
+  }
+
+  .pos-sidebar a svg {
+    color: hsl(0 0% 100%) !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+  }
+
+  /* Shopping cart icon should be yellow */
+  .pos-sidebar .text-yellow-400 {
+    color: hsl(45 93% 47%) !important;
+  }
+
+  .pos-sidebar a:hover {
+    color: hsl(0 0% 100%) !important;
+  }
+  
+  /* POS Topbar */
+  .pos-topbar {
+    @apply fixed top-0 right-0 h-16 flex items-center justify-between px-6 transition-all duration-300 z-50;
+    left: 16rem; /* 256px */
+    border-bottom: 1px solid;
+  }
+  
+  .pos-topbar.collapsed {
+    left: 5rem; /* 80px */
+  }
+  
+  /* POS Content Area */
+  .pos-content {
+    @apply transition-all duration-300 overflow-y-auto;
+    margin-left: 16rem; /* 256px */
+    margin-top: 0; /* Allow content to flow under fixed topbar */
+    height: 100vh; /* Full viewport height; header overlays */
+    padding: 1.5rem;
+    padding-top: calc(1.5rem + 4rem); /* Space for the 64px topbar */
+    scroll-behavior: smooth;
+  }
+  
+  .pos-content.collapsed {
+    margin-left: 5rem; /* 80px */
+  }
+  
+  /* Enhanced light theme button styles */
+  .btn-pos {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply hover:scale-95 hover:shadow-lg active:scale-90;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  }
+  
+  .btn-pos-primary {
+    @apply btn-pos text-white;
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+  }
+  
+  .btn-pos-primary:hover {
+    background: linear-gradient(135deg, hsl(var(--primary-hover)), hsl(var(--primary)));
+    box-shadow: 0 4px 14px 0 hsl(var(--primary) / 0.3);
+  }
+  
+  .btn-pos-accent {
+    @apply btn-pos text-white;
+    background: linear-gradient(135deg, hsl(var(--accent-orange)), hsl(var(--accent-orange) / 0.9));
+  }
+  
+  .btn-pos-accent:hover {
+    background: linear-gradient(135deg, hsl(var(--accent-orange) / 0.9), hsl(var(--accent-orange)));
+    box-shadow: 0 4px 14px 0 hsl(var(--accent-orange) / 0.3);
+  }
+  
+  /* Product Cards with enhanced light theme styling */
+  .product-card {
+    @apply bg-card border rounded-xl p-4 transition-all duration-300;
+    @apply hover:shadow-xl hover:-translate-y-1;
+    box-shadow: 0 4px 20px hsl(var(--primary) / 0.08);
+    border: 1px solid hsl(var(--border));
+  }
+  
+  .product-card:hover {
+    box-shadow: 0 8px 30px hsl(var(--primary) / 0.15);
+    border-color: hsl(var(--primary) / 0.3);
+    transform: translateY(-2px) scale(1.02);
+  }
+  
+  .dark .product-card {
+    background: #1c1c1c;
+    @apply border-gray-800;
+    box-shadow: 0 4px 20px hsl(0 0% 0% / 0.3);
+  }
+  
+  .dark .product-card:hover {
+    box-shadow: 0 8px 30px hsl(0 0% 0% / 0.4);
+  }
+  
+  /* Animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-fadeInUp {
+    animation: fadeInUp 0.5s ease-out;
+  }
+  
+  .animate-slideInLeft {
+    animation: slideInLeft 0.3s ease-out;
+  }
+  
+  /* Focus States */
+  .pos-input:focus {
+    @apply outline-none ring-2;
+    ring-color: hsl(var(--primary));
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+  }
+
+  /* Enhanced Accessibility Focus Styles - Blue theme */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  .pos-input:focus,
+  button:focus,
+  [role="button"]:focus {
+    border-color: #0d6efd !important;      /* Blue border */
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important; /* Blue glow */
+    outline: none !important;              /* Remove default outline */
+    ring-color: #0d6efd !important;
+  }
+
+  /* Dark mode focus styles */
+  .dark input:focus,
+  .dark textarea:focus,
+  .dark select:focus,
+  .dark .pos-input:focus {
+    border-color: #4dabf7 !important;      /* Lighter blue for dark mode */
+    box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.25) !important;
+    ring-color: #4dabf7 !important;
+  }
+
+  /* Override any existing focus ring colors */
+  *:focus-visible {
+    outline: 2px solid #0d6efd !important;
+    outline-offset: 2px !important;
+  }
+
+  .dark *:focus-visible {
+    outline-color: #4dabf7 !important;
+  }
+
+  /* Theme Toggle Button */
+  .dark .theme-toggle-sun {
+    background: hsl(45, 100%, 60% / 0.1);
+    border-radius: 50%;
+    padding: 0.5rem;
+    box-shadow: 0 0 20px hsl(45, 100%, 60% / 0.3);
+  }
+  
+  .dark .theme-toggle-sun:hover {
+    background: hsl(45, 100%, 60% / 0.2);
+    box-shadow: 0 0 25px hsl(45, 100%, 60% / 0.4);
+  }
+
+  .theme-toggle-moon {
+    background: transparent;
+    border-radius: 50%;
+    padding: 0.5rem;
+  }
+  
+  .theme-toggle-moon:hover {
+    background: hsl(var(--muted) / 0.5);
+  }
+
+  /* Scrollbar for Settings Menu */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  .scrollbar-track-transparent {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+
+  .scrollbar-thumb-muted {
+    --tw-scrollbar-thumb: hsl(var(--muted-foreground) / 0.3);
+  }
+
+  /* Settings Page Specific Animations */
+  .settings-content-fade {
+    animation: settingsFadeIn 0.4s ease-out;
+  }
+
+  .settings-save-button {
+    animation: settingsSaveSlideIn 0.3s ease-out;
+  }
+
+  @keyframes settingsFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes settingsSaveSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Light mode auto-applied styles with vibrant colors */
+  form,
+  .form-container,
+  .modal-content,
+  .card,
+  .settings-section {
+    @apply bg-card text-card-foreground border-border;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  }
+
+  input,
+  textarea,
+  select {
+    @apply bg-input text-foreground border-input-border;
+    color: hsl(var(--text-primary)) !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1) !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-muted-foreground;
+    color: hsl(var(--text-placeholder)) !important;
+  }
+
+  table {
+    @apply border-table-border;
+  }
+
+  table thead,
+  table th {
+    @apply bg-table-header-bg text-table-header-text border-table-border;
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+  }
+
+  table tbody tr {
+    @apply bg-table-row-bg border-table-border;
+  }
+
+  table tbody tr:hover {
+    @apply bg-table-row-hover;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px hsl(var(--primary) / 0.15);
+  }
+
+  table td {
+    @apply text-foreground border-table-border;
+  }
+
+  label,
+  .form-label {
+    @apply text-foreground;
+    color: hsl(var(--text-primary)) !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-foreground;
+    color: hsl(var(--text-primary)) !important;
+  }
+
+  p, span, div {
+    @apply text-foreground;
+    color: hsl(var(--text-primary)) !important;
+  }
+
+  .text-muted-foreground,
+  .text-secondary {
+    color: hsl(var(--text-secondary)) !important;
+  }
+
+  .text-disabled {
+    @apply text-text-disabled;
+  }
+
+  /* Force visibility for sidebar menu items in light mode */
+  .settings-sidebar button,
+  .settings-sidebar button span,
+  .settings-sidebar button svg {
+    color: hsl(var(--text-primary)) !important;
+  }
+
+  .settings-sidebar button[data-variant="ghost"]:hover {
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--text-primary)) !important;
+  }
+
+  .settings-sidebar button[data-variant="secondary"] {
+    background-color: hsl(var(--secondary)) !important;
+    color: hsl(var(--secondary-foreground)) !important;
+  }
+
+  /* POS Dark Mode Auto-Applied Styles */
+  .dark form,
+  .dark .form-container,
+  .dark .modal-content,
+  .dark .card,
+  .dark .settings-section {
+    @apply bg-card text-card-foreground border-border;
+  }
+
+  .dark input,
+  .dark textarea,
+  .dark select {
+    @apply bg-input text-text-primary border-input-border;
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    @apply text-text-placeholder;
+  }
+
+  .dark table {
+    @apply border-table-border;
+  }
+
+  .dark table thead,
+  .dark table th {
+    @apply bg-table-header-bg text-table-header-text border-table-border;
+  }
+
+  .dark table tbody tr {
+    @apply bg-table-row-bg border-table-border;
+  }
+
+  .dark table tbody tr:hover {
+    @apply bg-table-row-hover;
+  }
+
+  .dark table td {
+    @apply text-text-primary border-table-border;
+  }
+
+  .dark .progress-bar {
+    @apply bg-progress-track;
+  }
+
+  .dark .progress-fill {
+    @apply bg-progress-fill;
+  }
+
+  .dark label,
+  .dark .form-label {
+    @apply text-text-secondary;
+  }
+
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    @apply text-text-primary;
+  }
+
+  .dark p, .dark span, .dark div {
+    @apply text-text-primary;
+  }
+
+  .dark .text-disabled {
+    @apply text-text-disabled;
+  }
+
+  /* Switch/Toggle Styles */
+  .dark .toggle-on {
+    @apply bg-toggle-on;
+  }
+
+  .dark .toggle-off {
+    @apply bg-toggle-off;
+  }
+
+  /* Table styling improvements for reports */
+  .dark tbody tr:hover {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  .light tbody tr:hover {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  /* Table header styling for reports - Force blue background */
+  .dark [data-table-header] {
+    color: white !important;
+  }
+
+  .light [data-table-header] {
+    color: white !important;
+  }
+
+  /* Table body text styling - Proper theme colors */
+  .dark tbody td {
+    color: white !important;
+  }
+
+  .light tbody td {
+    color: black !important;
+  }
+
+  /* Override any table cell color inheritance */
+  tbody .text-foreground {
+    color: inherit !important;
+  }
+  /* Dark mode: ensure native date/time picker icons are visible */
+  .dark input[type="date"],
+  .dark input[type="datetime-local"],
+  .dark input[type="time"] {
+    color-scheme: dark;
+  }
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  .dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.4);
+    opacity: 1;
+  }
+}
