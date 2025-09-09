@@ -194,20 +194,38 @@ const SuperAdmin = () => {
     const loadRegistrations = async () => {
       setLoadingRegistrations(true);
       try {
-        // Try to fetch users from auth.users. This may be restricted depending on your Supabase RLS.
-        let { data: users, error: usersErr } = await supabase
-          .from('users')
-          .select('id, email, user_metadata, created_at, last_sign_in_at');
+        // First, attempt to call admin endpoint to list auth users (requires admin server and admin-api-key in localStorage)
+        let users: any = null;
+        try {
+          const adminKey = localStorage.getItem('admin-api-key') || '';
+          const resp = await fetch('/admin/list-users', { headers: { 'x-admin-key': adminKey } });
+          if (resp.ok) {
+            const json = await resp.json();
+            users = json.users || [];
+          }
+        } catch (err) {
+          // ignore and fallback
+          console.warn('Admin list-users endpoint not available', err);
+        }
 
-        if (usersErr) {
-          console.warn('Could not fetch auth.users directly:', usersErr);
-          // Fallback to system_users table if present
-          const { data: systemUsers, error: suErr } = await supabase.from('system_users').select('*');
-          if (suErr) {
-            console.warn('Could not fetch system_users fallback:', suErr);
-            users = [] as any;
+        if (!users) {
+          // Try to fetch users from auth.users via client (may be restricted depending on your Supabase RLS).
+          const { data: udata, error: usersErr } = await supabase
+            .from('users')
+            .select('id, email, user_metadata, created_at, last_sign_in_at');
+
+          if (usersErr) {
+            console.warn('Could not fetch auth.users directly:', usersErr);
+            // Fallback to system_users table if present
+            const { data: systemUsers, error: suErr } = await supabase.from('system_users').select('*');
+            if (suErr) {
+              console.warn('Could not fetch system_users fallback:', suErr);
+              users = [] as any;
+            } else {
+              users = systemUsers as any;
+            }
           } else {
-            users = systemUsers as any;
+            users = udata as any;
           }
         }
 
