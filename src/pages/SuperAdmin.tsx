@@ -154,6 +154,7 @@ const SuperAdmin = () => {
   const [promoName, setPromoName] = useState('');
   const [promoDiscount, setPromoDiscount] = useState<number>(10);
   const [promoInfluencer, setPromoInfluencer] = useState('');
+  const [promoCode, setPromoCode] = useState('');
 
   // Load promo codes from Supabase
   useEffect(() => {
