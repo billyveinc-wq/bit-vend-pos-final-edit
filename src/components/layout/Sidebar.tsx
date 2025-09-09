@@ -57,7 +57,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
 
-  const menuItems = [
+  // Build menu sections with Admin-only pushed to top when available
+  const baseSections = [
     {
       title: 'Main',
       items: [
@@ -152,14 +153,20 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         { href: '/dashboard/backup', icon: Database, label: 'Backup & Restore' },
       ]
     },
-    ...(isAdmin ? [{
-      title: 'Admin Only',
-      items: [
-        { href: '/dashboard/superadmin', icon: Shield, label: 'Super Admin' },
-        { href: '/dashboard/application', icon: Settings, label: 'Application' },
-        { href: '/dashboard/layout', icon: LayoutGrid, label: 'Layout' },
-      ]
-    }] : []),
+  ];
+
+  const adminSection = isAdmin ? [{
+    title: 'Admin Only',
+    items: [
+      { href: '/dashboard/superadmin', icon: Shield, label: 'Super Admin' },
+      { href: '/dashboard/application', icon: Settings, label: 'Application' },
+      { href: '/dashboard/layout', icon: LayoutGrid, label: 'Layout' },
+    ]
+  }] : [];
+
+  const menuItems = [
+    ...adminSection,
+    ...baseSections
   ];
 
   return (
