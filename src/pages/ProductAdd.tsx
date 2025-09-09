@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X, Upload as UploadIcon, RotateCcw, Calendar, Package } from 'lucide-react';
+import { ArrowLeft, Save, X, Upload as LucideUploadIcon, RotateCcw, Calendar, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -630,7 +630,7 @@ const ProductAdd = () => {
                               }}
                               className="gap-2"
                             >
-                              <UploadIcon className="h-4 w-4" />
+                              <LucideUploadIcon className="h-4 w-4" />
                               Change Image
                             </Button>
                             <Button
@@ -650,7 +650,7 @@ const ProductAdd = () => {
                         </div>
                       ) : (
                         <>
-                          <UploadIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                          <LucideUploadIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                           <p className="text-sm text-muted-foreground mb-2">Upload image</p>
                           <p className="text-xs text-muted-foreground">PNG/JPG, recommended 800×800</p>
                         </>
