@@ -276,6 +276,26 @@ const SuperAdmin = () => {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="promoCode">Promo Code</Label>
+                    <div className="flex gap-2">
+                      <Input id="promoCode" value={(formData as any).promoCode || ''} onChange={(e) => setFormData({ ...formData, promoCode: e.target.value })} placeholder="PROMO0001" />
+                      <Button type="button" onClick={async () => {
+                        const num = Math.floor(Math.random() * 10000);
+                        const code = `PROMO${String(num).padStart(4,'0')}`;
+                        setFormData(prev => ({ ...prev, promoCode: code }));
+                      }}>Generate</Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="influencerName">Influencer Name</Label>
+                    <Input id="influencerName" value={(formData as any).influencerName || ''} onChange={(e) => setFormData({ ...formData, influencerName: e.target.value })} placeholder="Influencer name" />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
