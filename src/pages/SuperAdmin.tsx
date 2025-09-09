@@ -56,8 +56,13 @@ const SuperAdmin = () => {
     username: '',
     email: '',
     role: 'admin' as SystemUser['role'],
-    status: 'active' as SystemUser['status']
+    status: 'active' as SystemUser['status'],
+    promoCode: '',
+    influencerName: '',
+    promoDiscount: 10
   });
+  const [managePassOpen, setManagePassOpen] = useState(false);
+  const [managePassForm, setManagePassForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
   const [systemUsers] = useState<SystemUser[]>([]);
 
