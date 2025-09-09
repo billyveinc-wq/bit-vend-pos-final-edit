@@ -19,9 +19,26 @@ const AdminSettings = () => {
     confirmPassword: ''
   });
 
+  useEffect(() => {
+    // Ensure there's a stored admin password (for demo/local auth). Default is 'admin123'
+    const stored = localStorage.getItem('admin-password');
+    if (!stored) {
+      localStorage.setItem('admin-password', 'admin123');
+    }
+  }, []);
+
+  const isStrongPassword = (pw: string) => {
+    const lengthOk = pw.length >= 8;
+    const upper = /[A-Z]/.test(pw);
+    const lower = /[a-z]/.test(pw);
+    const number = /[0-9]/.test(pw);
+    const special = /[^A-Za-z0-9]/.test(pw);
+    return lengthOk && upper && lower && number && special;
+  };
+
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
       toast.error('Please fill in all password fields');
       return;
@@ -32,19 +49,22 @@ const AdminSettings = () => {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      toast.error('New password must be at least 6 characters long');
+    if (!isStrongPassword(passwordForm.newPassword)) {
+      toast.error('Weak password. Use at least 8 characters, include uppercase, lowercase, numbers and symbols.');
       return;
     }
 
-    if (passwordForm.currentPassword !== 'admin123') {
+    const storedPassword = localStorage.getItem('admin-password') || 'admin123';
+
+    if (passwordForm.currentPassword !== storedPassword) {
       toast.error('Current password is incorrect');
       return;
     }
 
-    // In a real implementation, this would update the admin password in the database
+    // Store new password locally (demo). In production this should go to a secure server.
+    localStorage.setItem('admin-password', passwordForm.newPassword);
     toast.success('Admin password changed successfully!');
-    
+
     // Reset form
     setPasswordForm({
       currentPassword: '',
