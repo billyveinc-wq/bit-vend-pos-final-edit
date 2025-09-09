@@ -24,6 +24,7 @@ import {
   Edit,
   Trash2,
   Eye,
+  EyeOff,
   AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
