@@ -37,19 +37,32 @@ const Layout: React.FC<LayoutProps> = () => {
   // Check authentication but don't redirect if already authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        // Only redirect to auth if user is not authenticated
+      // Allow local admin sessions stored in localStorage to bypass Supabase session check
+      const adminSession = localStorage.getItem('admin-session');
+      if (adminSession) return;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          // Only redirect to auth if user is not authenticated
+          window.location.href = '/auth';
+        }
+      } catch (err) {
+        console.warn('Error fetching supabase session:', err);
         window.location.href = '/auth';
       }
     };
-    
+
     checkAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        window.location.href = '/auth';
+        const adminSession = localStorage.getItem('admin-session');
+        // Only redirect if there's no local admin session
+        if (!adminSession) {
+          window.location.href = '/auth';
+        }
       }
       // Don't redirect on SIGNED_IN to preserve current page
     });
