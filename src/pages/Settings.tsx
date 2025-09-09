@@ -38,6 +38,7 @@ import {
   EyeOff,
   Camera,
   Upload as SettingsUpload,
+ FileText,
   X,
   Crown,
   Star,
