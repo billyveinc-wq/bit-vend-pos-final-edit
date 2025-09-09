@@ -142,7 +142,7 @@ const AuthPage = () => {
     try {
       const redirectUrl = `${window.location.origin}/dashboard`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -178,16 +178,21 @@ const AuthPage = () => {
         return;
       }
 
-      // If a promo/referral code was provided, check if it exists and notify user about the applied discount
-      if (referralCodeInput) {
+      // If a promo/referral code was provided, check if it exists and attach to user_promotions
+      if (referralCodeInput && signUpData?.user) {
         try {
-          const { data, error } = await supabase.from('promo_codes').select('*').eq('code', referralCodeInput).maybeSingle();
-          if (error) {
-            console.warn('Promo lookup error', error);
-          }
-          if (data) {
-            // Attach promo to user metadata — Supabase signUp already completed above so we store for later billing logic
-            toast.success(`Promo code applied: ${data.discount}% off`);
+          const { data: promoData, error: promoErr } = await supabase.from('promo_codes').select('*').eq('code', referralCodeInput).maybeSingle();
+          if (promoErr) console.warn('Promo lookup error', promoErr);
+          if (promoData) {
+            // record user promotion in user_promotions table
+            const { error: upErr } = await supabase.from('user_promotions').insert({
+              user_id: signUpData.user.id,
+              promo_code_id: promoData.id,
+              discount: promoData.discount,
+              influencer_name: promoData.name
+            });
+            if (upErr) console.warn('Failed to attach promo to user:', upErr);
+            else toast.success(`Promo code applied: ${promoData.discount}% off`);
           }
         } catch (err) {
           console.warn('Promo lookup failed', err);
