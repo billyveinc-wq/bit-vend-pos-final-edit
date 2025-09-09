@@ -68,5 +68,37 @@ app.get('/admin/list-users', async (req, res) => {
   }
 });
 
+// Sync auth.users into public.system_users table (upsert)
+app.post('/admin/sync-users', async (req, res) => {
+  try {
+    const { data: users, error } = await supabase.auth.admin.listUsers();
+    if (error) {
+      console.error('Failed listing users for sync', error);
+      return res.status(500).json({ error });
+    }
+
+    const payload = (users || []).map(u => ({
+      id: u.id,
+      email: u.email,
+      user_metadata: u.user_metadata || null,
+      created_at: u.created_at || null,
+      last_sign_in_at: u.last_sign_in_at || null
+    }));
+
+    if (payload.length > 0) {
+      const { error: upErr } = await supabase.from('system_users').upsert(payload, { onConflict: 'id' });
+      if (upErr) {
+        console.error('Upsert system_users error', upErr);
+        return res.status(500).json({ error: upErr });
+      }
+    }
+
+    return res.json({ ok: true, count: payload.length });
+  } catch (err) {
+    console.error('Sync users error', err);
+    return res.status(500).json({ error: 'Internal error', details: err });
+  }
+});
+
 const port = process.env.PORT || 8787;
 app.listen(port, () => console.log(`Admin server running on port ${port}`));
