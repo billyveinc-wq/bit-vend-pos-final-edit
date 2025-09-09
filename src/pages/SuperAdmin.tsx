@@ -324,8 +324,15 @@ const SuperAdmin = () => {
                   const user = session?.user || null;
                   if (user && user.email === 'admn.bitvend@gmail.com') {
                     const { error } = await supabase.auth.updateUser({ password: newPassword });
-                    if (error) { toast.error('Failed to update Supabase password'); console.error(error); }
-                    else { toast.success('Password updated in Supabase'); localStorage.setItem('admin-password', newPassword); }
+                    if (error) {
+                      console.error('Supabase password update failed', error);
+                      // ensure local fallback so admin isn't locked out
+                      localStorage.setItem('admin-password', newPassword);
+                      toast.error('Failed to update Supabase password — stored locally as fallback');
+                    } else {
+                      localStorage.setItem('admin-password', newPassword);
+                      toast.success('Password updated in Supabase');
+                    }
                   } else {
                     localStorage.setItem('admin-password', newPassword);
                     toast.success('Local admin password updated');
