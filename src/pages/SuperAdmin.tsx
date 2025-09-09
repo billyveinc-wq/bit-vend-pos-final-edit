@@ -147,20 +147,25 @@ const SuperAdmin = () => {
   const [promoDiscount, setPromoDiscount] = useState<number>(10);
   const [promoCodes, setPromoCodes] = useState<Array<{id: number; name: string; code: string; discount: number; createdAt: string}>>([]);
 
+  // Load promo codes from Supabase
   useEffect(() => {
-    // Load promo codes from localStorage
-    try {
-      const raw = localStorage.getItem('promo-codes');
-      if (raw) setPromoCodes(JSON.parse(raw));
-    } catch (err) {
-      console.warn('Failed to load promo codes', err);
-    }
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('promo_codes')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.warn('Failed to fetch promo codes from Supabase:', error);
+          return;
+        }
+        if (data) setPromoCodes(data as any[]);
+      } catch (err) {
+        console.warn('Failed to load promo codes', err);
+      }
+    };
+    load();
   }, []);
-
-  const savePromoCodes = (codes: any[]) => {
-    localStorage.setItem('promo-codes', JSON.stringify(codes));
-    setPromoCodes(codes);
-  };
 
   const generateCode = (length = 8) => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -169,7 +174,7 @@ const SuperAdmin = () => {
     return result;
   };
 
-  const handleCreatePromo = (e?: React.FormEvent) => {
+  const handleCreatePromo = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!promoName) {
       toast.error('Please enter a name for this promo');
@@ -179,20 +184,48 @@ const SuperAdmin = () => {
       toast.error('Please select a valid discount');
       return;
     }
+
     const code = generateCode(8);
-    const newPromo = { id: Date.now(), name: promoName, code, discount: promoDiscount, createdAt: new Date().toISOString() };
-    const updated = [newPromo, ...promoCodes];
-    savePromoCodes(updated);
-    toast.success(`Promo ${code} created (${promoDiscount}% off)`);
-    setPromoDialogOpen(false);
-    setPromoName('');
-    setPromoDiscount(10);
+
+    try {
+      const { data, error } = await supabase
+        .from('promo_codes')
+        .insert({ name: promoName, code, discount: promoDiscount })
+        .select()
+        .single();
+      if (error) {
+        console.error('Error inserting promo code:', error);
+        toast.error('Failed to create promo code');
+        return;
+      }
+      const newPromo = data;
+      const updated = [newPromo, ...promoCodes];
+      setPromoCodes(updated);
+      toast.success(`Promo ${newPromo.code} created (${newPromo.discount}% off)`);
+      setPromoDialogOpen(false);
+      setPromoName('');
+      setPromoDiscount(10);
+    } catch (err) {
+      console.error('Create promo error', err);
+      toast.error('Failed to create promo code');
+    }
   };
 
-  const handleDeletePromo = (id: number) => {
-    const updated = promoCodes.filter(p => p.id !== id);
-    savePromoCodes(updated);
-    toast.success('Promo code deleted');
+  const handleDeletePromo = async (id: number) => {
+    try {
+      const { error } = await supabase.from('promo_codes').delete().eq('id', id);
+      if (error) {
+        console.error('Error deleting promo', error);
+        toast.error('Failed to delete promo');
+        return;
+      }
+      const updated = promoCodes.filter(p => p.id !== id);
+      setPromoCodes(updated);
+      toast.success('Promo code deleted');
+    } catch (err) {
+      console.error('Delete promo error', err);
+      toast.error('Failed to delete promo');
+    }
   };
 
   return (
