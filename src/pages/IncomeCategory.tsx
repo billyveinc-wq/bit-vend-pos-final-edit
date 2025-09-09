@@ -1,1 +1,12 @@
-{"code":"rate-limited","message":"You have hit the rate limit. Please upgrade to keep chatting.","providerLimitHit":false,"isRetryable":true}
+import React from 'react';
+
+const IncomeCategory: React.FC = () => {
+  return (
+    <div>
+      <h1>Income Categories</h1>
+      <p>Income category management coming soon...</p>
+    </div>
+  );
+};
+
+export default IncomeCategory;

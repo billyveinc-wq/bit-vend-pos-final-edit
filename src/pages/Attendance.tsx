@@ -1,1 +1,12 @@
-{"code":"rate-limited","message":"You have hit the rate limit. Please upgrade to keep chatting.","providerLimitHit":false,"isRetryable":true}
+import React from 'react';
+
+const Attendance: React.FC = () => {
+  return (
+    <div>
+      <h1>Attendance</h1>
+      <p>Attendance management coming soon...</p>
+    </div>
+  );
+};
+
+export default Attendance;

@@ -1,1 +1,12 @@
-{"code":"rate-limited","message":"You have hit the rate limit. Please upgrade to keep chatting.","providerLimitHit":false,"isRetryable":true}
+import React from 'react';
+
+const MoneyTransfer: React.FC = () => {
+  return (
+    <div>
+      <h1>Money Transfer</h1>
+      <p>Money transfer management coming soon...</p>
+    </div>
+  );
+};
+
+export default MoneyTransfer;
