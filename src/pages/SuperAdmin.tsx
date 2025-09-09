@@ -150,6 +150,10 @@ const SuperAdmin = () => {
   };
 
   const [promoCodes, setPromoCodes] = useState<Array<{id: number; name: string; code: string; discount: number; created_at?: string}>>([]);
+  const [promoDialogOpen, setPromoDialogOpen] = useState(false);
+  const [promoName, setPromoName] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState<number>(10);
+  const [promoInfluencer, setPromoInfluencer] = useState('');
 
   // Load promo codes from Supabase
   useEffect(() => {
@@ -178,6 +182,23 @@ const SuperAdmin = () => {
       if (!promoCodes.find(p => p.code === code)) return code;
     }
     return `PROMO${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+  };
+
+  const handleCreatePromo = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!promoName) { toast.error('Please enter a name for this promo'); return; }
+    if (![10,20,30,40,50].includes(promoDiscount)) { toast.error('Please select a valid discount'); return; }
+    try {
+      const code = await generatePromoCode();
+      const { data, error } = await supabase.from('promo_codes').insert({ name: promoName, code, discount: promoDiscount, influencer_name: promoInfluencer }).select().single();
+      if (error) { console.error('Error inserting promo code:', error); toast.error('Failed to create promo code'); return; }
+      setPromoCodes(prev => [data, ...prev]);
+      toast.success(`Promo ${data.code} created (${data.discount}% off)`);
+      setPromoDialogOpen(false);
+      setPromoName(''); setPromoDiscount(10); setPromoInfluencer('');
+    } catch (err) {
+      console.error('Create promo error', err); toast.error('Failed to create promo code');
+    }
   };
 
   const handleDeletePromo = async (id: number) => {
