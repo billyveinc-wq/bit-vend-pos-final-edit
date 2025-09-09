@@ -178,6 +178,22 @@ const AuthPage = () => {
         return;
       }
 
+      // If a promo/referral code was provided, check if it exists and notify user about the applied discount
+      if (referralCodeInput) {
+        try {
+          const raw = localStorage.getItem('promo-codes');
+          if (raw) {
+            const promoList = JSON.parse(raw) as Array<{ code: string; discount: number; name?: string }>;
+            const matched = promoList.find(p => p.code === referralCodeInput);
+            if (matched) {
+              toast.success(`Promo code applied: ${matched.discount}% off`);
+            }
+          }
+        } catch (err) {
+          console.warn('Promo lookup failed', err);
+        }
+      }
+
       toast.success('Account created! Please check your email to confirm your account.');
 
       // Show success message
