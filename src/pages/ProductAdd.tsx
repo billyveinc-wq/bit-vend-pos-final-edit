@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X, Upload as LucideUploadIcon, RotateCcw, Calendar, Package } from 'lucide-react';
+import { ArrowLeft, Save, X, Upload as LucideUploadIcon, RotateCcw, Calendar, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -200,6 +200,16 @@ const ProductAdd = () => {
     calculateProfitMargin(formData.purchasePrice, formData.sellingPrice);
   }, [formData.purchasePrice, formData.sellingPrice]);
 
+  const goToStep = (id: string) => setActiveTab(id);
+  const goNext = () => {
+    const idx = tabs.findIndex(t => t.id === activeTab);
+    if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id);
+  };
+  const goPrev = () => {
+    const idx = tabs.findIndex(t => t.id === activeTab);
+    if (idx > 0) setActiveTab(tabs[idx - 1].id);
+  };
+
   return (
     <div className="space-y-6 p-6 bg-background dark:bg-settings-form min-h-screen animate-fadeInUp">
       {/* Header */}
@@ -229,6 +239,20 @@ const ProductAdd = () => {
             style={{ width: `${progress}%` }}
           />
         </div>
+        <div className="flex items-center justify-between mt-1">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              aria-label={`Go to ${t.label}`}
+              onClick={() => goToStep(t.id)}
+              className={cn(
+                "h-2 w-2 rounded-full transition-colors",
+                activeTab === t.id ? "bg-success" : "bg-muted-foreground/40 hover:bg-muted-foreground/60"
+              )}
+            />
+          ))}
+        </div>
+
       </div>
 
       {/* Form */}
@@ -744,35 +768,29 @@ const ProductAdd = () => {
           </Tabs>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-4 p-6 border-t dark:border-gray-600 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleReset}
-              className="gap-2 transition-all duration-200 dark:bg-settings-form dark:text-white hover:scale-105 active:scale-95"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reset
-            </Button>
-            
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              className="gap-2 transition-all duration-200 border-cancel text-cancel hover:bg-cancel/10 dark:border-cancel dark:text-cancel dark:hover:bg-cancel/10 hover:scale-105 active:scale-95"
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              className="bg-save hover:bg-save-hover text-save-foreground gap-2 transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              <Save className="h-4 w-4" />
-              Save Product
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 border-t dark:border-gray-600 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+            <div className="flex gap-2 order-2 sm:order-1">
+              <Button type="button" variant="outline" onClick={handleReset} className="gap-2 dark:bg-settings-form dark:text-white">
+                <RotateCcw className="h-4 w-4" /> Reset
+              </Button>
+              <Button type="button" variant="outline" onClick={handleCancel} className="gap-2 border-cancel text-cancel hover:bg-cancel/10 dark:border-cancel dark:text-cancel dark:hover:bg-cancel/10">
+                <X className="h-4 w-4" /> Cancel
+              </Button>
+            </div>
+            <div className="flex gap-2 order-1 sm:order-2">
+              <Button type="button" variant="outline" onClick={goPrev} disabled={activeTab === 'general'} className="gap-2">
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              {activeTab !== 'extras' ? (
+                <Button type="button" onClick={goNext} className="gap-2">
+                  Next <ChevronRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button type="button" onClick={handleSubmit} className="bg-save hover:bg-save-hover text-save-foreground gap-2">
+                  <Save className="h-4 w-4" /> Save Product
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
