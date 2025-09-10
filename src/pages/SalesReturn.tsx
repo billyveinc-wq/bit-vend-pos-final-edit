@@ -295,10 +295,10 @@ const SalesReturn = () => {
                 </Button>
                 {returnItem.status === 'pending' && (
                   <>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => rejectReturn(returnItem.id)}>
                       Reject
                     </Button>
-                    <Button size="sm" className="bg-success hover:bg-success/90">
+                    <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => approveReturn(returnItem.id)}>
                       Approve Return
                     </Button>
                   </>
