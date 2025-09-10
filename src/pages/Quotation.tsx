@@ -209,53 +209,6 @@ const Quotation = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <FileText className="w-8 h-8 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">24</p>
-                <p className="text-sm text-muted-foreground">Total Quotes</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-8 h-8 text-success" />
-              <div>
-                <p className="text-2xl font-bold">18</p>
-                <p className="text-sm text-muted-foreground">Accepted</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Send className="w-8 h-8 text-orange-500" />
-              <div>
-                <p className="text-2xl font-bold">4</p>
-                <p className="text-sm text-muted-foreground">Pending</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-8 h-8 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">$142.5K</p>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Filters */}
       <Card>
