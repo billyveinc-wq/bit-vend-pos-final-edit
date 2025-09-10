@@ -7,13 +7,24 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Shield, Key, Save, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Card } from '@/components/ui/card';
 
 const AdminSettings = () => {
-  const { adminSession } = useAdminAuth();
+  const { adminSession, isAdmin } = useAdminAuth();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <div className="p-6">Access Denied</div>
+        </Card>
+      </div>
+    );
+  }
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
