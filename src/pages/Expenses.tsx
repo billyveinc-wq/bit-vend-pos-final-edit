@@ -67,14 +67,14 @@ const Expenses = () => {
             id: String(row.id),
             title: row.title,
             amount: Number(row.amount) || 0,
-            category: row.category,
-            date: row.date,
+            category: '',
+            date: row.expense_date,
             description: row.description || '',
-            receiptNumber: row.receipt_number || '',
-            vendor: row.vendor || '',
+            receiptNumber: '',
+            vendor: '',
             paymentMethod: row.payment_method || '',
-            status: (row.status || 'pending') as Expense['status'],
-            approvedBy: row.approved_by || '',
+            status: (row.is_approved ? 'approved' : 'pending') as Expense['status'],
+            approvedBy: '',
             createdAt: row.created_at,
           }));
           setExpenses(mapped);
@@ -107,15 +107,12 @@ const Expenses = () => {
           .update({
             title: formData.title,
             amount: parseFloat(formData.amount) || 0,
-            category: formData.category,
-            date: formData.date,
+            expense_date: formData.date,
             description: formData.description || null,
-            receipt_number: formData.receiptNumber || null,
-            vendor: formData.vendor || null,
             payment_method: formData.paymentMethod || null,
-            status: formData.status,
+            is_approved: formData.status === 'approved',
           })
-          .eq('id', Number(editingExpense.id));
+          .eq('id', editingExpense.id);
         if (error) { toast.error(error.message); return; }
         setExpenses(prev => prev.map(expense =>
           expense.id === editingExpense.id
@@ -129,13 +126,10 @@ const Expenses = () => {
           .insert({
             title: formData.title,
             amount: parseFloat(formData.amount) || 0,
-            category: formData.category,
-            date: formData.date,
+            expense_date: formData.date,
             description: formData.description || null,
-            receipt_number: formData.receiptNumber || null,
-            vendor: formData.vendor || null,
             payment_method: formData.paymentMethod || null,
-            status: formData.status,
+            is_approved: formData.status === 'approved',
           })
           .select('*')
           .single();
@@ -184,7 +178,7 @@ const Expenses = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this expense?')) {
       try {
-        const { error } = await supabase.from('expenses').delete().eq('id', Number(id));
+        const { error } = await supabase.from('expenses').delete().eq('id', id);
         if (error) { toast.error(error.message); return; }
         setExpenses(prev => prev.filter(expense => expense.id !== id));
         toast.success('Expense deleted successfully!');
