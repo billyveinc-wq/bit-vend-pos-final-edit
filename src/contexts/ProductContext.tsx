@@ -34,19 +34,44 @@ const ProductContext = createContext<ProductContextType | undefined>(undefined);
 export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
 
-  // Load products from localStorage or use initial data
+  // Load products from Supabase if available; fallback to localStorage or initial data
   useEffect(() => {
-    const savedProducts = localStorage.getItem('pos-products');
-    if (savedProducts) {
+    const load = async () => {
       try {
-        setProducts(JSON.parse(savedProducts));
-      } catch (error) {
-        console.error('Error loading products:', error);
+        const { data, error } = await supabase.from('products').select('*');
+        if (!error && Array.isArray(data) && data.length) {
+          const mapped = data.map((row: any, idx: number) => ({
+            id: idx + 1, // local ID for UI only; DB id is separate
+            name: row.name,
+            description: row.description || '',
+            price: Number(row.price) || 0,
+            category: row.category,
+            sku: row.sku || undefined,
+            barcode: row.barcode || undefined,
+            stock: Number(row.stock) || 0,
+            minStock: Number(row.min_stock) || 0,
+            brand: row.brand || undefined,
+            supplier: row.supplier || undefined,
+            status: (row.status || 'active') as 'active' | 'inactive' | 'draft',
+            image: row.image || undefined,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+          }));
+          setProducts(mapped);
+          return;
+        }
+      } catch (e) {
+        console.warn('Supabase products fetch failed, falling back to local data');
+      }
+      const savedProducts = localStorage.getItem('pos-products');
+      if (savedProducts) {
+        try { setProducts(JSON.parse(savedProducts)); }
+        catch { setProducts(initialProducts); }
+      } else {
         setProducts(initialProducts);
       }
-    } else {
-      setProducts(initialProducts);
-    }
+    };
+    load();
   }, []);
 
   // Save to localStorage when products change
