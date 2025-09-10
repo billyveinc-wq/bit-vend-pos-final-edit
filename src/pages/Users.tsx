@@ -229,6 +229,9 @@ const Users = () => {
     });
     setEditingUser(null);
     setShowPassword(false);
+    setRestrictAccess(false);
+    setSelectedPages([]);
+    setSelectedActions([]);
   };
 
   const getStatusBadge = (status: string) => {
