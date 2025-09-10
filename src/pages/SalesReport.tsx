@@ -99,8 +99,8 @@ const SalesReport: React.FC = () => {
           customerName: undefined,
           customerPhone: undefined,
           items: (row.sale_items || []).map((it: any) => ({
-            productId: String(it.product_id) as any,
-            productName: '',
+            productId: Number(it.product_id) || 0,
+            productName: it.product_name || (PRODUCTS.find(p => p.id === Number(it.product_id))?.name ?? `Product ${it.product_id ?? ''}`),
             quantity: Number(it.quantity) || 0,
             unitPrice: Number(it.unit_price) || 0,
             total: Number(it.total_amount) || 0,
