@@ -513,11 +513,11 @@ const SalesReport: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div className="space-y-2 md:col-span-2">
               <Label>Quick Period</Label>
               <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full md:w-40 h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -537,7 +537,7 @@ const SalesReport: React.FC = () => {
                 type="date"
                 value={dateRange.startDate}
                 onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
-                className="w-full"
+                className="w-full md:w-40 h-9"
               />
             </div>
             
@@ -547,14 +547,14 @@ const SalesReport: React.FC = () => {
                 type="date"
                 value={dateRange.endDate}
                 onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
-                className="w-full"
+                className="w-full md:w-40 h-9"
               />
             </div>
             
             <div className="space-y-2 md:col-span-3">
               <Label>Payment Method</Label>
               <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full md:w-44 h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -569,7 +569,7 @@ const SalesReport: React.FC = () => {
             <div className="space-y-2 md:col-span-2">
               <Label>Status</Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full md:w-36 h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -584,7 +584,8 @@ const SalesReport: React.FC = () => {
             <div className="md:col-span-3 grid grid-cols-2 gap-2 w-full">
               <Button
                 variant="outline"
-                className="w-full"
+                size="sm"
+                className="w-full md:w-32"
                 onClick={handleRefresh}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -592,7 +593,8 @@ const SalesReport: React.FC = () => {
               </Button>
               <Button
                 variant="outline"
-                className="w-full whitespace-nowrap"
+                size="sm"
+                className="w-full md:w-32 whitespace-nowrap"
                 onClick={handleExportData}
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -605,8 +607,7 @@ const SalesReport: React.FC = () => {
 
       {activeView === 'overview' && (
         <div className="space-y-6">
-          {/* Key Business Metrics - moved above comprehensive reports */}
-          <BusinessReports />
+          {/* Metrics removed to create space */}
 
           {/* Comprehensive Reports Table */}
           <ReportsTable />
