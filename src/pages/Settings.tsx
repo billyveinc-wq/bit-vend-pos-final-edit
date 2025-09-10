@@ -80,7 +80,7 @@ const Settings = () => {
   });
 
   const [locations, setLocations] = useState([
-    { id: '1', name: 'Main Store', address: '', isActive: true }
+    { id: '1', code: 'MAIN', name: 'Main Store', manager: '', phone: '', email: '', address: '', city: '', state: '', postalCode: '', country: 'US', currency: 'USD', taxRegion: '', isActive: true, isMain: true, notes: '' }
   ]);
 
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
@@ -741,6 +741,138 @@ const Settings = () => {
                   <Save className="h-4 w-4 mr-2" />
                   Save Locations
                 </Button>
+              </CardContent>
+            </Card>
+          );
+        case 'business-locations':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Locations & Branches</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">Create and manage your store locations/branches. Mark your primary branch, set contact details, and choose currency/tax region per branch.</p>
+                <div className="flex items-center justify-between">
+                  <Button
+                    onClick={() => {
+                      const newLoc = { id: Date.now().toString(), code: '', name: '', manager: '', phone: '', email: '', address: '', city: '', state: '', postalCode: '', country: 'US', currency: 'USD', taxRegion: '', isActive: true, isMain: false, notes: '' };
+                      setLocations(prev => [...prev, newLoc]);
+                    }}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Branch
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => { saveLocal('pos-locations', locations); showSaveToast(); }}>Save Branches</Button>
+                </div>
+
+                {locations.map((loc, index) => (
+                  <div key={loc.id} className="p-4 border rounded-lg space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Branch Code</Label>
+                        <Input value={loc.code} onChange={(e)=>{
+                          const next=[...locations]; next[index]={...loc, code:e.target.value}; setLocations(next);
+                        }} placeholder="e.g., MAIN" />
+                      </div>
+                      <div>
+                        <Label>Branch Name</Label>
+                        <Input value={loc.name} onChange={(e)=>{
+                          const next=[...locations]; next[index]={...loc, name:e.target.value}; setLocations(next);
+                        }} placeholder="Main Store" />
+                      </div>
+                      <div className="flex items-center gap-2 mt-6 md:mt-0">
+                        <Switch checked={!!loc.isMain} onCheckedChange={(c)=>{
+                          const next=locations.map(l=>({ ...l, isMain: false }));
+                          next[index].isMain=c; setLocations(next as any);
+                        }} />
+                        <Label>Primary Branch</Label>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Manager</Label>
+                        <Input value={loc.manager} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, manager:e.target.value}; setLocations(next); }} placeholder="Manager name" />
+                      </div>
+                      <div>
+                        <Label>Phone</Label>
+                        <Input value={loc.phone} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, phone:e.target.value}; setLocations(next); }} placeholder="+1 555 000 000" />
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input type="email" value={loc.email} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, email:e.target.value}; setLocations(next); }} placeholder="store@example.com" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Address</Label>
+                        <Input value={loc.address} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, address:e.target.value}; setLocations(next); }} placeholder="123 Main St" />
+                      </div>
+                      <div>
+                        <Label>City</Label>
+                        <Input value={loc.city} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, city:e.target.value}; setLocations(next); }} placeholder="New York" />
+                      </div>
+                      <div>
+                        <Label>State</Label>
+                        <Input value={loc.state} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, state:e.target.value}; setLocations(next); }} placeholder="NY" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Postal Code</Label>
+                        <Input value={loc.postalCode} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, postalCode:e.target.value}; setLocations(next); }} placeholder="10001" />
+                      </div>
+                      <div>
+                        <Label>Country</Label>
+                        <Select value={loc.country} onValueChange={(v)=>{ const next=[...locations]; next[index]={...loc, country:v}; setLocations(next); }}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countries.slice(0, 20).map((c)=>(<SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={!!loc.isActive} onCheckedChange={(c)=>{ const next=[...locations]; next[index]={...loc, isActive:c}; setLocations(next); }} />
+                        <Label>Active</Label>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Currency</Label>
+                        <Input value={loc.currency} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, currency:e.target.value}; setLocations(next); }} placeholder="USD" />
+                      </div>
+                      <div>
+                        <Label>Tax Region</Label>
+                        <Input value={loc.taxRegion} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, taxRegion:e.target.value}; setLocations(next); }} placeholder="e.g., NY-State" />
+                      </div>
+                      <div>
+                        <Label>Notes</Label>
+                        <Input value={loc.notes} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, notes:e.target.value}; setLocations(next); }} placeholder="Internal notes" />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={()=>{
+                        setLocations(prev => prev.filter(l => l.id !== loc.id));
+                        toast.success('Branch removed');
+                      }}>Remove</Button>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex gap-2">
+                  <Button onClick={()=>{ saveLocal('pos-locations', locations); showSaveToast(); }} className="bg-save hover:bg-save-hover text-save-foreground">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Branches
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );
