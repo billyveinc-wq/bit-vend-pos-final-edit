@@ -315,7 +315,11 @@ const Topbar: React.FC<TopbarProps> = ({
                 size="sm"
                 className="p-2 relative transition-all duration-200 hover:scale-90 active:scale-75"
                 onClick={() => {
-                  if (isAdmin) setShowSupportDialog(true); else { setCompose({ to: supportEmail || '', subject: '', body: '' }); setShowEmailDialog(true); }
+                  if (isAdmin) setShowSupportDialog(true);
+                  else {
+                    setCompose({ to: supportEmail || '', cc: '', bcc: '', subject: '', body: '', attachments: [] });
+                    setShowEmailDialog(true);
+                  }
                 }}
               >
                 <Mail size={18} />
