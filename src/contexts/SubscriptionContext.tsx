@@ -76,7 +76,15 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchSubscription = async () => {
     try {
       setIsLoading(true);
-      
+
+      // Short-circuit if offline
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        console.warn('Offline: using default subscription features');
+        setSubscription(null);
+        setFeatures(DEFAULT_FEATURES);
+        return;
+      }
+
       // First get the session to avoid AuthSessionMissingError when no session exists
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
