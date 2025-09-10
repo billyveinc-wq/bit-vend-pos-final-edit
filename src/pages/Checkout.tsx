@@ -27,6 +27,7 @@ const Checkout = () => {
   });
   const [paymentMethod, setPaymentMethod] = useState("Card");
   const [enabledProviders, setEnabledProviders] = useState<string[] | null>(null);
+  const [companyId, setCompanyId] = useState<number | null>(null);
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
