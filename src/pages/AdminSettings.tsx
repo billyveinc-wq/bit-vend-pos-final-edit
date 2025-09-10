@@ -7,7 +7,6 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Shield, Key, Save, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
 
 const AdminSettings = () => {
   const { adminSession, isAdmin } = useAdminAuth();
