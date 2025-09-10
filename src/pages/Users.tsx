@@ -209,6 +209,13 @@ const Users = () => {
         }).eq('id', editingUser.id);
         if (error) { toast.error(error.message); return; }
 
+        // Ensure company linkage exists
+        try {
+          if (companyId) {
+            await supabase.from('company_users').upsert({ company_id: companyId, user_id: editingUser.id, role: formData.role || 'member' }, { onConflict: 'company_id,user_id' });
+          }
+        } catch {}
+
         // Sync RBAC user_roles with selected role
         try {
           let roleId: number | undefined;
@@ -269,6 +276,13 @@ const Users = () => {
             created_at: new Date().toISOString(),
             company_id: companyId || null
           });
+
+          // Link to company as role
+          try {
+            if (companyId) {
+              await supabase.from('company_users').upsert({ company_id: companyId, user_id: userId, role: formData.role || 'member' }, { onConflict: 'company_id,user_id' });
+            }
+          } catch {}
 
           // Sync RBAC user_roles with selected role
           try {
