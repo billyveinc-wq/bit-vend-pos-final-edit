@@ -585,6 +585,23 @@ const AuthPage = () => {
                     </form>
                   </TabsContent>
 
+                  {/* Reset Password Form (after email link) */}
+                  <TabsContent value="reset">
+                    <form onSubmit={handleCompleteReset} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="newPw">New Password</Label>
+                        <Input id="newPw" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="newPw2">Confirm New Password</Label>
+                        <Input id="newPw2" type="password" value={newPw2} onChange={(e) => setNewPw2(e.target.value)} required />
+                      </div>
+                      <Button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white" disabled={isLoading}>
+                        Set New Password
+                      </Button>
+                    </form>
+                  </TabsContent>
+
                   {/* Forgot Password Form */}
                   <TabsContent value="forgot">
                     <form onSubmit={handleForgotPassword} className="space-y-4">
