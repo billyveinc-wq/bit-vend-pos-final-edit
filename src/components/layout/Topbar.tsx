@@ -31,7 +31,8 @@ import {
   AlignCenter,
   AlignRight,
   Link as LinkIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Paperclip
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,6 +117,7 @@ const Topbar: React.FC<TopbarProps> = ({
   const [showSupportDialog, setShowSupportDialog] = useState(false);
   const [compose, setCompose] = useState<{ to: string; cc: string; bcc: string; subject: string; body: string; attachments: File[] }>({ to: '', cc: '', bcc: '', subject: '', body: '', attachments: [] });
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const loadSupportEmail = async () => {
@@ -513,7 +515,7 @@ const Topbar: React.FC<TopbarProps> = ({
               <Label className="flex items-center gap-2">Attachments</Label>
               <div className="flex items-center gap-2">
                 <input
-                  ref={(el) => (fileInputRef = el as any)}
+                  ref={fileInputRef}
                   type="file"
                   multiple
                   className="hidden"
@@ -522,8 +524,8 @@ const Topbar: React.FC<TopbarProps> = ({
                     setCompose(prev => ({ ...prev, attachments: files as File[] }));
                   }}
                 />
-                <Button type="button" variant="outline" size="sm" onClick={() => (fileInputRef as any)?.click()} className="gap-2">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-8.49 8.49a5 5 0 01-7.07-7.07l8.49-8.49a3.5 3.5 0 015 5l-8.49 8.49a2 2 0 11-2.83-2.83l7.78-7.78"/></svg>
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-2">
+                  <Paperclip className="h-4 w-4" />
                   Attach
                 </Button>
               </div>
