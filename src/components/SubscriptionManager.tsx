@@ -173,12 +173,13 @@ const SubscriptionManager: React.FC = () => {
 
   const handlePlanUpgrade = async () => {
     if (!selectedPlan) return;
-    
+
     try {
       // Simulate plan upgrade - integrate with actual payment processing
-      toast.success('Plan upgrade initiated. Redirecting to payment...');
+      toast.success('Plan upgrade initiated. Continue to payment.');
       setShowUpgradeDialog(false);
-      
+      setShowPaymentDialog(true);
+
       // Refresh subscription data
       await refreshSubscription();
     } catch (error) {
