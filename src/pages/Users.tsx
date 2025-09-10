@@ -259,6 +259,25 @@ const Users = () => {
         // Ensure admin stays logged in (sign out any accidental session switch)
         try { await supabase.auth.getSession().then(async ({ data }) => { if (data.session?.user?.email === formData.email) await supabase.auth.signOut(); }); } catch {}
 
+        // Immediately reflect in UI
+        if (userId) {
+          const selectedRole = roles.find(r => r.id === formData.role);
+          const newUser: User = {
+            id: String(userId),
+            username: formData.username,
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone || '',
+            role: formData.role,
+            status: 'active',
+            lastLogin: undefined,
+            createdAt: new Date().toISOString(),
+            permissions: selectedRole?.permissions || []
+          };
+          setUsers(prev => [newUser, ...prev]);
+        }
+
         toast.success('User created successfully with the specified password.');
       } catch (err) {
         console.error('Create user error', err);
