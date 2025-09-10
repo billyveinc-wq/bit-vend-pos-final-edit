@@ -100,7 +100,7 @@ const Topbar: React.FC<TopbarProps> = ({
   const [supportEmail, setSupportEmail] = useState<string | null>(null);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showSupportDialog, setShowSupportDialog] = useState(false);
-  const [compose, setCompose] = useState({ to: '', subject: '', body: '' });
+  const [compose, setCompose] = useState<{ to: string; cc: string; bcc: string; subject: string; body: string; attachments: File[] }>({ to: '', cc: '', bcc: '', subject: '', body: '', attachments: [] });
 
   useEffect(() => {
     const loadSupportEmail = async () => {
