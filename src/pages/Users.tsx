@@ -207,6 +207,20 @@ const Users = () => {
           user_metadata: updatedMeta
         }).eq('id', editingUser.id);
         if (error) { toast.error(error.message); return; }
+
+        // Sync RBAC user_roles with selected role
+        try {
+          let roleId: number | undefined;
+          const { data: roleRow } = await supabase.from('roles').select('id').eq('name', formData.role).maybeSingle();
+          roleId = roleRow?.id as number | undefined;
+          if (!roleId && formData.role === 'admin') {
+            const { data: createdRole } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+            roleId = createdRole?.id;
+          }
+          await supabase.from('user_roles').delete().eq('user_id', editingUser.id);
+          if (roleId) await supabase.from('user_roles').insert({ user_id: editingUser.id, role_id: roleId });
+        } catch {}
+
         // Update local state
         setUsers(prev => prev.map(user =>
           user.id === editingUser.id
@@ -254,6 +268,19 @@ const Users = () => {
             created_at: new Date().toISOString(),
             company_id: companyId || null
           });
+
+          // Sync RBAC user_roles with selected role
+          try {
+            let roleId: number | undefined;
+            const { data: roleRow } = await supabase.from('roles').select('id').eq('name', formData.role).maybeSingle();
+            roleId = roleRow?.id as number | undefined;
+            if (!roleId && formData.role === 'admin') {
+              const { data: createdRole } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+              roleId = createdRole?.id;
+            }
+            await supabase.from('user_roles').delete().eq('user_id', userId);
+            if (roleId) await supabase.from('user_roles').insert({ user_id: userId, role_id: roleId });
+          } catch {}
         }
 
         // Ensure admin stays logged in (sign out any accidental session switch)
