@@ -114,6 +114,18 @@ const NewQuotationPage = () => {
         total: 0,
       });
       if (error) { toast.error(error.message); return; }
+      // Persist logo (if selected) into app_settings keyed by quote number
+      try {
+        const logo = (window as any)._quoteLogoDataUrl as string | undefined;
+        if (logo) {
+          const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+          const companyId = (comp as any)?.id;
+          if (companyId) {
+            await supabase.from('app_settings').upsert({ company_id: companyId, key: `quote_logo_${quoteNo}`, value: logo }, { onConflict: 'company_id,key' });
+          }
+          delete (window as any)._quoteLogoDataUrl;
+        }
+      } catch {}
       toast.success('Quotation created successfully!');
       navigate('/dashboard/quotation');
     } catch (e) {
