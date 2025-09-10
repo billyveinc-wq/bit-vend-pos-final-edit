@@ -122,8 +122,8 @@ const Users = () => {
         if (uid) {
           const { data: existing } = await supabase.from('system_users').select('id, company_id').eq('id', uid).maybeSingle();
           if (!existing) {
-            const { data: meData } = await supabase.auth.getUser();
-            const me = meData.user;
+            const { data: meData } = await supabase.auth.getSession();
+            const me = meData.session?.user || null;
             const meta = (me as any)?.user_metadata || {};
             await supabase.from('system_users').upsert({
               id: uid,
