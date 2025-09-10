@@ -542,6 +542,71 @@ const Settings = () => {
     );
   };
 
+  // POS Terminal settings state
+  const [receiptSettings, setReceiptSettings] = useState({
+    template: 'classic',
+    showTax: true,
+    showTotals: true,
+    businessFooter: ''
+  });
+  const [terminalBehavior, setTerminalBehavior] = useState({
+    autoPrint: false,
+    playSoundOnAdd: true,
+    promptForReceipt: true
+  });
+  const [displaySettings, setDisplaySettings] = useState({
+    fontScale: 100,
+    compactMode: false
+  });
+
+  // System settings state
+  const [systemGeneral, setSystemGeneral] = useState({
+    appName: 'Bit Vend POS',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language: 'en'
+  });
+  const [emailTemplates, setEmailTemplates] = useState([
+    { id: 'order-confirmation', name: 'Order Confirmation', subject: 'Your order has been received', body: 'Thank you for your order.' },
+    { id: 'low-stock', name: 'Low Stock Alert', subject: 'Product low stock', body: 'A product is running low on stock.' },
+  ]);
+
+  // Hardware settings state
+  const [printerSettings, setPrinterSettings] = useState({
+    paperWidth: 80,
+    printLogo: true
+  });
+  const [barcodeSettings, setBarcodeSettings] = useState({
+    testInput: ''
+  });
+  const [cashDrawerSettings, setCashDrawerSettings] = useState({
+    openCode: '27,112,0,25,250'
+  });
+
+  // App settings state
+  const [invoiceTemplates, setInvoiceTemplates] = useState({
+    style: 'standard'
+  });
+  const [notifications, setNotifications] = useState({
+    salesSummaryEmail: true,
+    lowStockPush: true
+  });
+  const [appTheme, setAppTheme] = useState({
+    theme: localStorage.getItem('pos-theme') === 'dark' ? 'dark' : 'light'
+  });
+
+  // Security settings state
+  const [securityGeneral, setSecurityGeneral] = useState({
+    requireStrongPasswords: true,
+    twoFactorAuth: false
+  });
+  const [auditLogs] = useState<string[]>(() => {
+    const saved = localStorage.getItem('pos-audit-log');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Persist helpers
+  const saveLocal = (key: string, value: any) => localStorage.setItem(key, JSON.stringify(value));
+
   const renderContent = () => {
     if (section === 'business') {
       switch (subsection) {
@@ -553,13 +618,13 @@ const Settings = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Locations & Branches</CardTitle>
-                  <Button 
+                  <Button
                     onClick={() => {
-                      const newLocation = { 
-                        id: Date.now().toString(), 
-                        name: `Location ${locations.length + 1}`, 
-                        address: '', 
-                        isActive: true 
+                      const newLocation = {
+                        id: Date.now().toString(),
+                        name: `Location ${locations.length + 1}`,
+                        address: '',
+                        isActive: true
                       };
                       setLocations(prev => [...prev, newLocation]);
                       toast.success('New location added');
@@ -580,7 +645,7 @@ const Settings = () => {
                     </div>
                     <Switch
                       checked={!hours.closed}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setOperatingHours(prev => ({
                           ...prev,
                           [day]: { ...prev[day], closed: !checked }
@@ -592,7 +657,7 @@ const Settings = () => {
                         <Input
                           type="time"
                           value={hours.open}
-                          onChange={(e) => 
+                          onChange={(e) =>
                             setOperatingHours(prev => ({
                               ...prev,
                               [day]: { ...prev[day], open: e.target.value }
@@ -604,7 +669,7 @@ const Settings = () => {
                         <Input
                           type="time"
                           value={hours.close}
-                          onChange={(e) => 
+                          onChange={(e) =>
                             setOperatingHours(prev => ({
                               ...prev,
                               [day]: { ...prev[day], close: e.target.value }
@@ -672,7 +737,7 @@ const Settings = () => {
                     </div>
                   </div>
                 ))}
-                <Button onClick={() => showSaveToast()} className="bg-save hover:bg-save-hover text-save-foreground">
+                <Button onClick={() => { saveLocal('pos-locations', locations); showSaveToast(); }} className="bg-save hover:bg-save-hover text-save-foreground">
                   <Save className="h-4 w-4 mr-2" />
                   Save Locations
                 </Button>
@@ -704,20 +769,398 @@ const Settings = () => {
       }
     }
 
+    if (section === 'pos-terminal') {
+      switch (subsection) {
+        case 'receipt-settings':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Receipt Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Template</Label>
+                    <Select value={receiptSettings.template} onValueChange={(v) => setReceiptSettings(prev => ({ ...prev, template: v }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="classic">Classic</SelectItem>
+                        <SelectItem value="modern">Modern</SelectItem>
+                        <SelectItem value="compact">Compact</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2 mt-6 md:mt-0">
+                    <Switch checked={receiptSettings.showTax} onCheckedChange={(c)=>setReceiptSettings(p=>({...p, showTax:c}))} />
+                    <Label>Show Tax</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={receiptSettings.showTotals} onCheckedChange={(c)=>setReceiptSettings(p=>({...p, showTotals:c}))} />
+                    <Label>Show Totals</Label>
+                  </div>
+                </div>
+                <div>
+                  <Label>Footer Text</Label>
+                  <Textarea value={receiptSettings.businessFooter} onChange={(e)=>setReceiptSettings(p=>({...p, businessFooter:e.target.value}))} placeholder="Thank you for shopping!" />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={()=>{ saveLocal('pos-receipt-settings', receiptSettings); showSaveToast(); }}>Save</Button>
+                  <Button variant="outline" onClick={()=>window.print()}>Test Print</Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        case 'terminal-behavior':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Terminal Behavior</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Switch checked={terminalBehavior.autoPrint} onCheckedChange={(c)=>setTerminalBehavior(p=>({...p, autoPrint:c}))} />
+                  <Label>Auto-print after checkout</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={terminalBehavior.playSoundOnAdd} onCheckedChange={(c)=>setTerminalBehavior(p=>({...p, playSoundOnAdd:c}))} />
+                  <Label>Play sound when item added</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={terminalBehavior.promptForReceipt} onCheckedChange={(c)=>setTerminalBehavior(p=>({...p, promptForReceipt:c}))} />
+                  <Label>Prompt for receipt option</Label>
+                </div>
+                <Button onClick={()=>{ saveLocal('pos-terminal-behavior', terminalBehavior); showSaveToast(); }}>Save</Button>
+              </CardContent>
+            </Card>
+          );
+        case 'display-settings':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Display Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Font Scale (%)</Label>
+                    <Input type="number" value={displaySettings.fontScale} onChange={(e)=>setDisplaySettings(p=>({...p, fontScale: Number(e.target.value||100)}))} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={displaySettings.compactMode} onCheckedChange={(c)=>setDisplaySettings(p=>({...p, compactMode:c}))} />
+                    <Label>Compact Mode</Label>
+                  </div>
+                </div>
+                <Button onClick={()=>{ saveLocal('pos-display-settings', displaySettings); showSaveToast(); }}>Save</Button>
+              </CardContent>
+            </Card>
+          );
+        default:
+          return null;
+      }
+    }
+
+    if (section === 'system') {
+      switch (subsection) {
+        case 'general':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>System General</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>App Name</Label>
+                    <Input value={systemGeneral.appName} onChange={(e)=>setSystemGeneral(p=>({...p, appName:e.target.value}))} />
+                  </div>
+                  <div>
+                    <Label>Timezone</Label>
+                    <Input value={systemGeneral.timezone} onChange={(e)=>setSystemGeneral(p=>({...p, timezone:e.target.value}))} />
+                  </div>
+                  <div>
+                    <Label>Language</Label>
+                    <Select value={systemGeneral.language} onValueChange={(v)=>setSystemGeneral(p=>({...p, language:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="fr">French</SelectItem>
+                        <SelectItem value="sw">Swahili</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button onClick={()=>{ saveLocal('pos-system-general', systemGeneral); showSaveToast(); }}>Save</Button>
+              </CardContent>
+            </Card>
+          );
+        case 'email-templates':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Email Templates</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {emailTemplates.map((tpl, idx)=> (
+                  <div key={tpl.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Template Name</Label>
+                        <Input value={tpl.name} onChange={(e)=>{
+                          const next=[...emailTemplates]; next[idx]={...tpl, name:e.target.value}; setEmailTemplates(next);
+                        }} />
+                      </div>
+                      <div>
+                        <Label>Subject</Label>
+                        <Input value={tpl.subject} onChange={(e)=>{
+                          const next=[...emailTemplates]; next[idx]={...tpl, subject:e.target.value}; setEmailTemplates(next);
+                        }} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Body</Label>
+                      <Textarea value={tpl.body} onChange={(e)=>{
+                        const next=[...emailTemplates]; next[idx]={...tpl, body:e.target.value}; setEmailTemplates(next);
+                      }} />
+                    </div>
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  <Button onClick={()=>{ saveLocal('pos-email-templates', emailTemplates); showSaveToast(); }}>Save Templates</Button>
+                  <Button variant="outline" onClick={()=>setEmailTemplates(prev=>[...prev, { id: `tpl-${Date.now()}`, name: 'New Template', subject: '', body: '' }])}>Add Template</Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        case 'backup':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Backup & Restore</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-muted-foreground">Manage application backups and restores.</p>
+                <div className="flex gap-2">
+                  <Button onClick={()=> navigate('/dashboard/backup')}>Open Backup Page</Button>
+                  <Button variant="outline" onClick={()=> toast.success('Backup started (simulated)')}>Run Quick Backup</Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        default:
+          return null;
+      }
+    }
+
+    if (section === 'hardware') {
+      switch (subsection) {
+        case 'receipt-printer':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Receipt Printer</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Paper Width (mm)</Label>
+                    <Input type="number" value={printerSettings.paperWidth} onChange={(e)=>setPrinterSettings(p=>({...p, paperWidth:Number(e.target.value||80)}))} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={printerSettings.printLogo} onCheckedChange={(c)=>setPrinterSettings(p=>({...p, printLogo:c}))} />
+                    <Label>Print Logo</Label>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={()=>{ saveLocal('pos-printer-settings', printerSettings); showSaveToast(); }}>Save</Button>
+                  <Button variant="outline" onClick={()=>window.print()}>Test Print</Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        case 'barcode-scanner':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Barcode Scanner</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Test Input</Label>
+                  <Input value={barcodeSettings.testInput} onChange={(e)=>setBarcodeSettings({ testInput: e.target.value })} placeholder="Focus here and scan..." />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={()=>{ saveLocal('pos-barcode-settings', barcodeSettings); showSaveToast(); }}>Save</Button>
+                  <Button variant="outline" onClick={()=> toast.success(`Scanned: ${barcodeSettings.testInput || '—'}`)}>Test Scan</Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        case 'cash-drawer':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Cash Drawer</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Open Code (ESC/POS)</Label>
+                  <Input value={cashDrawerSettings.openCode} onChange={(e)=>setCashDrawerSettings({ openCode: e.target.value })} />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={()=>{ saveLocal('pos-cash-drawer', cashDrawerSettings); showSaveToast(); }}>Save</Button>
+                  <Button variant="outline" onClick={()=> toast.success('Cash drawer signal sent (simulated)')}>Test Open</Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        default:
+          return null;
+      }
+    }
+
+    if (section === 'app') {
+      switch (subsection) {
+        case 'invoice-templates':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Invoice Templates</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Template Style</Label>
+                  <Select value={invoiceTemplates.style} onValueChange={(v)=>setInvoiceTemplates({ style: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="compact">Compact</SelectItem>
+                      <SelectItem value="detailed">Detailed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={()=>{ saveLocal('pos-invoice-template', invoiceTemplates); showSaveToast(); }}>Save</Button>
+                  <Button variant="outline" onClick={()=> navigate('/dashboard/invoice-settings')}>Open Invoice Settings</Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        case 'notifications':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Notifications</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Switch checked={notifications.salesSummaryEmail} onCheckedChange={(c)=>setNotifications(p=>({...p, salesSummaryEmail:c}))} />
+                  <Label>Daily sales summary email</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={notifications.lowStockPush} onCheckedChange={(c)=>setNotifications(p=>({...p, lowStockPush:c}))} />
+                  <Label>Low stock push notification</Label>
+                </div>
+                <Button onClick={()=>{ saveLocal('pos-notifications', notifications); showSaveToast(); }}>Save</Button>
+              </CardContent>
+            </Card>
+          );
+        case 'theme':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Theme</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Appearance</Label>
+                  <Select value={appTheme.theme} onValueChange={(v)=>{ setAppTheme({ theme:v }); localStorage.setItem('pos-theme', v); window.location.reload(); }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        default:
+          return null;
+      }
+    }
+
+    if (section === 'security') {
+      switch (subsection) {
+        case 'general':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Security Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Switch checked={securityGeneral.requireStrongPasswords} onCheckedChange={(c)=>setSecurityGeneral(p=>({...p, requireStrongPasswords:c}))} />
+                  <Label>Require strong passwords</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={securityGeneral.twoFactorAuth} onCheckedChange={(c)=>setSecurityGeneral(p=>({...p, twoFactorAuth:c}))} />
+                  <Label>Enable 2FA (simulated)</Label>
+                </div>
+                <Button onClick={()=>{ saveLocal('pos-security', securityGeneral); showSaveToast(); }}>Save</Button>
+              </CardContent>
+            </Card>
+          );
+        case 'sessions':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Management</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-muted-foreground">Active sessions:</p>
+                <ul className="list-disc ml-6 text-sm">
+                  <li>Browser: {navigator.userAgent}</li>
+                  <li>Login: {new Date().toLocaleString()}</li>
+                </ul>
+                <Button variant="outline" onClick={()=> toast.success('Other sessions revoked (simulated)')}>Revoke Others</Button>
+              </CardContent>
+            </Card>
+          );
+        case 'audit':
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Audit & Logs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {auditLogs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No audit logs found.</p>
+                ) : (
+                  <ul className="list-disc ml-6 text-sm">
+                    {auditLogs.map((l, i)=>(<li key={i}>{l}</li>))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          );
+        default:
+          return null;
+      }
+    }
+
     if (section === 'users') {
       return <SystemUsersReferrals />;
     }
 
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Settings content for {section} - {subsection}</p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   };
 
   return (
