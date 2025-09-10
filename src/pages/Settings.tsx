@@ -201,7 +201,7 @@ const Settings = () => {
     }
   }, [editId, mode, subsection, businesses]);
 
-  const handleSaveBusiness = () => {
+  const handleSaveBusiness = async () => {
     if (!businessForm.businessName) {
       toast.error('Business name is required');
       return;
@@ -212,12 +212,40 @@ const Settings = () => {
       operatingHours
     };
 
+    // Persist to local context for UI responsiveness
     if (editId) {
       updateBusiness(editId, businessData);
-      toast.success('Business updated successfully!');
     } else {
       addBusiness(businessData);
-      toast.success('Business created successfully!');
+    }
+
+    // Persist to Supabase companies (with extended columns)
+    try {
+      const mod = await import('@/integrations/supabase/client');
+      const { data: existing } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+      const payload: any = {
+        name: businessForm.businessName,
+        plan_id: null,
+        business_type: businessForm.businessType || null,
+        tax_id: businessForm.taxId || null,
+        business_license: businessForm.businessLicense || null,
+        phone: businessForm.phone || null,
+        email: businessForm.email || null,
+        logo_url: businessForm.logoUrl || null,
+        address: businessForm.address || null,
+        city: businessForm.city || null,
+        state: businessForm.state || null,
+        postal_code: businessForm.postalCode || null,
+        country: businessForm.country || null,
+      };
+      if (existing?.id) {
+        await mod.supabase.from('companies').update(payload).eq('id', existing.id);
+      } else {
+        await mod.supabase.from('companies').insert(payload);
+      }
+      toast.success('Business saved');
+    } catch (e) {
+      // Non-blocking: DB may be unavailable
     }
 
     // Navigate back to business list
