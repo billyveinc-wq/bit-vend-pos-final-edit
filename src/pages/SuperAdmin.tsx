@@ -685,7 +685,7 @@ const SuperAdmin = () => {
                           promoCode: up?.promo_code?.code || up?.promo_code_id || (u.user_metadata?.referral_code || '-'),
                           influencerName: up?.promo_code?.influencer_name || up?.influencer_name || (u.user_metadata?.referral_name || '-'),
                           createdAt: u.created_at || u.createdAt || '-',
-                          lastLogin: u.last_sign_in_at || u.lastLogin || '-',
+                          lastLogin: u.last_sign_in_at || '-'
                         };
                       });
                       setRegistrations(regs);
