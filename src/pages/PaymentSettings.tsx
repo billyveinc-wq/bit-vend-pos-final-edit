@@ -237,8 +237,10 @@ const PaymentSettings: React.FC = () => {
         .from('payment_provider_settings')
         .upsert(payload, { onConflict: 'company_id,provider_key' });
       if (error) throw error;
+      const { data: s } = await supabase.auth.getSession();
       await supabase.from('payment_audit_logs').insert({
         company_id: companyId,
+        user_id: s?.session?.user?.id || null,
         action: 'update_settings',
         details: { provider }
       });
