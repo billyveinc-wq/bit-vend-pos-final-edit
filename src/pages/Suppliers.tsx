@@ -126,7 +126,7 @@ const Suppliers = () => {
             notes: formData.notes || null,
             is_active: formData.isActive,
           })
-          .eq('id', Number(editingSupplier.id));
+          .eq('id', editingSupplier.id);
         if (error) { toast.error(error.message); return; }
         setSuppliers(prev => prev.map(supplier =>
           supplier.id === editingSupplier.id
