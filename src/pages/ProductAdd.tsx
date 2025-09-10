@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const categories = ["Electronics", "Beverages", "Food", "Clothing", "Books", "Health"];
 const brands = ["Apple", "Samsung", "Nike", "Adidas", "Generic"];
@@ -138,7 +139,7 @@ const ProductAdd = () => {
       });
       
       toast.success("Product added successfully!");
-      navigate('/products');
+      navigate('/dashboard/products');
     } catch (error) {
       toast.error("Error adding product. Please try again.");
       console.error('Error adding product:', error);
@@ -146,7 +147,7 @@ const ProductAdd = () => {
   };
 
   const handleCancel = () => {
-    navigate('/products');
+    navigate('/dashboard/products');
   };
 
   const handleReset = () => {
