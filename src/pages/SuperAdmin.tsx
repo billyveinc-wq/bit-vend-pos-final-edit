@@ -633,12 +633,13 @@ const SuperAdmin = () => {
         </Card>
       </div>
 
-      {/* Main Tabs: Promo / Registrations / System Users / Alerts */}
+      {/* Main Tabs: Promo / Registrations / System Users / Billing / Alerts */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-4 mb-4">
+        <TabsList className="grid w-full grid-cols-5 mb-4">
           <TabsTrigger value="promo">Promo Codes</TabsTrigger>
           <TabsTrigger value="registrations">Registrations</TabsTrigger>
           <TabsTrigger value="system">System Users</TabsTrigger>
+          <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="alerts">System Alerts</TabsTrigger>
         </TabsList>
 
@@ -689,6 +690,41 @@ const SuperAdmin = () => {
                   </TableBody>
                 </Table>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="billing">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Billing & Payments</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => (window.location.href = '/dashboard/subscription')}>Open Subscription Manager</Button>
+                  <Button variant="outline" onClick={() => (window.location.href = '/dashboard/payment-settings')}>Configure Payment Providers</Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">Manage global billing, review tenant subscriptions, and link the receiving accounts users will pay to via Payment Settings.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">How payments are received</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">Each business configures its own provider credentials (M-Pesa, PayPal, Flutterwave) under Payment Settings. Ensure these are set to the correct merchant accounts.</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Plans and Subscriptions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">Use Subscription Manager to view/upgrade plans, trials, and billing cycles. For recurring cards, use the card-capable provider configured by the business.</p>
+                  </CardContent>
+                </Card>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
