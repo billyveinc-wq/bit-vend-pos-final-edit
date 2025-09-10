@@ -236,6 +236,42 @@ const AuthPage = () => {
         console.warn('Failed to upsert new user into system_users', err);
       }
 
+      // Create starter plan trial (14 days) if no plan chosen
+      try {
+        if (signUpData?.user) {
+          const now = new Date();
+          const expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+          await supabase.from('user_subscriptions').insert({
+            user_id: signUpData.user.id,
+            plan_id: 'starter',
+            status: 'active',
+            started_at: now.toISOString(),
+            expires_at: expires.toISOString()
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to create trial subscription', err);
+      }
+
+      // Link user to company (create if missing) and reflect in registrations
+      try {
+        if (signUpData?.user && companyName) {
+          // Find or create company
+          const { data: existing } = await supabase.from('companies').select('id').eq('name', companyName).maybeSingle();
+          let companyId = existing?.id as number | undefined;
+          if (!companyId) {
+            const { data: created, error: cErr } = await supabase.from('companies').insert({ name: companyName }).select('id').single();
+            if (!cErr) companyId = created.id;
+          }
+          if (companyId) {
+            await supabase.from('company_users').upsert({ company_id: companyId, user_id: signUpData.user.id, role: 'owner' });
+            await supabase.from('system_users').update({ company_id: companyId }).eq('id', signUpData.user.id);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to link user to company', err);
+      }
+
       // If a promo/referral code was provided, check if it exists and attach to user_promotions
       if (referralCodeInput && signUpData?.user) {
         try {
