@@ -139,12 +139,13 @@ const Users = () => {
       toast.success('User updated successfully!');
     } else {
       try {
-        // Create user via Supabase Auth using a temporary random password
-        const tempPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).toUpperCase().slice(2);
+        // Validate password input on create
+        if (formData.password.length < 8) { toast.error('Password must be at least 8 characters'); return; }
+        if (formData.password !== formData.confirmPassword) { toast.error('Passwords do not match'); return; }
         const restrictions = restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false };
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
-          password: tempPassword,
+          password: formData.password,
           options: {
             data: {
               username: formData.username,
@@ -169,19 +170,10 @@ const Users = () => {
           });
         }
 
-        // Send password reset email to force password change on first access (use default redirect to avoid invalid URL errors)
-        {
-          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(formData.email);
-          if (resetErr) {
-            console.warn('resetPasswordForEmail error:', resetErr);
-            toast.error(resetErr.message);
-          }
-        }
-
         // Ensure admin stays logged in (sign out any accidental session switch)
         try { await supabase.auth.getSession().then(async ({ data }) => { if (data.session?.user?.email === formData.email) await supabase.auth.signOut(); }); } catch {}
 
-        toast.success('User invited. Email sent with a link to set password and login.');
+        toast.success('User created successfully with the specified password.');
       } catch (err) {
         console.error('Create user error', err);
         toast.error('Failed to create user');
@@ -433,8 +425,8 @@ const Users = () => {
                         type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                        placeholder="Enter password"
-                        required={false}
+                        placeholder="Enter password (min 8 characters)"
+                        required={!editingUser}
                       />
                       <button
                         type="button"
