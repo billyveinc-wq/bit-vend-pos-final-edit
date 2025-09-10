@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Eye, HandCoins, FileDown, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,9 +43,35 @@ const Income = () => {
     paymentMethod: ''
   });
 
-  const [incomes] = useState<Income[]>([
-  ]
-  )
+  const [incomes, setIncomes] = useState<Income[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('income')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          const mapped: Income[] = data.map((row: any) => ({
+            id: String(row.id),
+            title: row.title,
+            amount: Number(row.amount) || 0,
+            category: row.category,
+            source: row.source,
+            date: row.date,
+            description: row.description || '',
+            status: (row.status || 'received') as Income['status'],
+            paymentMethod: row.payment_method || '',
+          }));
+          setIncomes(mapped);
+        }
+      } catch (e) {
+        console.warn('Failed to load income');
+      }
+    };
+    load();
+  }, []);
 
   const filteredIncomes = useMemo(() => {
     return incomes.filter(income =>
@@ -54,20 +81,71 @@ const Income = () => {
     );
   }, [incomes, searchTerm]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.title || !formData.amount || !formData.category || !formData.source) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
 
-    toast({
-      title: editingIncome ? "Income Updated" : "Income Added",
-      description: `Income record has been ${editingIncome ? 'updated' : 'added'} successfully`,
-    });
+    try {
+      if (editingIncome) {
+        const { error } = await supabase
+          .from('income')
+          .update({
+            title: formData.title,
+            amount: parseFloat(formData.amount) || 0,
+            category: formData.category,
+            source: formData.source,
+            date: formData.date,
+            description: formData.description || null,
+            payment_method: formData.paymentMethod || null,
+          })
+          .eq('id', Number(editingIncome.id));
+        if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+        setIncomes(prev => prev.map(i => i.id === editingIncome.id ? {
+          ...i,
+          title: formData.title,
+          amount: parseFloat(formData.amount) || 0,
+          category: formData.category,
+          source: formData.source,
+          date: formData.date,
+          description: formData.description || '',
+          paymentMethod: formData.paymentMethod || ''
+        } : i));
+        toast({ title: 'Income Updated', description: 'Income record has been updated successfully' });
+      } else {
+        const { data, error } = await supabase
+          .from('income')
+          .insert({
+            title: formData.title,
+            amount: parseFloat(formData.amount) || 0,
+            category: formData.category,
+            source: formData.source,
+            date: formData.date,
+            description: formData.description || null,
+            status: 'received',
+            payment_method: formData.paymentMethod || null,
+          })
+          .select('*')
+          .single();
+        if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+        const newIncome: Income = {
+          id: String(data.id),
+          title: data.title,
+          amount: Number(data.amount) || 0,
+          category: data.category,
+          source: data.source,
+          date: data.date,
+          description: data.description || '',
+          status: (data.status || 'received') as Income['status'],
+          paymentMethod: data.payment_method || '',
+        };
+        setIncomes(prev => [newIncome, ...prev]);
+        toast({ title: 'Income Added', description: 'Income record has been added successfully' });
+      }
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to save income', variant: 'destructive' });
+    }
 
     resetForm();
   };
@@ -99,11 +177,16 @@ const Income = () => {
     });
   };
 
-  const handleDelete = () => {
-    toast({
-      title: "Income Deleted",
-      description: "Income record has been deleted successfully",
-    });
+  const handleDelete = async (id?: string) => {
+    if (!id) return;
+    try {
+      const { error } = await supabase.from('income').delete().eq('id', Number(id));
+      if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
+      setIncomes(prev => prev.filter(i => i.id !== id));
+      toast({ title: 'Income Deleted', description: 'Income record has been deleted successfully' });
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to delete income', variant: 'destructive' });
+    }
   };
 
   const getStatusColor = (status: string) => {
