@@ -112,6 +112,14 @@ const Application = () => {
 
   const handleSaveSettings = async () => {
     await saveAppSetting('application_settings', appSettings);
+    try {
+      const mod = await import('@/integrations/supabase/client');
+      const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+      const companyId = comp?.id;
+      if (companyId) {
+        await mod.supabase.from('app_settings').upsert({ company_id: companyId, key: 'support_email', value: appSettings.supportEmail }, { onConflict: 'company_id,key' });
+      }
+    } catch {}
     localStorage.setItem('pos-application-settings', JSON.stringify(appSettings));
     toast.success('Application settings saved successfully!');
   };
