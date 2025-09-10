@@ -100,6 +100,23 @@ const Roles = () => {
         );
       } catch {}
       try {
+        // Ensure default admin role with full permissions
+        let adminRoleId: number | undefined;
+        const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
+        if (!adminRole?.id) {
+          const { data: created } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+          adminRoleId = created?.id;
+        } else {
+          adminRoleId = adminRole.id;
+        }
+        if (adminRoleId) {
+          const { data: allPerms } = await supabase.from('permissions').select('id');
+          await supabase.from('role_permissions').delete().eq('role_id', adminRoleId);
+          const rows = (allPerms || []).map((p: any) => ({ role_id: adminRoleId as number, permission_id: p.id }));
+          if (rows.length) await supabase.from('role_permissions').insert(rows);
+        }
+      } catch {}
+      try {
         // Load permissions to build id map
         const { data: per } = await supabase.from('permissions').select('id, key');
         const map: Record<string, number> = {};
