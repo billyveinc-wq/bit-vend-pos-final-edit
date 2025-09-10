@@ -1163,47 +1163,57 @@ const Settings = () => {
     return null;
   };
 
+  const getFirstSubsection = (sec: string) => {
+    const group = sidebarItems.find((s) => s.section === sec);
+    return group?.items?.[0]?.id || '';
+  };
+
   return (
-    <div className="flex h-full bg-background">
-      {/* Sidebar */}
-      <div className="w-64 border-r bg-card p-4 space-y-2 overflow-y-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-          <p className="text-sm text-muted-foreground">Configure your system</p>
-        </div>
-        
-        {sidebarItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.section} className="space-y-1">
-              <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground">
-                <Icon className="h-4 w-4" />
-                {item.title}
-              </div>
-              {item.items.map((subItem) => {
-                const SubIcon = subItem.icon;
-                const isActive = section === item.section && subsection === subItem.id;
-                return (
-                  <Button
-                    key={subItem.id}
-                    variant={isActive ? "secondary" : "ghost"}
-                    className="w-full justify-start gap-2 h-9"
-                    onClick={() => updateSearchParams(item.section, subItem.id)}
-                  >
-                    <SubIcon className="h-4 w-4" />
-                    {subItem.label}
-                  </Button>
-                );
-              })}
-            </div>
-          );
-        })}
+    <div className="p-6 space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="text-sm text-muted-foreground">Configure your system</p>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        {renderContent()}
-      </div>
+      {/* Top-level sections as tabs */}
+      <Tabs
+        value={section}
+        onValueChange={(val) => updateSearchParams(val, getFirstSubsection(val))}
+      >
+        <TabsList className="flex flex-wrap">
+          {sidebarItems.map((grp) => (
+            <TabsTrigger key={grp.section} value={grp.section} className="capitalize">
+              {grp.title}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {sidebarItems.map((grp) => {
+          const activeSub = section === grp.section ? subsection : getFirstSubsection(grp.section);
+          return (
+            <TabsContent key={grp.section} value={grp.section} className="space-y-4">
+              {/* Subsections for the active section */}
+              {grp.items && grp.items.length > 0 && (
+                <Tabs
+                  value={activeSub}
+                  onValueChange={(sub) => updateSearchParams(grp.section, sub)}
+                >
+                  <TabsList className="flex flex-wrap">
+                    {grp.items.map((it) => (
+                      <TabsTrigger key={it.id} value={it.id} className="capitalize">
+                        {it.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              )}
+
+              {/* Render the detailed content for the current selection */}
+              {section === grp.section && renderContent()}
+            </TabsContent>
+          );
+        })}
+      </Tabs>
     </div>
   );
 };
