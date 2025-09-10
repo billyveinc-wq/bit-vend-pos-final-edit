@@ -118,9 +118,17 @@ const MoneyTransfer = () => {
       }).select('*').single();
       if (error) { toast.error(error.message); return; }
 
-      if (fromAcc) await supabase.rpc('noop');
-      if (fromAcc) await supabase.from('bank_accounts').update({ balance: supabase.sql`balance - ${parseFloat(formData.amount)}` }).eq('id', Number(fromAcc.id));
-      if (toAcc) await supabase.from('bank_accounts').update({ balance: supabase.sql`balance + ${parseFloat(formData.amount)}` }).eq('id', Number(toAcc.id));
+      // Update balances sequentially
+      if (fromAcc) {
+        const { data: fromRow } = await supabase.from('bank_accounts').select('balance').eq('id', Number(fromAcc.id)).maybeSingle();
+        const fromBal = Number(fromRow?.balance || 0);
+        await supabase.from('bank_accounts').update({ balance: fromBal - parseFloat(formData.amount) }).eq('id', Number(fromAcc.id));
+      }
+      if (toAcc) {
+        const { data: toRow } = await supabase.from('bank_accounts').select('balance').eq('id', Number(toAcc.id)).maybeSingle();
+        const toBal = Number(toRow?.balance || 0);
+        await supabase.from('bank_accounts').update({ balance: toBal + parseFloat(formData.amount) }).eq('id', Number(toAcc.id));
+      }
       await supabase.from('money_transfers').update({ status: 'completed' }).eq('id', data.id);
 
       const newTransfer: MoneyTransfer = {
