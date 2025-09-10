@@ -50,6 +50,8 @@ const SalesReturn = () => {
   const [dateFilter, setDateFilter] = useState('today');
 
   const [salesReturns, setSalesReturns] = useState<SalesReturn[]>([]);
+  const [processOpen, setProcessOpen] = useState(false);
+  const [processForm, setProcessForm] = useState({ customer: '', originalInvoice: '', refundMethod: 'cash', reason: '', amount: '', date: '' });
 
   useEffect(() => {
     const load = async () => {
