@@ -613,7 +613,13 @@ const Settings = () => {
   // Hardware settings state
   const [printerSettings, setPrinterSettings] = useState({
     paperWidth: 80,
-    printLogo: true
+    printLogo: true,
+    connectionType: 'usb',
+    deviceName: '',
+    ipAddress: '',
+    cutPaper: true,
+    kickDrawerAfterPrint: true,
+    printDensity: 100
   });
   const [barcodeSettings, setBarcodeSettings] = useState({
     testInput: ''
