@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PRODUCTS } from '@/data/posData';
 import ReportsTable from '@/components/ReportsTable';
 import BusinessReports from '@/components/BusinessReports';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -66,8 +67,46 @@ const SalesReport: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [activeView, setActiveView] = useState<'overview' | 'detailed' | 'products' | 'customers'>('overview');
 
-  // Use real database data - placeholder data removed for clean production app
-  const [sales] = useState<Sale[]>([]);
+  // Load sales from Supabase
+  const [sales, setSales] = useState<Sale[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('id, invoice_number, subtotal, tax_amount, discount_amount, total_amount, payment_method, payment_status, created_at, sale_items ( product_id, quantity, unit_price, total_amount )')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Sale[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          invoiceNo: row.invoice_number || '-',
+          date: new Date(row.created_at).toISOString().split('T')[0],
+          time: new Date(row.created_at).toLocaleTimeString(),
+          customerName: undefined,
+          customerPhone: undefined,
+          items: (row.sale_items || []).map((it: any) => ({
+            productId: String(it.product_id) as any,
+            productName: '',
+            quantity: Number(it.quantity) || 0,
+            unitPrice: Number(it.unit_price) || 0,
+            total: Number(it.total_amount) || 0,
+          })),
+          subtotal: Number(row.subtotal) || 0,
+          tax: Number(row.tax_amount) || 0,
+          discount: Number(row.discount_amount) || 0,
+          total: Number(row.total_amount) || 0,
+          paymentMethod: (row.payment_method || 'cash') as any,
+          status: (row.payment_status || 'completed') as any,
+          cashier: '',
+        }));
+        setSales(mapped);
+      } catch (e) {
+        console.warn('Failed to load sales report');
+      }
+    };
+    load();
+  }, []);
 
   // Filter sales based on date range and filters
   const filteredSales = useMemo(() => {
