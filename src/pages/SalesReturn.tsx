@@ -318,6 +318,45 @@ const SalesReturn = () => {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={processOpen} onOpenChange={setProcessOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Process Return</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleProcessSubmit} className="space-y-3">
+            <div>
+              <Label htmlFor="pr-date">Return Date</Label>
+              <Input id="pr-date" type="date" value={processForm.date} onChange={(e) => setProcessForm(prev => ({ ...prev, date: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="pr-amount">Amount</Label>
+              <Input id="pr-amount" type="number" step="0.01" value={processForm.amount} onChange={(e) => setProcessForm(prev => ({ ...prev, amount: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="pr-method">Refund Method</Label>
+              <Select value={processForm.refundMethod} onValueChange={(v) => setProcessForm(prev => ({ ...prev, refundMethod: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="store_credit">Store Credit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="pr-reason">Reason</Label>
+              <Textarea id="pr-reason" value={processForm.reason} onChange={(e) => setProcessForm(prev => ({ ...prev, reason: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setProcessOpen(false)}>Cancel</Button>
+              <Button type="submit">Create Return</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
