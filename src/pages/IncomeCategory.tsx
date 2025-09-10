@@ -17,6 +17,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface IncomeCategory {
   id: string;
@@ -42,36 +43,88 @@ const IncomeCategory = () => {
 
   const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('income_categories')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: IncomeCategory[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          name: row.name,
+          description: row.description || '',
+          color: row.color || '#10b981',
+          isActive: !!row.is_active,
+          incomeCount: Number(row.income_count) || 0,
+          totalAmount: Number(row.total_amount) || 0,
+          createdAt: row.created_at,
+        }));
+        setIncomeCategories(mapped);
+      } catch (e) {
+        console.warn('Failed to load income categories');
+      }
+    };
+    load();
+  }, []);
+
   const filteredCategories = incomeCategories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name) {
       toast.error('Please enter a category name');
       return;
     }
-    
-    if (editingCategory) {
-      setIncomeCategories(prev => prev.map(category =>
-        category.id === editingCategory.id
-          ? { ...category, ...formData }
-          : category
-      ));
-      toast.success('Income category updated successfully!');
-    } else {
-      const newCategory: IncomeCategory = {
-        id: Date.now().toString(),
-        ...formData,
-        incomeCount: 0,
-        totalAmount: 0,
-        createdAt: new Date().toISOString()
-      };
-      setIncomeCategories(prev => [...prev, newCategory]);
-      toast.success('Income category created successfully!');
+
+    try {
+      if (editingCategory) {
+        const { error } = await supabase
+          .from('income_categories')
+          .update({
+            name: formData.name,
+            description: formData.description || null,
+            is_active: formData.isActive,
+          })
+          .eq('id', editingCategory.id);
+        if (error) { toast.error(error.message); return; }
+        setIncomeCategories(prev => prev.map(category =>
+          category.id === editingCategory.id
+            ? { ...category, ...formData }
+            : category
+        ));
+        toast.success('Income category updated successfully!');
+      } else {
+        const { data, error } = await supabase
+          .from('income_categories')
+          .insert({
+            name: formData.name,
+            description: formData.description || null,
+            is_active: formData.isActive,
+          })
+          .select('*')
+          .single();
+        if (error) { toast.error(error.message); return; }
+        const newCategory: IncomeCategory = {
+          id: String(data.id),
+          name: data.name,
+          description: data.description || '',
+          color: data.color || '#10b981',
+          isActive: !!data.is_active,
+          incomeCount: Number(data.income_count) || 0,
+          totalAmount: Number(data.total_amount) || 0,
+          createdAt: data.created_at,
+        };
+        setIncomeCategories(prev => [newCategory, ...prev]);
+        toast.success('Income category created successfully!');
+      }
+    } catch (err) {
+      toast.error('Failed to save income category');
     }
 
     setIsDialogOpen(false);
@@ -89,10 +142,16 @@ const IncomeCategory = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this income category?')) {
-      setIncomeCategories(prev => prev.filter(category => category.id !== id));
-      toast.success('Income category deleted successfully!');
+      try {
+        const { error } = await supabase.from('income_categories').delete().eq('id', id);
+        if (error) { toast.error(error.message); return; }
+        setIncomeCategories(prev => prev.filter(category => category.id !== id));
+        toast.success('Income category deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete income category');
+      }
     }
   };
 
