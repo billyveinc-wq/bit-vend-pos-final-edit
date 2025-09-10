@@ -805,16 +805,13 @@ const SuperAdmin = () => {
                             <Button variant="destructive" size="sm" onClick={async () => {
                               if (!confirm('Delete this system user and related data?')) return;
                               try {
-                                const adminKey = localStorage.getItem('admin-api-key') || '';
-                                const resp = await fetch('/admin/delete-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey }, body: JSON.stringify({ userId: su.id }) });
-                                if (resp.ok) {
-                                  setSystemUsersList(prev => prev.filter(x => x.id !== su.id));
-                                  toast.success('User deleted via admin endpoint');
-                                } else {
-                                  await supabase.from('system_users').delete().eq('id', su.id);
-                                  setSystemUsersList(prev => prev.filter(x => x.id !== su.id));
-                                  toast.success('System user removed (auth user may still exist)');
-                                }
+                                // Delete public system user row (auth user will remain in auth.users)
+                                await supabase.from('system_users').delete().eq('id', su.id);
+                                await supabase.from('company_users').delete().eq('user_id', su.id);
+                                await supabase.from('user_subscriptions').delete().eq('user_id', su.id);
+                                await supabase.from('user_promotions').delete().eq('user_id', su.id);
+                                setSystemUsersList(prev => prev.filter(x => x.id !== su.id));
+                                toast.success('System user and related public data removed (auth user may still exist)');
                               } catch (err) {
                                 console.error('Delete system user error', err);
                                 toast.error('Failed to delete system user');
