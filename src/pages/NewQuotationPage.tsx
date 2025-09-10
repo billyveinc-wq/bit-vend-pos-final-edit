@@ -23,14 +23,8 @@ const NewQuotationPage = () => {
   const [notesTouched, setNotesTouched] = useState(false);
   const [validTouched, setValidTouched] = useState(false);
 
-  useEffect(() => {
-    const t = (location.state as any)?.template;
-    if (t) setFormData((prev) => ({ ...prev, template: t }));
-  }, [location.state]);
-
-  useEffect(() => {
-    if (notesTouched) return;
-    const defaults: Record<string, string> = {
+  const applyTemplateDefaults = (tpl: string) => {
+    const noteDefaults: Record<string, string> = {
       standard: 'Thank you for considering our offer. Prices valid for 7 days.',
       detailed: 'Detailed quotation including terms and conditions. Payment due within 14 days of acceptance.',
       service: 'Service quotation. Scope of work as discussed. Timesheets will be provided on completion.',
@@ -43,12 +37,6 @@ const NewQuotationPage = () => {
       rental: 'Rental quotation. Items remain property of the company. Late fees may apply.',
       installation: 'Installation quotation. Includes setup, configuration, and basic training.'
     };
-    const next = defaults[formData.template as keyof typeof defaults] || '';
-    setFormData(prev => ({ ...prev, notes: next }));
-  }, [formData.template, notesTouched]);
-
-  useEffect(() => {
-    if (validTouched) return;
     const validityDays: Record<string, number> = {
       standard: 7,
       detailed: 14,
@@ -62,16 +50,24 @@ const NewQuotationPage = () => {
       rental: 7,
       installation: 14
     };
-    const days = validityDays[formData.template as keyof typeof validityDays];
-    if (!days) return;
+    const days = validityDays[tpl] || 0;
     const d = new Date();
     d.setDate(d.getDate() + days);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
-    const formatted = `${yyyy}-${mm}-${dd}`;
-    setFormData(prev => ({ ...prev, validUntil: formatted }));
-  }, [formData.template, validTouched]);
+    const formatted = days ? `${yyyy}-${mm}-${dd}` : '';
+    setFormData(prev => ({ ...prev, template: tpl, notes: noteDefaults[tpl] || '', validUntil: formatted }));
+    setNotesTouched(false);
+    setValidTouched(false);
+  };
+
+  useEffect(() => {
+    const t = (location.state as any)?.template;
+    if (t) applyTemplateDefaults(t);
+  }, [location.state]);
+
+
 
   const handleSave = async () => {
     if (!formData.customer || !formData.email) {
@@ -125,6 +121,32 @@ const NewQuotationPage = () => {
           <CardTitle>Quotation Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <Label htmlFor="template">Template</Label>
+              <Select value={formData.template} onValueChange={(v) => applyTemplateDefaults(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="detailed">Detailed</SelectItem>
+                  <SelectItem value="service">Service</SelectItem>
+                  <SelectItem value="product">Product</SelectItem>
+                  <SelectItem value="wholesale">Wholesale</SelectItem>
+                  <SelectItem value="pro_forma">Pro Forma</SelectItem>
+                  <SelectItem value="subscription">Subscription</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="consulting">Consulting</SelectItem>
+                  <SelectItem value="rental">Rental</SelectItem>
+                  <SelectItem value="installation">Installation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Badge variant="outline" className="w-full justify-center">Using: {formData.template}</Badge>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="customer">Customer Name *</Label>
