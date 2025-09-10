@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import PaymentSettings from './PaymentSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,7 +43,6 @@ import {
   Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
-import React, { useMemo } from 'react';
 
 const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
