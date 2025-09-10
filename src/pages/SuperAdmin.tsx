@@ -95,7 +95,7 @@ const SuperAdmin = () => {
     try {
       const { data, error } = await supabase.from('system_users').select('*');
       if (error) throw error;
-      const users = data || [];
+      const users = (data || []).filter((u: any) => Boolean(u?.user_metadata?.created_by_admin));
       const ids = users.map((u: any) => u.id);
       const { data: urs } = await supabase.from('user_roles').select('user_id, role_id').in('user_id', ids.length ? ids : ['none']);
       const roleIds = Array.from(new Set((urs || []).map((r: any) => r.role_id)));
