@@ -36,13 +36,41 @@ const useCompany = () => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
+
+      // 1) Try company_users link
+      const { data: cu } = await supabase
         .from('company_users')
         .select('company_id, role')
         .eq('user_id', user.id)
         .maybeSingle();
-      if (data?.company_id) setCompanyId(Number(data.company_id));
-      if (data?.role) setRole(data.role);
+      if (cu?.company_id) { setCompanyId(Number(cu.company_id)); setRole(cu.role || null); return; }
+
+      // 2) Try system_users.company_id
+      const { data: su } = await supabase
+        .from('system_users')
+        .select('company_id, user_metadata')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (su?.company_id) { setCompanyId(Number(su.company_id)); setRole('owner'); return; }
+
+      // 3) Attach to first company or create a new one
+      const { data: firstCompany } = await supabase.from('companies').select('id, name').order('id').limit(1).maybeSingle();
+      let cid = firstCompany?.id as number | undefined;
+      if (!cid) {
+        const meta = (su as any)?.user_metadata || {};
+        const fallbackName = meta.company_name || (user.email ? user.email.split('@')[0] + "'s Company" : 'My Company');
+        const { data: created } = await supabase.from('companies').insert({ name: fallbackName }).select('id').single();
+        cid = created?.id;
+      }
+      if (cid) {
+        // Make user owner if first in company
+        const { count } = await supabase.from('company_users').select('id', { count: 'exact', head: true }).eq('company_id', cid);
+        const isFirst = (count || 0) === 0;
+        await supabase.from('company_users').upsert({ company_id: cid, user_id: user.id, role: isFirst ? 'owner' : 'member' });
+        await supabase.from('system_users').update({ company_id: cid }).eq('id', user.id);
+        setCompanyId(Number(cid));
+        setRole(isFirst ? 'owner' : 'member');
+      }
     })();
   }, []);
 
@@ -195,15 +223,12 @@ const PaymentSettings: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!companyId) return;
+      if (!companyId) { setLoading(false); return; }
       const { data, error } = await supabase
         .from('payment_provider_settings')
         .select('provider_key, enabled, credentials')
         .eq('company_id', companyId);
-      if (error) {
-        setLoading(false);
-        return;
-      }
+      if (error) { setLoading(false); return; }
       const next: any = { ...settings };
       (data || []).forEach((row: any) => {
         const key = row.provider_key as ProviderKey;
@@ -289,6 +314,8 @@ const PaymentSettings: React.FC = () => {
 
       {loading ? (
         <div className="p-6 text-muted-foreground">Loading...</div>
+      ) : !companyId ? (
+        <Card className="p-6"><CardDescription>No company linked to your account yet. A default company has been created and linked. Please refresh.</CardDescription></Card>
       ) : (
         <Accordion type="multiple" className="space-y-4">
           {(Object.keys(providerLabels) as ProviderKey[]).map((p) => (
