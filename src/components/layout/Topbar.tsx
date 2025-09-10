@@ -443,30 +443,75 @@ const Topbar: React.FC<TopbarProps> = ({
 
       {/* User email compose dialog */}
       <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Send Email</DialogTitle>
+            <DialogTitle>New Message</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div>
-              <Label htmlFor="mail-to">To</Label>
-              <Input id="mail-to" value={compose.to} onChange={(e) => setCompose(prev => ({ ...prev, to: e.target.value }))} placeholder="support@company.com" />
-            </div>
-            <div>
-              <Label htmlFor="mail-sub">Subject</Label>
-              <Input id="mail-sub" value={compose.subject} onChange={(e) => setCompose(prev => ({ ...prev, subject: e.target.value }))} placeholder="" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="mail-to">To</Label>
+                <Input id="mail-to" value={compose.to} onChange={(e) => setCompose(prev => ({ ...prev, to: e.target.value }))} placeholder="support@company.com" />
+              </div>
+              <div>
+                <Label htmlFor="mail-cc">Cc</Label>
+                <Input id="mail-cc" value={compose.cc} onChange={(e) => setCompose(prev => ({ ...prev, cc: e.target.value }))} placeholder="" />
+              </div>
+              <div>
+                <Label htmlFor="mail-bcc">Bcc</Label>
+                <Input id="mail-bcc" value={compose.bcc} onChange={(e) => setCompose(prev => ({ ...prev, bcc: e.target.value }))} placeholder="" />
+              </div>
+              <div>
+                <Label htmlFor="mail-sub">Subject</Label>
+                <Input id="mail-sub" value={compose.subject} onChange={(e) => setCompose(prev => ({ ...prev, subject: e.target.value }))} placeholder="" />
+              </div>
             </div>
             <div>
               <Label htmlFor="mail-body">Message</Label>
-              <Input id="mail-body" value={compose.body} onChange={(e) => setCompose(prev => ({ ...prev, body: e.target.value }))} placeholder="" />
+              <Textarea id="mail-body" rows={8} value={compose.body} onChange={(e) => setCompose(prev => ({ ...prev, body: e.target.value }))} placeholder="Write your message..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Attachments</Label>
+              <Input type="file" multiple onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                setCompose(prev => ({ ...prev, attachments: files as File[] }));
+              }} />
+              {compose.attachments.length > 0 && (
+                <div className="max-h-32 overflow-auto border rounded p-2 text-sm">
+                  {compose.attachments.map((f, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <span className="truncate mr-2">{f.name}</span>
+                      <Button variant="ghost" size="sm" onClick={() => setCompose(prev => ({ ...prev, attachments: prev.attachments.filter((_, idx) => idx !== i) }))}>Remove</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Note: Attachments cannot be auto-included via mailto/Gmail URL. You'll need to attach them in the email window.</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
               <Button onClick={() => {
-                const mailto = `mailto:${encodeURIComponent(compose.to)}?subject=${encodeURIComponent(compose.subject)}&body=${encodeURIComponent(compose.body)}`;
+                const params = new URLSearchParams();
+                if (compose.to) params.set('to', compose.to);
+                if (compose.cc) params.set('cc', compose.cc);
+                if (compose.bcc) params.set('bcc', compose.bcc);
+                if (compose.subject) params.set('su', compose.subject);
+                if (compose.body) params.set('body', compose.body);
+                const url = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
+                window.open(url, '_blank');
+                setShowEmailDialog(false);
+              }}>Open in Gmail</Button>
+              <Button onClick={() => {
+                const qp: string[] = [];
+                const enc = (s: string) => encodeURIComponent(s);
+                if (compose.subject) qp.push(`subject=${enc(compose.subject)}`);
+                if (compose.cc) qp.push(`cc=${enc(compose.cc)}`);
+                if (compose.bcc) qp.push(`bcc=${enc(compose.bcc)}`);
+                if (compose.body) qp.push(`body=${enc(compose.body)}`);
+                const mailto = `mailto:${enc(compose.to || '')}${qp.length ? '?' + qp.join('&') : ''}`;
                 window.location.href = mailto;
                 setShowEmailDialog(false);
-              }}>Open Mail</Button>
+              }}>Open Mail App</Button>
             </div>
           </div>
         </DialogContent>
