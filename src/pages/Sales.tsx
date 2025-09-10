@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useSEO } from '@/lib/seo';
 import { useSales } from '@/contexts/SalesContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Sale {
   id: string;
@@ -40,15 +41,75 @@ const Sales = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { sales } = useSales();
+  const { sales: localSales } = useSales();
+  const [dbSales, setDbSales] = useState<any[]>([]);
 
-  const filteredSales = sales.filter(sale =>
-    sale.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (sale.customerName || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('id, invoice_number, subtotal, tax_amount, discount_amount, total_amount, payment_method, payment_status, created_at, sale_items ( quantity, unit_price, total_amount )')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped = (data || []).map((row: any) => ({
+          id: String(row.id),
+          invoiceNo: row.invoice_number || '-',
+          customerName: '',
+          customerPhone: '',
+          items: (row.sale_items || []).map((it: any) => ({
+            productName: '',
+            quantity: it.quantity,
+            price: Number(it.unit_price) || 0,
+            total: Number(it.total_amount) || 0,
+          })),
+          subtotal: Number(row.subtotal) || 0,
+          tax: Number(row.tax_amount) || 0,
+          discount: Number(row.discount_amount) || 0,
+          total: Number(row.total_amount) || 0,
+          paymentMethod: (row.payment_method || 'cash'),
+          status: (row.payment_status || 'completed'),
+          salesPerson: '',
+          date: new Date(row.created_at).toISOString().split('T')[0],
+          time: new Date(row.created_at).toLocaleTimeString(),
+        }));
+        setDbSales(mapped);
+      } catch (e) {
+        console.warn('Failed to load sales');
+      }
+    };
+    load();
+  }, []);
 
-  const completedSales = sales.filter(s => s.status === 'completed');
-  const totalRevenue = completedSales.reduce((sum, s) => sum + s.total, 0);
+  const allSales = useMemo(() => {
+    const localMapped = (localSales || []).map((s: any) => ({
+      id: s.id || s.invoiceNo,
+      invoiceNo: s.invoiceNo,
+      customerName: s.customerName,
+      customerPhone: s.customerPhone,
+      items: s.items,
+      subtotal: s.subtotal,
+      tax: s.tax,
+      discount: s.discount,
+      total: s.total,
+      paymentMethod: s.paymentMethod,
+      status: s.status,
+      salesPerson: s.salesPerson,
+      date: s.date,
+      time: s.time,
+    }));
+    const byId = new Map<string, any>();
+    [...dbSales, ...localMapped].forEach((s) => byId.set(String(s.id), s));
+    return Array.from(byId.values());
+  }, [dbSales, localSales]);
+
+  const filteredSales = useMemo(() => allSales.filter((sale: any) =>
+    String(sale.invoiceNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(sale.customerName || '').toLowerCase().includes(searchTerm.toLowerCase())
+  ), [allSales, searchTerm]);
+
+  const completedSales = allSales.filter((s: any) => s.status === 'completed');
+  const totalRevenue = completedSales.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
   const averageOrderValue = completedSales.length > 0 ? totalRevenue / completedSales.length : 0;
 
   return (
@@ -73,7 +134,7 @@ const Sales = () => {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{sales.length}</div>
+            <div className="text-2xl font-bold">{allSales.length}</div>
           </CardContent>
         </Card>
 
