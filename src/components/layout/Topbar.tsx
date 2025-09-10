@@ -527,30 +527,39 @@ const Topbar: React.FC<TopbarProps> = ({
               )}
               <p className="text-xs text-muted-foreground">Note: Attachments cannot be auto-included via mailto/Gmail URL. You'll need to attach them in the email window.</p>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
-              <Button onClick={() => {
-                const params = new URLSearchParams();
-                if (compose.to) params.set('to', compose.to);
-                if (compose.cc) params.set('cc', compose.cc);
-                if (compose.bcc) params.set('bcc', compose.bcc);
-                if (compose.subject) params.set('su', compose.subject);
-                if (compose.body) params.set('body', compose.body);
-                const url = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
-                window.open(url, '_blank');
-                setShowEmailDialog(false);
-              }}>Open in Gmail</Button>
-              <Button onClick={() => {
-                const qp: string[] = [];
-                const enc = (s: string) => encodeURIComponent(s);
-                if (compose.subject) qp.push(`subject=${enc(compose.subject)}`);
-                if (compose.cc) qp.push(`cc=${enc(compose.cc)}`);
-                if (compose.bcc) qp.push(`bcc=${enc(compose.bcc)}`);
-                if (compose.body) qp.push(`body=${enc(compose.body)}`);
-                const mailto = `mailto:${enc(compose.to || '')}${qp.length ? '?' + qp.join('&') : ''}`;
-                window.location.href = mailto;
-                setShowEmailDialog(false);
-              }}>Open Mail App</Button>
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <span className="text-sm">Formatting</span>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
+                  const toVal = (compose.to && compose.to.trim()) || (supportEmail || '');
+                  const bodyVal = (editorRef.current?.innerText || compose.body || '').trim();
+                  const params = new URLSearchParams();
+                  if (toVal) params.set('to', toVal);
+                  if (compose.cc) params.set('cc', compose.cc);
+                  if (compose.bcc) params.set('bcc', compose.bcc);
+                  if (compose.subject) params.set('su', compose.subject);
+                  if (bodyVal) params.set('body', bodyVal);
+                  const url = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
+                  window.open(url, '_blank');
+                  setShowEmailDialog(false);
+                }}>Open in Gmail</Button>
+                <Button onClick={() => {
+                  const qp: string[] = [];
+                  const enc = (s: string) => encodeURIComponent(s);
+                  const toVal = (compose.to && compose.to.trim()) || (supportEmail || '');
+                  const bodyVal = (editorRef.current?.innerText || compose.body || '').trim();
+                  if (compose.subject) qp.push(`subject=${enc(compose.subject)}`);
+                  if (compose.cc) qp.push(`cc=${enc(compose.cc)}`);
+                  if (compose.bcc) qp.push(`bcc=${enc(compose.bcc)}`);
+                  if (bodyVal) qp.push(`body=${enc(bodyVal)}`);
+                  const mailto = `mailto:${enc(toVal)}${qp.length ? '?' + qp.join('&') : ''}`;
+                  window.location.href = mailto;
+                  setShowEmailDialog(false);
+                }}>Open Mail App</Button>
+              </div>
             </div>
           </div>
         </DialogContent>
