@@ -73,6 +73,7 @@ import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import ContactPage from "./pages/ContactPage";
 import SystemUpdates from "./pages/SystemUpdates";
+import Profile from "./pages/Profile";
 import { ArrowLeft, Save } from "lucide-react";
 import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
