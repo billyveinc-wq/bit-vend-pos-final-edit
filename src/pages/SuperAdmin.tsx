@@ -758,6 +758,7 @@ const SuperAdmin = () => {
               <div className="flex items-center justify-between">
                 <CardTitle>Billing & Payments</CardTitle>
                 <div className="flex items-center gap-2">
+                  <Button onClick={() => setBillingWizardOpen(true)}>Open Billing Setup Wizard</Button>
                   <Button variant="secondary" onClick={() => (window.location.href = '/dashboard/bank-accounts')}>Manage Bank Accounts</Button>
                 </div>
               </div>
