@@ -116,6 +116,8 @@ const App = () => (
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/auth" element={<AuthPage />} />
+                {/* Legacy direct links redirects */}
+                <Route path="/checkout" element={<Navigate to="/dashboard/checkout" replace />} />
                 
                 {/* POS Application Routes */}
                 <Route path="/dashboard" element={<Layout />}>
