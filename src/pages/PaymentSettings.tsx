@@ -255,7 +255,8 @@ const PaymentSettings: React.FC = () => {
       // Call serverless endpoint which uses stored credentials securely
       const res = await fetch(`/api/payments/${provider}/test`, { method: 'POST' });
       const ok = res.ok;
-      await supabase.from('payment_audit_logs').insert({ company_id: companyId, action: 'test_connection', details: { provider, ok } });
+      const { data: s } = await supabase.auth.getSession();
+      await supabase.from('payment_audit_logs').insert({ company_id: companyId, user_id: s?.session?.user?.id || null, action: 'test_connection', details: { provider, ok } });
       if (ok) toast({ title: 'Connection OK', description: `${providerLabels[provider]} test succeeded` });
       else toast({ title: 'Test failed', description: `${providerLabels[provider]} test failed`, variant: 'destructive' });
     } catch (e: any) {
