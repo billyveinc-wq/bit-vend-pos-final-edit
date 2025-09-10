@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle, PlugZap, Smartphone, CreditCard, Globe2 } from 'lucide-react';
+import { CheckCircle2, XCircle, PlugZap, Smartphone, CreditCard, Globe2, Eye, EyeOff, Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -96,6 +96,20 @@ const ProviderSection: React.FC<{
   onSave: () => Promise<void>;
   onTest: () => Promise<void>;
 }> = ({ provider, value, onChange, onSave, onTest }) => {
+  const [showSecrets, setShowSecrets] = useState(false);
+
+  const toggleSecrets = () => setShowSecrets((s) => !s);
+
+  const copyWebhook = async () => {
+    try {
+      const base = window.location.origin;
+      let path = '';
+      if (provider === 'mpesa') path = '/api/payments/mpesa/callback';
+      else if (provider === 'paypal') path = '/api/payments/paypal/webhook';
+      else if (provider === 'flutterwave') path = '/api/payments/flutterwave/webhook';
+      await navigator.clipboard.writeText(base + path);
+    } catch {}
+  };
   const logo = useMemo(() => {
     switch (provider) {
       case 'mpesa': return <Smartphone className="h-5 w-5" />;
@@ -133,11 +147,21 @@ const ProviderSection: React.FC<{
             </div>
             <div>
               <Label>Consumer Secret</Label>
-              <Input type="password" value={value.credentials.consumerSecret || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, consumerSecret: e.target.value } })} />
+              <div className="relative">
+                <Input type={showSecrets ? 'text' : 'password'} value={value.credentials.consumerSecret || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, consumerSecret: e.target.value } })} />
+                <button type="button" onClick={toggleSecrets} className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
+                  {showSecrets ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                </button>
+              </div>
             </div>
             <div>
               <Label>Passkey (STK Push)</Label>
-              <Input type="password" value={value.credentials.passkey || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, passkey: e.target.value } })} />
+              <div className="relative">
+                <Input type={showSecrets ? 'text' : 'password'} value={value.credentials.passkey || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, passkey: e.target.value } })} />
+                <button type="button" onClick={toggleSecrets} className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
+                  {showSecrets ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                </button>
+              </div>
             </div>
             <div>
               <Label>Shortcode (Paybill/Till)</Label>
@@ -164,7 +188,12 @@ const ProviderSection: React.FC<{
             </div>
             <div>
               <Label>Client Secret</Label>
-              <Input type="password" value={value.credentials.clientSecret || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, clientSecret: e.target.value } })} />
+              <div className="relative">
+                <Input type={showSecrets ? 'text' : 'password'} value={value.credentials.clientSecret || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, clientSecret: e.target.value } })} />
+                <button type="button" onClick={toggleSecrets} className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
+                  {showSecrets ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                </button>
+              </div>
             </div>
             <div>
               <Label>Mode</Label>
@@ -187,11 +216,21 @@ const ProviderSection: React.FC<{
             </div>
             <div>
               <Label>Secret Key</Label>
-              <Input type="password" value={value.credentials.secretKey || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, secretKey: e.target.value } })} />
+              <div className="relative">
+                <Input type={showSecrets ? 'text' : 'password'} value={value.credentials.secretKey || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, secretKey: e.target.value } })} />
+                <button type="button" onClick={toggleSecrets} className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
+                  {showSecrets ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                </button>
+              </div>
             </div>
             <div>
               <Label>Encryption Key</Label>
-              <Input type="password" value={value.credentials.encryptionKey || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, encryptionKey: e.target.value } })} />
+              <div className="relative">
+                <Input type={showSecrets ? 'text' : 'password'} value={value.credentials.encryptionKey || ''} onChange={(e) => onChange({ ...value, credentials: { ...value.credentials, encryptionKey: e.target.value } })} />
+                <button type="button" onClick={toggleSecrets} className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground">
+                  {showSecrets ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                </button>
+              </div>
             </div>
             <div>
               <Label>Environment</Label>
@@ -206,17 +245,20 @@ const ProviderSection: React.FC<{
           </div>
         )}
 
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex items-center gap-3 pt-2 flex-wrap">
           <Button variant="outline" onClick={onTest}>Test Connection</Button>
           <Button onClick={onSave}>Save Settings</Button>
         </div>
 
         <Alert className="mt-2">
-          <AlertDescription>
-            Credentials are stored server-side per business. Webhooks required:
-            /api/payments/mpesa/callback, /api/payments/paypal/webhook, /api/payments/flutterwave/webhook
+          <AlertDescription className="flex items-center justify-between gap-3">
+            <span>Credentials are stored server-side per business. Webhook URL: <code className="px-1 py-0.5 rounded bg-muted text-xs">{typeof window !== 'undefined' ? window.location.origin : ''}{provider === 'mpesa' ? '/api/payments/mpesa/callback' : provider === 'paypal' ? '/api/payments/paypal/webhook' : '/api/payments/flutterwave/webhook'}</code></span>
+            <Button size="sm" variant="outline" className="gap-1" onClick={copyWebhook}><Copy className="h-3 w-3"/> Copy</Button>
           </AlertDescription>
         </Alert>
+        <div className="text-xs text-muted-foreground">
+          Need help? See provider docs {provider === 'mpesa' && (<a className="underline inline-flex items-center gap-1" href="https://developer.safaricom.co.ke" target="_blank" rel="noreferrer">Daraja <ExternalLink className="h-3 w-3"/></a>)}{provider === 'paypal' && (<a className="underline inline-flex items-center gap-1" href="https://developer.paypal.com" target="_blank" rel="noreferrer">PayPal <ExternalLink className="h-3 w-3"/></a>)}{provider === 'flutterwave' && (<a className="underline inline-flex items-center gap-1" href="https://developer.flutterwave.com" target="_blank" rel="noreferrer">Flutterwave <ExternalLink className="h-3 w-3"/></a>)}
+        </div>
       </CardContent>
     </Card>
   );
@@ -324,6 +366,40 @@ const PaymentSettings: React.FC = () => {
         </CardHeader>
       </Card>
 
+      {!loading && companyId && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {(Object.keys(providerLabels) as ProviderKey[]).map((p) => {
+            const val = settings[p];
+            const connected = val.enabled && Object.keys(val.credentials).length > 0;
+            return (
+              <Card key={p} className={connected ? 'border-green-500/40' : ''}>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {p === 'mpesa' ? <Smartphone className="h-5 w-5"/> : p === 'paypal' ? <Globe2 className="h-5 w-5"/> : <CreditCard className="h-5 w-5"/>}
+                    <CardTitle className="text-base">{providerLabels[p]}</CardTitle>
+                  </div>
+                  {connected ? (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">Connected</Badge>
+                  ) : (
+                    <Badge variant="secondary">Not Configured</Badge>
+                  )}
+                </CardHeader>
+                <CardContent className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>Enabled</span>
+                    <Switch checked={val.enabled} onCheckedChange={(c) => setSettings(prev => ({ ...prev, [p]: { ...prev[p], enabled: c } }))} />
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const el = document.getElementById(`provider-${p}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}>Configure</Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
       {loading ? (
         <div className="p-6 text-muted-foreground">Loading...</div>
       ) : !companyId ? (
@@ -332,6 +408,7 @@ const PaymentSettings: React.FC = () => {
         <Accordion type="multiple" className="space-y-4">
           {(Object.keys(providerLabels) as ProviderKey[]).map((p) => (
             <AccordionItem key={p} value={p}>
+              <div id={`provider-${p}`}></div>
               <AccordionTrigger className="text-base font-semibold">{providerLabels[p]}</AccordionTrigger>
               <AccordionContent>
                 <ProviderSection
