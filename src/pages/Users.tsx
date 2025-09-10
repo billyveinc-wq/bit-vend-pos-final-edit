@@ -141,6 +141,7 @@ const Users = () => {
       try {
         // Create user via Supabase Auth using a temporary random password
         const tempPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).toUpperCase().slice(2);
+        const restrictions = restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false };
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: tempPassword,
@@ -151,6 +152,7 @@ const Users = () => {
               last_name: formData.lastName,
               phone: formData.phone,
               role: formData.role,
+              restrictions
             }
           }
         });
