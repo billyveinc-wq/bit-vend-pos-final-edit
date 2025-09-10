@@ -736,6 +736,7 @@ const SuperAdmin = () => {
                 <div className="flex items-center gap-2">
                   <Button onClick={() => (window.location.href = '/dashboard/subscription')}>Open Subscription Manager</Button>
                   <Button variant="outline" onClick={() => (window.location.href = '/dashboard/payment-settings')}>Configure Payment Providers</Button>
+                  <Button variant="secondary" onClick={() => (window.location.href = '/dashboard/bank-accounts')}>Manage Bank Accounts</Button>
                 </div>
               </div>
             </CardHeader>
