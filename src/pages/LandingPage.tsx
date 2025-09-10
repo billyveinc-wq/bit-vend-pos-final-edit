@@ -213,7 +213,7 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-orange-500/10 via-background to-blue-600/10 py-16 lg:py-24">
+      <section className="relative bg-gradient-to-br from-orange-500/10 via-background to-blue-600/10 py-16 lg:py-24" data-animate>
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-blue-600/5" />
         
@@ -355,7 +355,7 @@ const LandingPage = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Accept Payments Your Customers Love</h2>
             <p className="text-muted-foreground">Built-in integrations with leading providers</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto" data-animate>
             <Card className="relative overflow-hidden border-2 border-green-500/30">
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/10 rounded-full blur-2xl" />
               <CardHeader>
@@ -411,7 +411,7 @@ const LandingPage = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 border-y border-border/50">
+      <section className="py-20 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 border-y border-border/50" data-animate>
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
@@ -422,7 +422,7 @@ const LandingPage = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto" data-animate>
             {[
               {
                 name: 'Starter Plan',
@@ -587,7 +587,7 @@ const LandingPage = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto" data-animate>
             {features.map((feature, index) => {
               const IconComponent = feature.icon;
               return (
@@ -625,7 +625,7 @@ const LandingPage = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto" data-animate>
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="hover:shadow-lg transition-all duration-300">
                 <CardHeader>
@@ -651,7 +651,7 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-24">
+      <section className="relative py-24" data-animate>
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-orange-600 to-blue-700"></div>
         <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,.1)_50%,transparent_75%,transparent_100%)]"></div>
         <div className="absolute top-0 left-0 w-full h-full">
