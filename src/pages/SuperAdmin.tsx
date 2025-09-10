@@ -90,6 +90,38 @@ const SuperAdmin = () => {
   const [systemUsersList, setSystemUsersList] = useState<any[]>([]);
   const [loadingSystemUsers, setLoadingSystemUsers] = useState(false);
 
+  const loadSystemUsers = async () => {
+    setLoadingSystemUsers(true);
+    try {
+      const { data, error } = await supabase.from('system_users').select('*');
+      if (error) throw error;
+      const users = data || [];
+      const ids = users.map((u: any) => u.id);
+      const { data: urs } = await supabase.from('user_roles').select('user_id, role_id').in('user_id', ids.length ? ids : ['none']);
+      const roleIds = Array.from(new Set((urs || []).map((r: any) => r.role_id)));
+      const { data: roles } = await supabase.from('roles').select('id, name').in('id', roleIds.length ? roleIds : [0]);
+      const roleNameById = new Map((roles || []).map((r: any) => [r.id, r.name]));
+      const rolesByUser = new Map<string, string[]>();
+      (urs || []).forEach((r: any) => {
+        const arr = rolesByUser.get(r.user_id) || [];
+        const name = roleNameById.get(r.role_id);
+        if (name) arr.push(name);
+        rolesByUser.set(r.user_id, arr);
+      });
+      const enriched = users.map((u: any) => ({ ...u, roles: rolesByUser.get(u.id) || [] }));
+      setSystemUsersList(enriched);
+    } catch (err) {
+      console.error('Load system users error', err);
+      toast.error('Failed to load system users');
+    } finally { setLoadingSystemUsers(false); }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'system') {
+      loadSystemUsers();
+    }
+  }, [activeTab]);
+
   type AlertLevel = 'info' | 'warning' | 'critical';
   type AlertType = 'high_memory' | 'maintenance' | string;
   interface SystemAlert { id: string; type: AlertType; level: AlertLevel; title: string; message: string; data?: any; timestamp?: string; scheduled_at?: string; active?: boolean; }
