@@ -372,10 +372,14 @@ const AuthPage = () => {
         }
       }
 
-      toast.success('Account created! Please check your email to confirm your account.');
-
-      // Show success message
-      setCurrentMode('signin');
+      const selectedPlan = (new URLSearchParams(window.location.search)).get('plan') || 'starter';
+      if (selectedPlan !== 'starter') {
+        toast.success('Account created! Continue to set up billing.');
+        navigate(`/dashboard/subscription?startCheckout=1&plan=${selectedPlan}`);
+      } else {
+        toast.success('Account created! 14-day trial activated.');
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Sign up error:', error);
       toast.error('An unexpected error occurred. Please try again.');
