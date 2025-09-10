@@ -587,7 +587,11 @@ const Settings = () => {
   });
   const [displaySettings, setDisplaySettings] = useState({
     fontScale: 100,
-    compactMode: false
+    compactMode: false,
+    kioskMode: false,
+    showCustomerDisplay: false,
+    numberPadPosition: 'right',
+    highContrast: false
   });
 
   // System settings state
