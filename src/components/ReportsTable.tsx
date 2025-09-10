@@ -350,23 +350,14 @@ const ReportsTable: React.FC = () => {
               Export All ZIP
             </Button>
           </CardTitle>
-          <CardDescription className="flex items-center justify-between gap-3 flex-wrap">
+          <CardDescription className="flex items-center gap-3 flex-wrap">
             <span>Generate, view, and export detailed business reports with advanced filtering</span>
-            <div className="relative w-full sm:max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search reports..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
           </CardDescription>
         </CardHeader>
       <CardContent>
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center mb-6">
+          <div className="flex items-center gap-2 justify-center">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">Category:</span>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -378,7 +369,18 @@ const ReportsTable: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="relative flex items-center justify-center">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search reports..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-full"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-center">
             <span className="text-sm font-medium text-muted-foreground">Type:</span>
             <Select value={selectedType} onValueChange={setSelectedType}>
               <SelectTrigger className="w-40 capitalize"><SelectValue /></SelectTrigger>
