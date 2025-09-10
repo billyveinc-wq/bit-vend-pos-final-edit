@@ -824,6 +824,7 @@ const SuperAdmin = () => {
                       <TableHead className="text-white font-semibold">ID</TableHead>
                       <TableHead className="text-white font-semibold">Email</TableHead>
                       <TableHead className="text-white font-semibold">Company ID</TableHead>
+                      <TableHead className="text-white font-semibold">Roles</TableHead>
                       <TableHead className="text-white font-semibold">Created</TableHead>
                       <TableHead className="text-white font-semibold">Actions</TableHead>
                     </TableRow>
@@ -834,17 +835,45 @@ const SuperAdmin = () => {
                         <TableCell className="text-foreground">{su.id}</TableCell>
                         <TableCell className="text-foreground">{su.email}</TableCell>
                         <TableCell className="text-foreground">{su.company_id || '-'}</TableCell>
+                        <TableCell className="text-foreground">{(su as any).roles?.length ? (su as any).roles.join(', ') : '-'}</TableCell>
                         <TableCell className="text-foreground">{su.created_at || '-'}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={async () => {
+                              try {
+                                // Ensure admin role exists
+                                const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
+                                let roleId = adminRole?.id as number | undefined;
+                                if (!roleId) {
+                                  const { data: created } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+                                  roleId = created?.id;
+                                }
+                                if (!roleId) { toast.error('Failed to resolve admin role'); return; }
+                                // Assign if not already
+                                const { data: existing } = await supabase.from('user_roles').select('user_id, role_id').eq('user_id', su.id).eq('role_id', roleId).maybeSingle();
+                                if (!existing) await supabase.from('user_roles').insert({ user_id: su.id, role_id: roleId });
+                                setSystemUsersList(prev => prev.map(u => u.id === su.id ? { ...u, roles: Array.from(new Set([...(u as any).roles || [], 'admin'])) } : u));
+                                toast.success('Admin role assigned');
+                              } catch (err) { toast.error('Failed to assign admin'); }
+                            }}>Make Admin</Button>
+                            <Button variant="secondary" size="sm" onClick={async () => {
+                              try {
+                                const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
+                                const roleId = adminRole?.id as number | undefined;
+                                if (!roleId) { toast.error('Admin role not found'); return; }
+                                await supabase.from('user_roles').delete().eq('user_id', su.id).eq('role_id', roleId);
+                                setSystemUsersList(prev => prev.map(u => u.id === su.id ? { ...u, roles: ((u as any).roles || []).filter((r: string) => r !== 'admin') } : u));
+                                toast.success('Admin role removed');
+                              } catch (err) { toast.error('Failed to remove admin'); }
+                            }}>Remove Admin</Button>
                             <Button variant="destructive" size="sm" onClick={async () => {
                               if (!confirm('Delete this system user and related data?')) return;
                               try {
-                                // Delete public system user row (auth user will remain in auth.users)
                                 await supabase.from('system_users').delete().eq('id', su.id);
                                 await supabase.from('company_users').delete().eq('user_id', su.id);
                                 await supabase.from('user_subscriptions').delete().eq('user_id', su.id);
                                 await supabase.from('user_promotions').delete().eq('user_id', su.id);
+                                await supabase.from('user_roles').delete().eq('user_id', su.id);
                                 setSystemUsersList(prev => prev.filter(x => x.id !== su.id));
                                 toast.success('System user and related public data removed (auth user may still exist)');
                               } catch (err) {
