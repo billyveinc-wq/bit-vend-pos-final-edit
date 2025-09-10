@@ -580,19 +580,19 @@ const SalesReport: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="flex items-end space-x-2">
-              <Button 
-                variant="outline" 
-                className="flex-1 transition-all duration-200 hover:scale-105"
+
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button
+                variant="outline"
+                className="w-full"
                 onClick={handleRefresh}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1 transition-all duration-200 hover:scale-105"
+              <Button
+                variant="outline"
+                className="w-full whitespace-nowrap"
                 onClick={handleExportData}
               >
                 <Download className="h-4 w-4 mr-2" />
