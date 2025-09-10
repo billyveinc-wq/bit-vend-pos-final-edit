@@ -148,6 +148,32 @@ const Checkout = () => {
     }
 
     try {
+      // If using M-Pesa, trigger STK Push through server using stored company credentials
+      if (paymentMethod === 'Mobile') {
+        if (!companyId) { toast.error('No company linked'); return; }
+        const phone = mpesaPhone.trim();
+        if (!/^\d{10,12}$/.test(phone)) { toast.error('Enter a valid phone number'); return; }
+        const normalized = phone.startsWith('254') ? phone : (phone.startsWith('0') ? `254${phone.slice(1)}` : `254${phone}`);
+        const invoiceProbe = `INV-${Date.now()}`;
+        const resp = await fetch('/api/payments/mpesa/stk-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company_id: companyId,
+            phone: normalized,
+            amount: Number(finalTotal.toFixed(2)),
+            currency: 'KES',
+            reference: invoiceProbe,
+          })
+        });
+        if (!resp.ok) {
+          const msg = await resp.text().catch(()=>'');
+          toast.error(`M-Pesa initiation failed${msg ? `: ${msg}` : ''}`);
+          return;
+        }
+        toast.success('M-Pesa prompt sent. Complete on your phone...');
+      }
+
       const saleItems = cart.map(item => ({
         productId: item.product.id,
         productName: item.product.name,
