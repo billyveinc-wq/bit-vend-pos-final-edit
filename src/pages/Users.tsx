@@ -21,6 +21,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -68,47 +69,68 @@ const Users = () => {
     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
 
     if (!formData.username || !formData.email || !formData.firstName || !formData.lastName || !formData.role) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    if (!editingUser && (!formData.password || formData.password !== formData.confirmPassword)) {
-      toast.error('Password and confirm password must match');
-      return;
-    }
-    const selectedRole = roles.find(r => r.id === formData.role);
-
     if (editingUser) {
+      const selectedRole = roles.find(r => r.id === formData.role);
       setUsers(prev => prev.map(user =>
         user.id === editingUser.id
-          ? { 
-            ...user, 
-            ...formData, 
+          ? {
+            ...user,
+            ...formData,
             permissions: selectedRole?.permissions || []
           }
           : user
       ));
       toast.success('User updated successfully!');
     } else {
-      const newUser: User = {
-        id: Date.now().toString(),
-        username: formData.username,
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        role: formData.role,
-        status: formData.status,
-        permissions: selectedRole?.permissions || [],
-        createdAt: new Date().toISOString()
-      };
-      setUsers(prev => [...prev, newUser]);
-      toast.success('User created successfully!');
+      try {
+        // Create user via Supabase Auth using a temporary random password
+        const tempPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).toUpperCase().slice(2);
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: tempPassword,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth`,
+            data: {
+              username: formData.username,
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              phone: formData.phone,
+              role: formData.role,
+            }
+          }
+        });
+        if (error) { toast.error(error.message); return; }
+
+        // Mirror to system_users for admin visibility
+        const userId = data.user?.id;
+        if (userId) {
+          await supabase.from('system_users').upsert({
+            id: userId,
+            email: formData.email,
+            user_metadata: { username: formData.username, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, role: formData.role },
+            created_at: new Date().toISOString()
+          });
+        }
+
+        // Send password reset email to force password change on first access
+        await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo: `${window.location.origin}/auth?mode=reset` });
+
+        // Ensure admin stays logged in (sign out any accidental session switch)
+        try { await supabase.auth.getSession().then(async ({ data }) => { if (data.session?.user?.email === formData.email) await supabase.auth.signOut(); }); } catch {}
+
+        toast.success('User invited. Email sent with a link to set password and login.');
+      } catch (err) {
+        console.error('Create user error', err);
+        toast.error('Failed to create user');
+      }
     }
 
     setIsDialogOpen(false);
