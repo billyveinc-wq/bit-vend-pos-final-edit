@@ -26,6 +26,7 @@ const Checkout = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [paymentMethod, setPaymentMethod] = useState("Card");
+  const [enabledProviders, setEnabledProviders] = useState<string[] | null>(null);
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
@@ -44,6 +45,22 @@ const Checkout = () => {
         setCart([]);
       }
     }
+  }, []);
+
+  // Load enabled providers per company
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: cu } = await supabase.from('company_users').select('company_id').eq('user_id', user.id).maybeSingle();
+      if (!cu?.company_id) return;
+      const { data: settingsRows } = await supabase
+        .from('payment_provider_settings')
+        .select('provider_key, enabled')
+        .eq('company_id', cu.company_id);
+      const enabled = (settingsRows || []).filter(r => r.enabled).map(r => r.provider_key as string);
+      setEnabledProviders(enabled);
+    })();
   }, []);
 
   // Save cart to localStorage whenever it changes
@@ -420,22 +437,29 @@ const Checkout = () => {
         <div className="mb-6">
           <Label className="text-base font-semibold mb-3 block">Payment Method</Label>
           <div className="grid grid-cols-3 gap-2">
-            <Button
-              variant={paymentMethod === "Card" ? "default" : "outline"}
-              onClick={() => setPaymentMethod("Card")}
-              className="flex items-center gap-2"
-            >
-              <CreditCard className="h-4 w-4" />
-              Card
-            </Button>
-            <Button
-              variant={paymentMethod === "Mobile" ? "default" : "outline"}
-              onClick={() => setPaymentMethod("Mobile")}
-              className="flex items-center gap-2"
-            >
-              <Smartphone className="h-4 w-4" />
-              Mobile
-            </Button>
+            {/* Show Card only if Flutterwave enabled or if settings not configured */}
+            {(enabledProviders === null || enabledProviders.includes('flutterwave')) && (
+              <Button
+                variant={paymentMethod === "Card" ? "default" : "outline"}
+                onClick={() => setPaymentMethod("Card")}
+                className="flex items-center gap-2"
+              >
+                <CreditCard className="h-4 w-4" />
+                Card
+              </Button>
+            )}
+            {/* Show Mobile only if M-Pesa enabled or if settings not configured */}
+            {(enabledProviders === null || enabledProviders.includes('mpesa')) && (
+              <Button
+                variant={paymentMethod === "Mobile" ? "default" : "outline"}
+                onClick={() => setPaymentMethod("Mobile")}
+                className="flex items-center gap-2"
+              >
+                <Smartphone className="h-4 w-4" />
+                Mobile
+              </Button>
+            )}
+            {/* Always allow Cash */}
             <Button
               variant={paymentMethod === "Cash" ? "default" : "outline"}
               onClick={() => setPaymentMethod("Cash")}
