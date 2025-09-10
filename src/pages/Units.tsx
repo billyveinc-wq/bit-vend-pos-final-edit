@@ -42,33 +42,92 @@ const Units = () => {
     isActive: true
   });
 
-  const [units, setUnits] = useState<Unit[]>([
-  ]
-  )
+  const [units, setUnits] = useState<Unit[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('units')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          const mapped: Unit[] = data.map((row: any) => ({
+            id: String(row.id),
+            name: row.name,
+            shortName: row.short_name,
+            type: (row.type || 'quantity') as Unit['type'],
+            baseUnit: row.base_unit || '',
+            conversionFactor: row.conversion_factor ? Number(row.conversion_factor) : 1,
+            isActive: !!row.is_active,
+            createdAt: row.created_at,
+          }));
+          setUnits(mapped);
+        }
+      } catch (e) {
+        console.warn('Failed to load units');
+      }
+    };
+    load();
+  }, []);
 
   const filteredUnits = units.filter(unit =>
     unit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     unit.shortName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (editingUnit) {
-      setUnits(prev => prev.map(unit =>
-        unit.id === editingUnit.id
-          ? { ...unit, ...formData }
-          : unit
-      ));
-      toast.success('Unit updated successfully!');
-    } else {
-      const newUnit: Unit = {
-        id: Date.now().toString(),
-        ...formData,
-        createdAt: new Date().toISOString()
-      };
-      setUnits(prev => [...prev, newUnit]);
-      toast.success('Unit created successfully!');
+
+    try {
+      if (editingUnit) {
+        const { error } = await supabase
+          .from('units')
+          .update({
+            name: formData.name,
+            short_name: formData.shortName,
+            type: formData.type,
+            base_unit: formData.baseUnit || null,
+            conversion_factor: formData.conversionFactor || null,
+            is_active: formData.isActive,
+          })
+          .eq('id', Number(editingUnit.id));
+        if (error) { toast.error(error.message); return; }
+        setUnits(prev => prev.map(unit =>
+          unit.id === editingUnit.id
+            ? { ...unit, ...formData }
+            : unit
+        ));
+        toast.success('Unit updated successfully!');
+      } else {
+        const { data, error } = await supabase
+          .from('units')
+          .insert({
+            name: formData.name,
+            short_name: formData.shortName,
+            type: formData.type,
+            base_unit: formData.baseUnit || null,
+            conversion_factor: formData.conversionFactor || null,
+            is_active: formData.isActive,
+          })
+          .select('*')
+          .single();
+        if (error) { toast.error(error.message); return; }
+        const newUnit: Unit = {
+          id: String(data.id),
+          name: data.name,
+          shortName: data.short_name,
+          type: (data.type || 'quantity') as Unit['type'],
+          baseUnit: data.base_unit || '',
+          conversionFactor: data.conversion_factor ? Number(data.conversion_factor) : 1,
+          isActive: !!data.is_active,
+          createdAt: data.created_at,
+        };
+        setUnits(prev => [newUnit, ...prev]);
+        toast.success('Unit created successfully!');
+      }
+    } catch (err) {
+      toast.error('Failed to save unit');
     }
 
     setIsDialogOpen(false);
@@ -88,10 +147,16 @@ const Units = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this unit?')) {
-      setUnits(prev => prev.filter(unit => unit.id !== id));
-      toast.success('Unit deleted successfully!');
+      try {
+        const { error } = await supabase.from('units').delete().eq('id', Number(id));
+        if (error) { toast.error(error.message); return; }
+        setUnits(prev => prev.filter(unit => unit.id !== id));
+        toast.success('Unit deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete unit');
+      }
     }
   };
 
