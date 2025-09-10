@@ -93,11 +93,24 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateProduct = (id: number, updates: Partial<Product>) => {
-    setProducts(prev => prev.map(product => 
-      product.id === id 
+    setProducts(prev => prev.map(product =>
+      product.id === id
         ? { ...product, ...updates, updatedAt: new Date().toISOString() }
         : product
     ));
+    // Async sync to Supabase for stock or fields that exist in DB
+    try {
+      const current = products.find(p => p.id === id);
+      const sku = current?.sku;
+      if (sku) {
+        const dbUpdates: any = {};
+        if (updates.stock !== undefined) dbUpdates.stock = updates.stock;
+        if (updates.minStock !== undefined) dbUpdates.min_stock = updates.minStock;
+        if (Object.keys(dbUpdates).length > 0) {
+          supabase.from('products').update(dbUpdates).eq('sku', sku);
+        }
+      }
+    } catch {}
   };
 
   const deleteProduct = (id: number) => {
