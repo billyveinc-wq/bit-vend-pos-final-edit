@@ -57,7 +57,11 @@ const AuthPage = () => {
           const qp = new URLSearchParams(window.location.search);
           const redirect = qp.get('redirect');
           const stored = localStorage.getItem('last-route');
-          const target = (redirect && redirect.startsWith('/dashboard')) ? redirect : (stored && stored.startsWith('/dashboard') ? stored : '/dashboard');
+          const isAdminUser = isAllowedAdminEmail(session.user.email || null);
+          const adminOnly = ['/dashboard/superadmin', '/dashboard/application', '/dashboard/layout', '/dashboard/admin-settings'];
+          const storedIsAdminOnly = stored ? adminOnly.some(p => stored.startsWith(p)) : false;
+          const candidate = (redirect && redirect.startsWith('/dashboard')) ? redirect : (stored && stored.startsWith('/dashboard') ? stored : '/dashboard');
+          const target = (!isAdminUser && storedIsAdminOnly) ? '/dashboard' : candidate;
           navigate(target, { replace: true });
         }
       } catch (err) {
@@ -73,7 +77,11 @@ const AuthPage = () => {
         const qp = new URLSearchParams(window.location.search);
         const redirect = qp.get('redirect');
         const stored = localStorage.getItem('last-route');
-        const target = (redirect && redirect.startsWith('/dashboard')) ? redirect : (stored && stored.startsWith('/dashboard') ? stored : '/dashboard');
+        const isAdminUser = isAllowedAdminEmail(session.user.email || null);
+        const adminOnly = ['/dashboard/superadmin', '/dashboard/application', '/dashboard/layout', '/dashboard/admin-settings'];
+        const storedIsAdminOnly = stored ? adminOnly.some(p => stored.startsWith(p)) : false;
+        const candidate = (redirect && redirect.startsWith('/dashboard')) ? redirect : (stored && stored.startsWith('/dashboard') ? stored : '/dashboard');
+        const target = (!isAdminUser && storedIsAdminOnly) ? '/dashboard' : candidate;
         navigate(target, { replace: true });
       }
     });
