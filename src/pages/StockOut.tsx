@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockOutRecord {
   id: string;
@@ -52,6 +53,30 @@ const StockOut = () => {
 
   const [stockOutRecords, setStockOutRecords] = useState<StockOutRecord[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('stock_outs').select('*').order('created_at', { ascending: false });
+        const mapped: StockOutRecord[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          productId: 0,
+          productName: row.product_name,
+          quantity: row.quantity,
+          reason: row.reason || '',
+          destination: row.destination || '',
+          requestedBy: row.requested_by || 'System',
+          approvedBy: row.approved_by || undefined,
+          outDate: row.out_date,
+          status: row.status || 'pending',
+          notes: row.notes || '',
+          createdAt: row.created_at,
+        }));
+        setStockOutRecords(mapped);
+      } catch (e) { console.warn('stock_outs not available'); }
+    };
+    load();
+  }, []);
+
   const outReasons = [
     'Sale',
     'Transfer to Branch',
@@ -69,7 +94,7 @@ const StockOut = () => {
     record.requestedBy.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.productId || !formData.quantity || !formData.reason) {
@@ -106,6 +131,22 @@ const StockOut = () => {
     };
     
     setStockOutRecords(prev => [...prev, newRecord]);
+
+    try {
+      const { error } = await supabase.from('stock_outs').insert({
+        product_sku: product.sku || null,
+        product_name: product.name,
+        quantity: requestedQuantity,
+        reason: formData.reason || null,
+        destination: formData.destination || null,
+        requested_by: 'Current User',
+        out_date: formData.outDate,
+        status: 'pending',
+        notes: formData.notes || null,
+      });
+      if (error) console.warn('Failed to insert stock_out', error);
+    } catch {}
+
     toast.success('Stock out request created successfully!');
     setIsDialogOpen(false);
     resetForm();
@@ -129,10 +170,22 @@ const StockOut = () => {
     toast.success('Stock out request approved!');
   };
 
-  const handleDispatchStock = (id: string) => {
+  const handleDispatchStock = async (id: string) => {
+    const rec = stockOutRecords.find(r => r.id === id);
     setStockOutRecords(prev => prev.map(record =>
       record.id === id ? { ...record, status: 'dispatched' } : record
     ));
+    try {
+      await supabase.from('stock_outs').update({ status: 'dispatched' }).eq('id', Number(id));
+      const product = products.find(p => p.name === rec?.productName);
+      if (product?.sku && rec) {
+        const { data: prodRow } = await supabase.from('products').select('stock').eq('sku', product.sku).maybeSingle();
+        const current = Number(prodRow?.stock || 0);
+        const next = Math.max(0, current - rec.quantity);
+        await supabase.from('products').update({ stock: next }).eq('sku', product.sku);
+        await supabase.from('inventory_movements').insert({ product_sku: product.sku, change: -rec.quantity, reason: 'stock_out' });
+      }
+    } catch (e) { console.warn('Dispatch update failed', e); }
     toast.success('Stock dispatched successfully!');
   };
 
