@@ -1592,6 +1592,34 @@ const Settings = () => {
                   <Switch checked={securityGeneral.twoFactorAuth} onCheckedChange={(c)=>setSecurityGeneral(p=>({...p, twoFactorAuth:c}))} />
                   <Label>Enable 2FA (simulated)</Label>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Min Password Length</Label>
+                    <Input type="number" value={securityGeneral.minPasswordLength} onChange={(e)=>setSecurityGeneral(p=>({...p, minPasswordLength:Number(e.target.value||8)}))} />
+                  </div>
+                  <div>
+                    <Label>Lockout After Failed Attempts</Label>
+                    <Input type="number" value={securityGeneral.lockoutAfterFailedAttempts} onChange={(e)=>setSecurityGeneral(p=>({...p, lockoutAfterFailedAttempts:Number(e.target.value||5)}))} />
+                  </div>
+                  <div>
+                    <Label>Session Timeout (minutes)</Label>
+                    <Input type="number" value={securityGeneral.sessionTimeoutMinutes} onChange={(e)=>setSecurityGeneral(p=>({...p, sessionTimeoutMinutes:Number(e.target.value||60)}))} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={securityGeneral.restrictByIP} onCheckedChange={(c)=>setSecurityGeneral(p=>({...p, restrictByIP:c}))} />
+                  <Label>Restrict by IP</Label>
+                </div>
+                {securityGeneral.restrictByIP && (
+                  <div>
+                    <Label>Allowed IPs (one per line)</Label>
+                    <Textarea value={securityGeneral.allowedIPs} onChange={(e)=>setSecurityGeneral(p=>({...p, allowedIPs:e.target.value}))} placeholder="123.45.67.89\n10.0.0.0/24" />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Switch checked={securityGeneral.requireDevicePIN} onCheckedChange={(c)=>setSecurityGeneral(p=>({...p, requireDevicePIN:c}))} />
+                  <Label>Require Device PIN</Label>
+                </div>
                 <Button onClick={()=>{ saveLocal('pos-security', securityGeneral); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
