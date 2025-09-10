@@ -130,7 +130,8 @@ const AuthPage = () => {
 
       if (!error) {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const { data: { session } } = await supabase.auth.getSession();
+          const user = session?.user;
           if (user) {
             await supabase.from('system_users').upsert({ id: user.id, last_sign_in_at: new Date().toISOString() }, { onConflict: 'id' });
           }
