@@ -84,6 +84,19 @@ import { Badge } from "@/components/ui/badge";
 
 const queryClient = new QueryClient();
 
+const RouteTracker = () => {
+  const location = useLocation();
+  useEffect(() => {
+    try {
+      if (location.pathname !== '/auth') {
+        const path = location.pathname + (location.search || '') + (location.hash || '');
+        localStorage.setItem('last-route', path);
+      }
+    } catch {}
+  }, [location]);
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -94,6 +107,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+              <RouteTracker />
               <Routes>
                 {/* Marketing Website Routes */}
                 <Route path="/" element={<LandingPage />} />
