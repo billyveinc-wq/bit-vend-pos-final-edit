@@ -65,6 +65,7 @@ import InvoiceSettings from "./pages/InvoiceSettings";
 import TaxSettings from "./pages/TaxSettings";
 import Backup from "./pages/Backup";
 import Subscription from "./pages/Subscription";
+import PaymentSettings from "./pages/PaymentSettings";
 import SubscriptionManage from "./pages/SubscriptionManage";
 import AdminSettings from "./pages/AdminSettings";
 import LandingPage from "./pages/LandingPage";
@@ -164,6 +165,7 @@ const App = () => (
                   <Route path="general-settings" element={<GeneralSettings />} />
                   <Route path="invoice-settings" element={<InvoiceSettings />} />
                   <Route path="tax-settings" element={<TaxSettings />} />
+                  <Route path="payment-settings" element={<PaymentSettings />} />
                   <Route path="backup" element={<Backup />} />
                   <Route path="attendance" element={<Attendance />} />
                   <Route path="users" element={<Users />} />

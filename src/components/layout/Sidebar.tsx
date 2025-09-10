@@ -175,6 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     {
       title: 'Settings',
       items: [
+        { href: '/dashboard/payment-settings', icon: CreditCard, label: 'Payment Settings', requiresAdmin: true as any },
         { href: '/dashboard/general-settings', icon: Settings, label: 'General Settings' },
         { href: '/dashboard/invoice-settings', icon: FileText, label: 'Invoice Settings' },
         { href: '/dashboard/tax-settings', icon: Calculator, label: 'Tax Settings' },
@@ -233,7 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
               )}
               <ul className="space-y-1 px-3">
                 {section.items
-                  .filter((item) => isAdmin || !allowedPages || allowedPages.includes(item.href))
+                  .filter((item: any) => (item.requiresAdmin ? isAdmin : (isAdmin || !allowedPages || allowedPages.includes(item.href))))
                   .map((item) => {
                     const Icon = item.icon;
                     const isActive = item.href === '/dashboard'
