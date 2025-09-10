@@ -415,7 +415,7 @@ const Settings = () => {
                     type="file"
                     accept="image/*"
                     onChange={handleLogoUpload}
-                    className="mb-2"
+                    className="mb-2 h-9 w-auto max-w-xs text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-secondary file:text-secondary-foreground"
                   />
                   {businessForm.logoUrl && (
                     <Button
@@ -553,8 +553,8 @@ const Settings = () => {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {countries.slice(0, 20).map((country) => (
+                  <SelectContent className="max-h-64 overflow-auto">
+                    {countries.map((country) => (
                       <SelectItem key={country.code} value={country.code}>
                         {country.name}
                       </SelectItem>
