@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockReturn {
   id: string;
@@ -56,6 +57,31 @@ const StockReturn = () => {
 
   const [stockReturns, setStockReturns] = useState<StockReturn[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('stock_returns').select('*').order('created_at', { ascending: false });
+        const mapped: StockReturn[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          productId: 0,
+          productName: row.product_name,
+          quantity: row.quantity,
+          reason: row.reason || '',
+          condition: (row.condition || 'good') as StockReturn['condition'],
+          supplier: row.supplier || '',
+          returnDate: row.return_date,
+          returnedBy: row.returned_by || 'System',
+          status: row.status || 'pending',
+          refundAmount: row.refund_amount ? Number(row.refund_amount) : undefined,
+          notes: row.notes || '',
+          createdAt: row.created_at,
+        }));
+        setStockReturns(mapped);
+      } catch (e) { console.warn('stock_returns not available'); }
+    };
+    load();
+  }, []);
+
   const returnReasons = [
     'Defective/Damaged',
     'Wrong Item Received',
@@ -81,7 +107,7 @@ const StockReturn = () => {
     returnRecord.supplier.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
 
@@ -112,6 +138,24 @@ const StockReturn = () => {
     };
     
     setStockReturns(prev => [...prev, newReturn]);
+
+    try {
+      const { error } = await supabase.from('stock_returns').insert({
+        product_sku: product.sku || null,
+        product_name: product.name,
+        quantity: parseInt(formData.quantity),
+        reason: formData.reason || null,
+        condition: formData.condition,
+        supplier: formData.supplier,
+        return_date: formData.returnDate,
+        returned_by: 'Current User',
+        status: 'pending',
+        refund_amount: formData.refundAmount ? parseFloat(formData.refundAmount) : null,
+        notes: formData.notes || null,
+      });
+      if (error) console.warn('Failed to insert stock_return', error);
+    } catch {}
+
     toast.success('Stock return created successfully!');
     setIsDialogOpen(false);
     resetForm();
@@ -130,17 +174,19 @@ const StockReturn = () => {
     });
   };
 
-  const handleApproveReturn = (id: string) => {
+  const handleApproveReturn = async (id: string) => {
     setStockReturns(prev => prev.map(returnRecord =>
       returnRecord.id === id ? { ...returnRecord, status: 'approved' } : returnRecord
     ));
+    try { await supabase.from('stock_returns').update({ status: 'approved' }).eq('id', Number(id)); } catch {}
     toast.success('Stock return approved!');
   };
 
-  const handleProcessReturn = (id: string) => {
+  const handleProcessReturn = async (id: string) => {
     setStockReturns(prev => prev.map(returnRecord =>
       returnRecord.id === id ? { ...returnRecord, status: 'processed' } : returnRecord
     ));
+    try { await supabase.from('stock_returns').update({ status: 'processed' }).eq('id', Number(id)); } catch {}
     toast.success('Stock return processed successfully!');
   };
 
