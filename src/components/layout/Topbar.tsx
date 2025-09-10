@@ -640,7 +640,7 @@ const Topbar: React.FC<TopbarProps> = ({
                     companyId = (comp as any)?.id;
                     if (!companyId) {
                       const { data: created, error: cErr } = await supabase.from('companies').insert({ name: 'Default Company' }).select('id').single();
-                      if (cErr) { alert('Failed to create company'); return; }
+                      if (cErr) { toast.error('Failed to create company'); return; }
                       companyId = created?.id;
                     }
                     if (!supportEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(supportEmail)) { alert('Enter a valid email'); return; }
