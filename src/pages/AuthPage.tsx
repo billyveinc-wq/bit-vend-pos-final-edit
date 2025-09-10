@@ -137,6 +137,25 @@ const AuthPage = () => {
     }
   };
 
+  const [newPw, setNewPw] = useState('');
+  const [newPw2, setNewPw2] = useState('');
+
+  const handleCompleteReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    if (newPw.length < 8) { toast.error('Password must be at least 8 characters'); setIsLoading(false); return; }
+    if (newPw !== newPw2) { toast.error('Passwords do not match'); setIsLoading(false); return; }
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPw });
+      if (error) { toast.error(error.message); setIsLoading(false); return; }
+      toast.success('Password updated. Please sign in.');
+      setCurrentMode('signin');
+    } catch (err) {
+      console.error('Reset password error', err);
+      toast.error('Failed to update password');
+    } finally { setIsLoading(false); }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
