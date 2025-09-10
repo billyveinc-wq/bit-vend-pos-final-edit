@@ -732,26 +732,12 @@ const SuperAdmin = () => {
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction onClick={async () => {
                                     try {
-                                      // Attempt to call admin server to fully delete auth user
-                                      const adminKey = localStorage.getItem('admin-api-key') || '';
-                                      const resp = await fetch('/admin/delete-user', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-                                        body: JSON.stringify({ userId: r.id })
-                                      });
-
-                                      if (resp.ok) {
-                                        toast.success('User fully deleted from Auth and related tables');
-                                        setRegistrations(prev => prev.filter(x => x.id !== r.id));
-                                        return;
-                                      }
-
-                                      // If admin endpoint failed or is not available, fallback to deleting public data
+                                      // Delete related public records only (cannot delete auth.users without service role)
                                       await supabase.from('user_subscriptions').delete().eq('user_id', r.id);
                                       await supabase.from('user_promotions').delete().eq('user_id', r.id);
                                       await supabase.from('company_users').delete().eq('user_id', r.id);
                                       await supabase.from('system_users').delete().eq('id', r.id);
-                                      toast.success('User related data removed. Admin endpoint unavailable or failed; auth user may still exist.');
+                                      toast.success('User related data removed (auth user may still exist)');
                                       setRegistrations(prev => prev.filter(x => x.id !== r.id));
                                     } catch (err) {
                                       console.error('Delete registration error', err);
