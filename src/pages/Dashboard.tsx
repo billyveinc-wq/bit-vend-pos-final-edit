@@ -27,7 +27,7 @@ import {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { products } = useProducts();
-  const { getTotalSales, getTodaysSales } = useSales();
+  const { getTotalSales, getTodaysSales, sales } = useSales();
   const { subscription, hasFeature } = useSubscription();
 
   const totalSalesAmount = getTotalSales();
@@ -222,19 +222,39 @@ const Dashboard: React.FC = () => {
             <CardTitle className="text-foreground">Recent Sales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent sales to display</p>
-              <FeatureGate feature="basic_sales_tracking" showUpgrade={false}>
-                <Button
-                  variant="outline"
-                  className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-                  onClick={() => navigate('/checkout')}
-                >
-                  Start Your First Sale
+            {sales && sales.length > 0 ? (
+              <div className="space-y-3">
+                {sales.slice(0, 5).map((s) => (
+                  <div key={s.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div>
+                      <div className="font-medium">{s.invoiceNo}</div>
+                      <div className="text-xs text-muted-foreground">{s.date} • {s.time} • {s.paymentMethod}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold">${s.total.toFixed(2)}</div>
+                      <div className="text-xs text-muted-foreground capitalize">{s.status}</div>
+                    </div>
+                  </div>
+                ))}
+                <Button variant="outline" className="mt-2" onClick={() => navigate('/dashboard/sales')}>
+                  View All Sales
                 </Button>
-              </FeatureGate>
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No recent sales to display</p>
+                <FeatureGate feature="basic_sales_tracking" showUpgrade={false}>
+                  <Button
+                    variant="outline"
+                    className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
+                    onClick={() => navigate('/checkout')}
+                  >
+                    Start Your First Sale
+                  </Button>
+                </FeatureGate>
+              </div>
+            )}
           </CardContent>
         </Card>
 
