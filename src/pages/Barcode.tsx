@@ -60,7 +60,7 @@ const Code39Barcode: React.FC<{ value: string; height?: number; unit?: number; c
 };
 
 const Barcode = () => {
-  const { products } = useProducts();
+  const { products, updateProduct } = useProducts();
   const [selectedProduct, setSelectedProduct] = useState('');
   const [barcodeType, setBarcodeType] = useState('CODE128');
   const [printQuantity, setPrintQuantity] = useState('1');
