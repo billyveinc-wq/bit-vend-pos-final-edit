@@ -230,34 +230,36 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                 </div>
               )}
               <ul className="space-y-1 px-3">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.href;
-                  
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        to={item.href}
-                        className={cn(
-                          "w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
-                          isActive
-                            ? "bg-gray-800 text-white"
-                            : "text-white hover:text-white hover:bg-gray-800"
-                        )}
-                      >
-                        <Icon size={18} className="flex-shrink-0 text-white" />
-                        {!collapsed && (
-                          <span className="ml-3 text-white">{item.label}</span>
-                        )}
-                        {collapsed && (
-                          <div className="absolute left-full ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap z-50 shadow-lg">
-                            {item.label}
-                          </div>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
+                {section.items
+                  .filter((item) => isAdmin || !allowedPages || allowedPages.includes(item.href))
+                  .map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.href;
+
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          to={item.href}
+                          className={cn(
+                            "w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
+                            isActive
+                              ? "bg-gray-800 text-white"
+                              : "text-white hover:text-white hover:bg-gray-800"
+                          )}
+                        >
+                          <Icon size={18} className="flex-shrink-0 text-white" />
+                          {!collapsed && (
+                            <span className="ml-3 text-white">{item.label}</span>
+                          )}
+                          {collapsed && (
+                            <div className="absolute left-full ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap z-50 shadow-lg">
+                              {item.label}
+                            </div>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
               </ul>
             </div>
           ))}
