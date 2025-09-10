@@ -110,11 +110,11 @@ const SalesReturn = () => {
           <p className="text-muted-foreground">Manage product returns and refunds</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={exportCSV}>
             <FileText className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={() => navigate('/dashboard/checkout')}>
+          <Button onClick={() => setProcessOpen(true)}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Process Return
           </Button>
