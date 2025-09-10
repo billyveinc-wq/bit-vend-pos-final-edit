@@ -97,7 +97,6 @@ const Users = () => {
           email: formData.email,
           password: tempPassword,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth`,
             data: {
               username: formData.username,
               first_name: formData.firstName,
@@ -120,8 +119,14 @@ const Users = () => {
           });
         }
 
-        // Send password reset email to force password change on first access
-        await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo: `${window.location.origin}/auth?mode=reset` });
+        // Send password reset email to force password change on first access (use default redirect to avoid invalid URL errors)
+        {
+          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(formData.email);
+          if (resetErr) {
+            console.warn('resetPasswordForEmail error:', resetErr);
+            toast.error(resetErr.message);
+          }
+        }
 
         // Ensure admin stays logged in (sign out any accidental session switch)
         try { await supabase.auth.getSession().then(async ({ data }) => { if (data.session?.user?.email === formData.email) await supabase.auth.signOut(); }); } catch {}
