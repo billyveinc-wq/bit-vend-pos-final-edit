@@ -439,7 +439,7 @@ const Topbar: React.FC<TopbarProps> = ({
             </TooltipContent>
           </Tooltip>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
+            <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
               Profile Settings
             </DropdownMenuItem>
             {isAdmin && (
