@@ -693,6 +693,131 @@ const SalesReport: React.FC = () => {
         </Card>
       )}
 
+      {activeView === 'quotations' && (
+        <Card className="animate-slideInLeft">
+          <CardHeader>
+            <CardTitle>View Quotations</CardTitle>
+            <CardDescription>Browse saved quotations and perform actions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {quotations.map((quote) => (
+                <div key={quote.id} className="p-4 border rounded-lg hover:shadow-md transition-all duration-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <FileText className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{quote.quoteNo || quote.id}</h4>
+                        <p className="text-sm text-muted-foreground">{quote.customer} • {quote.date}</p>
+                        {quote.template && (
+                          <p className="text-xs text-muted-foreground">Template: {quote.template}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold">${quote.total.toFixed(2)}</div>
+                      {getQuoteStatusBadge(quote.status)}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
+                    <div>
+                      <span className="text-muted-foreground">Items: </span>
+                      <span>{quote.items.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Subtotal: </span>
+                      <span>${quote.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Tax: </span>
+                      <span>${quote.tax.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Valid Until: </span>
+                      <span>{quote.validUntil || '-'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t">
+                    <Button variant="outline" size="sm" onClick={() => { setSelectedQuote(quote); setShowQuoteDialog(true); }}>
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadQuoteXLS(quote.id)}>
+                      <Download className="w-4 h-4 mr-1" />
+                      XLS
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadQuotePDF(quote.id)}>
+                      <Download className="w-4 h-4 mr-1" />
+                      PDF
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteQuote(quote.id)}>
+                      <Trash className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {quotations.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground">No quotations found.</div>
+              )}
+            </div>
+
+            <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Quotation Details</DialogTitle>
+                </DialogHeader>
+                {selectedQuote && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">{selectedQuote.quoteNo || selectedQuote.id}</p>
+                        <p className="text-sm text-muted-foreground">{selectedQuote.customer} • {selectedQuote.customerEmail}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold">${selectedQuote.total.toFixed(2)}</p>
+                        {getQuoteStatusBadge(selectedQuote.status)}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <Label>Date</Label>
+                        <div>{selectedQuote.date}</div>
+                      </div>
+                      <div>
+                        <Label>Valid Until</Label>
+                        <div>{selectedQuote.validUntil || '-'}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Items</Label>
+                      <div className="space-y-1 text-sm">
+                        {selectedQuote.items.map((it, idx) => (
+                          <div key={idx} className="flex justify-between">
+                            <span>{it.name} × {it.quantity}</span>
+                            <span>${it.total.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {selectedQuote.notes && (
+                      <div>
+                        <Label>Notes</Label>
+                        <div className="text-sm whitespace-pre-wrap">{selectedQuote.notes}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+      )}
+
       {activeView === 'products' && (
         <Card className="animate-slideInLeft">
           <CardHeader>
@@ -702,8 +827,8 @@ const SalesReport: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               {analytics.topProducts.map((product, index) => (
-                <div 
-                  key={product.id} 
+                <div
+                  key={product.id}
                   className="p-4 border rounded-lg animate-fadeInUp"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
@@ -719,7 +844,7 @@ const SalesReport: React.FC = () => {
                     </div>
                     <Badge variant="outline">Rank #{index + 1}</Badge>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4 mt-4">
                     <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{product.quantity}</p>
