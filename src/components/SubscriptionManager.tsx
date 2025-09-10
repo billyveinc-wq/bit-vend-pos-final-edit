@@ -88,6 +88,19 @@ const SubscriptionManager: React.FC = () => {
     }
   }, [subscription]);
 
+  // Auto-open upgrade/payment flow based on query params
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const start = params.get('startCheckout');
+      const plan = params.get('plan');
+      if (start === '1' && plan) {
+        setSelectedPlan(plan);
+        setShowUpgradeDialog(true);
+      }
+    } catch {}
+  }, []);
+
   const fetchPlans = async () => {
     try {
       const { data, error } = await supabase
