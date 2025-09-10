@@ -61,6 +61,7 @@ const AuthPage = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
+        if ((new URLSearchParams(window.location.search)).get('mode') === 'reset') return;
         navigate('/dashboard', { replace: true });
       }
     });
