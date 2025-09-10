@@ -907,39 +907,6 @@ const SuperAdmin = () => {
         </TabsContent>
       </Tabs>
 
-      {/* System Alerts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-yellow-600" />
-            System Alerts
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 rounded">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                <div>
-                  <h4 className="font-medium">High Memory Usage</h4>
-                  <p className="text-sm text-muted-foreground">Server memory usage is at 67%. Consider optimizing or upgrading.</p>
-                </div>
-              </div>
-            </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 rounded">
-              <div className="flex items-center gap-3">
-                <Activity className="w-5 h-5 text-blue-600" />
-                <div>
-                  <h4 className="font-medium">Scheduled Maintenance</h4>
-                  <p className="text-sm text-muted-foreground">System maintenance scheduled for tonight at 2:00 AM UTC.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-
     </div>
   );
 };
