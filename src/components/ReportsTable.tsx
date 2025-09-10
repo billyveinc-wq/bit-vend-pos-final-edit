@@ -405,7 +405,7 @@ const ReportsTable: React.FC = () => {
 
         {/* Reports Table */}
         <div className="rounded-md border">
-          <Table>
+          <Table className="min-w-[1150px]">
             <TableHeader>
               <TableRow className="bg-blue-500 hover:bg-blue-500">
                 <TableHead className="text-white font-semibold">Report Name</TableHead>
@@ -413,7 +413,7 @@ const ReportsTable: React.FC = () => {
                 <TableHead className="text-white font-semibold">Type</TableHead>
                 <TableHead className="text-white font-semibold">Description</TableHead>
                 <TableHead className="text-white font-semibold">Status</TableHead>
-                <TableHead className="text-white font-semibold w-[160px]">Actions</TableHead>
+                <TableHead className="text-white font-semibold w-[200px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -453,7 +453,7 @@ const ReportsTable: React.FC = () => {
                   <TableCell>
                     {getStatusBadge(report.status)}
                   </TableCell>
-                   <TableCell className="w-[160px]">
+                   <TableCell className="w-[200px]">
                      <div className="flex items-center justify-end gap-2">
                        <Tooltip>
                          <TooltipTrigger asChild>
