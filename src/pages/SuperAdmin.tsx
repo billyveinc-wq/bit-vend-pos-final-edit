@@ -75,23 +75,6 @@ const SuperAdmin = () => {
   const [systemUsersList, setSystemUsersList] = useState<any[]>([]);
   const [loadingSystemUsers, setLoadingSystemUsers] = useState(false);
 
-  // Admin key dialog
-  const [showAdminKeyDialog, setShowAdminKeyDialog] = useState(false);
-  const [adminKeyInput, setAdminKeyInput] = useState(() => localStorage.getItem('admin-api-key') || '');
-
-  const saveAdminKey = (key?: string) => {
-    const k = key === undefined ? adminKeyInput : key;
-    if (!k) {
-      localStorage.removeItem('admin-api-key');
-      toast.success('Admin key cleared');
-      setAdminKeyInput('');
-      setShowAdminKeyDialog(false);
-      return;
-    }
-    localStorage.setItem('admin-api-key', k);
-    toast.success('Admin key saved');
-    setShowAdminKeyDialog(false);
-  };
 
   const systemMetrics: SystemMetric[] = [
     { name: 'CPU Usage', value: '23%', status: 'healthy', icon: Cpu },
