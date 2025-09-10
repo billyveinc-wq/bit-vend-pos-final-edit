@@ -88,7 +88,7 @@ const RouteTracker = () => {
   const location = useLocation();
   useEffect(() => {
     try {
-      if (location.pathname !== '/auth') {
+      if (location.pathname.startsWith('/dashboard')) {
         const path = location.pathname + (location.search || '') + (location.hash || '');
         localStorage.setItem('last-route', path);
       }
