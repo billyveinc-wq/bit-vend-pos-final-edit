@@ -811,6 +811,22 @@ const Settings = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
+                        <Label>Company</Label>
+                        <Select value={loc.companyId || ''} onValueChange={(v)=>{ const next=[...locations]; next[index]={...loc, companyId:v}; setLocations(next); }}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(companies.length ? companies : [{ id: '', name: 'Unassigned' }]).map((c)=> (
+                              <SelectItem key={c.id} value={c.id}>{c.name || 'Unassigned'}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
                         <Label>Manager</Label>
                         <Input value={loc.manager} onChange={(e)=>{ const next=[...locations]; next[index]={...loc, manager:e.target.value}; setLocations(next); }} placeholder="Manager name" />
                       </div>
