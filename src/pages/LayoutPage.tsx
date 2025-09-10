@@ -27,7 +27,6 @@ import {
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 const saveAppSetting = async (key: string, value: any) => {
   try {
