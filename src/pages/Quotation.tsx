@@ -268,7 +268,10 @@ const Quotation = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold">${quote.total.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground">Valid until {quote.validUntil}</p>
+                  <div className="flex items-center justify-end gap-2">
+                    {quote.template && <Badge variant="outline">Template: {quote.template}</Badge>}
+                    <p className="text-sm text-muted-foreground">Valid until {quote.validUntil}</p>
+                  </div>
                 </div>
               </div>
 
