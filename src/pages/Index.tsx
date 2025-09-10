@@ -65,7 +65,7 @@ const Index: React.FC = () => {
     {
       title: 'View Sales Report',
       description: 'Check today\'s sales performance',
-      action: () => navigate('/sales-report'),
+      action: () => navigate('/dashboard/sales-report'),
       color: 'bg-green-500 hover:bg-green-600'
     },
     {
