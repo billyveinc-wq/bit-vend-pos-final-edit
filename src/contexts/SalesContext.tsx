@@ -46,16 +46,50 @@ export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [sales, setSales] = useState<Sale[]>([]);
   const { updateStock } = useProducts();
 
-  // Load sales from localStorage
+  // Load sales from Supabase if available; fallback to localStorage
   useEffect(() => {
-    const savedSales = localStorage.getItem('pos-sales');
-    if (savedSales) {
+    const load = async () => {
       try {
-        setSales(JSON.parse(savedSales));
-      } catch (error) {
-        console.error('Error loading sales:', error);
+        const { data, error } = await supabase
+          .from('sales')
+          .select('id, invoice_no, date, time, subtotal, tax, discount, total, payment_method, status, sales_person, receipt_template, created_at, sale_items(id, product_sku, product_name, quantity, unit_price, total)')
+          .order('created_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          const mapped: Sale[] = data.map((row: any) => ({
+            id: String(row.id),
+            invoiceNo: row.invoice_no,
+            date: row.date,
+            time: row.time,
+            items: (row.sale_items || []).map((it: any) => ({
+              productId: 0,
+              productName: it.product_name,
+              quantity: it.quantity,
+              unitPrice: Number(it.unit_price) || 0,
+              total: Number(it.total) || 0,
+            })),
+            subtotal: Number(row.subtotal) || 0,
+            tax: Number(row.tax) || 0,
+            discount: Number(row.discount) || 0,
+            total: Number(row.total) || 0,
+            paymentMethod: (row.payment_method || 'cash') as 'cash' | 'card' | 'mobile',
+            status: (row.status || 'completed') as 'completed' | 'pending' | 'cancelled' | 'refunded',
+            receiptTemplate: row.receipt_template || 'classic-receipt',
+            salesPerson: row.sales_person || 'System',
+            createdAt: row.created_at,
+          }));
+          setSales(mapped);
+          return;
+        }
+      } catch (e) {
+        console.warn('Sales fetch from Supabase failed, falling back to local data');
       }
-    }
+      const savedSales = localStorage.getItem('pos-sales');
+      if (savedSales) {
+        try { setSales(JSON.parse(savedSales)); }
+        catch (err) { console.error('Error loading sales:', err); }
+      }
+    };
+    load();
   }, []);
 
   // Save to localStorage when sales change
