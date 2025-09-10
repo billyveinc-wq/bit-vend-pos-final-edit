@@ -360,7 +360,7 @@ const Settings = () => {
         { id: 'theme', label: 'Theme', icon: Palette }
       ]
     },
-    {
+    ...(isAdmin ? [{
       section: 'security',
       title: 'Security',
       icon: Shield,
@@ -369,15 +369,15 @@ const Settings = () => {
         { id: 'sessions', label: 'Session Management', icon: Clock },
         { id: 'audit', label: 'Audit & Logs', icon: FileText }
       ]
-    },
-    {
+    }] : []),
+    ...(isAdmin ? [{
       section: 'users',
       title: 'Users & Referrals',
       icon: Users,
       items: [
         { id: 'management', label: 'User Management', icon: Users }
       ]
-    }
+    }] : [])
   ];
 
   const renderBusinessInfo = () => {
