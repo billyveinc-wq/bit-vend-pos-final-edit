@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { PRODUCTS as initialProducts } from '@/data/posData';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Product {
   id: number;
