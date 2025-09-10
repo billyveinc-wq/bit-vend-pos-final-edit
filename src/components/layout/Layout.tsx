@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
+import { SubscriptionProvider, useSubscription } from '@/contexts/SubscriptionContext';
 
 type LayoutProps = { children?: React.ReactNode };
 
@@ -70,6 +70,55 @@ const Layout: React.FC<LayoutProps> = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const TrialBanner: React.FC = () => {
+    const { subscription } = useSubscription();
+    const [show, setShow] = useState(false);
+    const [daysLeft, setDaysLeft] = useState<number | null>(null);
+
+    useEffect(() => {
+      const exp = subscription?.expires_at ? new Date(subscription.expires_at) : null;
+      if (!exp) return;
+      const now = new Date();
+      const msLeft = exp.getTime() - now.getTime();
+      const dl = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+      setDaysLeft(dl);
+
+      // Reminder only for last 4 days
+      if (dl > 0 && dl <= 4) {
+        const key = `trial-reminder-shown-${now.toISOString().slice(0,10)}`;
+        if (!localStorage.getItem(key)) {
+          setShow(true);
+          localStorage.setItem(key, '1');
+        }
+      } else {
+        setShow(false);
+      }
+
+      // If expired, redirect to subscription/settings
+      if (dl <= 0) {
+        try {
+          const url = '/dashboard/settings?section=business&subsection=subscription';
+          if (!window.location.href.includes('settings')) window.location.href = url;
+        } catch {}
+      }
+    }, [subscription?.expires_at]);
+
+    if (!show || daysLeft === null || daysLeft <= 0) return null;
+
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <div className="bg-amber-100 text-amber-900 border border-amber-300 rounded-lg shadow-lg p-4 max-w-xs">
+          <div className="font-semibold mb-1">Trial expires soon</div>
+          <div className="text-sm">Your trial period expires in {daysLeft} day{daysLeft === 1 ? '' : 's'}. Upgrade to keep access.</div>
+          <div className="mt-3 flex gap-2">
+            <button onClick={()=>window.location.href='/dashboard/settings?section=business&subsection=subscription'} className="px-3 py-1 rounded bg-amber-600 text-white text-sm">Upgrade</button>
+            <button onClick={()=>setShow(false)} className="px-3 py-1 rounded border text-sm">Dismiss</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <SubscriptionProvider>
       <div className="min-h-screen bg-background text-foreground">
@@ -85,6 +134,7 @@ const Layout: React.FC<LayoutProps> = () => {
             <Outlet />
           </div>
         </main>
+        <TrialBanner />
       </div>
     </SubscriptionProvider>
   );
