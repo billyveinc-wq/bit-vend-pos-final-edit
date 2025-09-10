@@ -183,10 +183,11 @@ const StockIn = () => {
     });
   };
 
-  const handleReceiveStock = (id: string) => {
+  const handleReceiveStock = async (id: string) => {
     setStockInRecords(prev => prev.map(record =>
       record.id === id ? { ...record, status: 'received' } : record
     ));
+    try { await supabase.from('stock_ins').update({ status: 'received' }).eq('id', Number(id)); } catch {}
     toast.success('Stock received successfully!');
   };
 
