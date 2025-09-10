@@ -59,6 +59,7 @@ const Checkout = () => {
         if (!user) return;
         const { data: cu } = await supabase.from('company_users').select('company_id').eq('user_id', user.id).maybeSingle();
         if (!cu?.company_id) return;
+        setCompanyId(Number(cu.company_id));
         const { data: settingsRows } = await supabase
           .from('payment_provider_settings')
           .select('provider_key, enabled')
