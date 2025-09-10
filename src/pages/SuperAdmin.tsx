@@ -190,7 +190,7 @@ const SuperAdmin = () => {
     load();
   }, []);
 
-  // Load registrations: show all users; empty company for none; include user count per company
+  // Load registrations: show all non-admin-created users; empty company for none; include user count per company
   useEffect(() => {
     const loadRegistrations = async () => {
       setLoadingRegistrations(true);
@@ -200,7 +200,7 @@ const SuperAdmin = () => {
           supabase.from('companies').select('id, name'),
           supabase.from('company_users').select('company_id, user_id')
         ]);
-        const users = (systemUsers || []) as any[];
+        const users = ((systemUsers || []) as any[]).filter(u => !u?.user_metadata?.created_by_admin);
         const companyById = new Map((comps || []).map((c: any) => [String(c.id), c.name]));
         const userCountByCompany = new Map<string, number>();
         (cu || []).forEach((row: any) => {
@@ -235,7 +235,7 @@ const SuperAdmin = () => {
             promoCode: up?.promo_code?.code || up?.promo_code_id || (u.user_metadata?.referral_code || '-'),
             influencerName: up?.promo_code?.influencer_name || up?.influencer_name || (u.user_metadata?.referral_name || '-'),
             createdAt: u.created_at || u.createdAt || '-',
-            lastLogin: u.last_sign_in_at || u.lastLogin || '-',
+            lastLogin: u.last_sign_in_at || '-',
           };
         });
 
