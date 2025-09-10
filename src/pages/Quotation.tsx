@@ -74,8 +74,9 @@ const Quotation = () => {
           })),
         }));
         setQuotations(mapped);
-      } catch (e) {
+      } catch (e: any) {
         console.warn('quotations not available');
+        toast.error('Quotations table is missing or inaccessible. Please ensure the "quotations" table exists with proper RLS.');
       }
     };
     load();
