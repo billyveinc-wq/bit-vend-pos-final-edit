@@ -57,6 +57,35 @@ const StockIn = () => {
 
   const [stockInRecords, setStockInRecords] = useState<StockInRecord[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await supabase
+          .from('stock_ins')
+          .select('*')
+          .order('created_at', { ascending: false });
+        const mapped: StockInRecord[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          productId: 0,
+          productName: row.product_name,
+          quantity: Number(row.quantity) || 0,
+          unitCost: Number(row.unit_cost) || 0,
+          totalCost: Number(row.total_cost) || 0,
+          supplier: row.supplier || '',
+          batchNumber: row.batch_number || undefined,
+          expiryDate: row.expiry_date || undefined,
+          receivedDate: row.received_date,
+          receivedBy: row.received_by || 'System',
+          status: row.status || 'pending',
+          notes: row.notes || undefined,
+          createdAt: row.created_at,
+        }));
+        setStockInRecords(mapped);
+      } catch (e) { console.warn('stock_ins not available'); }
+    };
+    load();
+  }, []);
+
   const suppliers = [
     'Supplier A Ltd',
     'Supplier B Corp',
@@ -73,7 +102,7 @@ const StockIn = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.productId || !formData.quantity || !formData.unitCost || !formData.supplier) {
       toast.error('Please fill in all required fields');
       return;
@@ -104,10 +133,27 @@ const StockIn = () => {
       notes: formData.notes,
       createdAt: new Date().toISOString()
     };
-    
+
     setStockInRecords(prev => [...prev, newRecord]);
 
     try {
+      // Persist stock-in record
+      await supabase.from('stock_ins').insert({
+        product_sku: product.sku || null,
+        product_name: product.name,
+        quantity,
+        unit_cost: unitCost,
+        total_cost: quantity * unitCost,
+        supplier: formData.supplier,
+        batch_number: formData.batchNumber || null,
+        expiry_date: formData.expiryDate || null,
+        received_date: formData.receivedDate,
+        received_by: 'Current User',
+        status: 'pending',
+        notes: formData.notes || null,
+      });
+
+      // Update product stock + movement
       if (product.sku) {
         const { data: prodRow } = await supabase.from('products').select('stock').eq('sku', product.sku).maybeSingle();
         const current = (prodRow?.stock as number) ?? 0;
@@ -116,7 +162,7 @@ const StockIn = () => {
         await supabase.from('inventory_movements').insert({ product_sku: product.sku, change: quantity, reason: 'stock_in' });
       }
     } catch (err) {
-      console.warn('Supabase stock update failed', err);
+      console.warn('Supabase stock in failed', err);
     }
 
     toast.success('Stock in record created successfully!');
