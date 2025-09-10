@@ -235,7 +235,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                   .filter((item) => isAdmin || !allowedPages || allowedPages.includes(item.href))
                   .map((item) => {
                     const Icon = item.icon;
-                    const isActive = location.pathname === item.href;
+                    const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
 
                     return (
                       <li key={item.href}>
