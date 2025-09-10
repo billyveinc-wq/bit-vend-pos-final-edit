@@ -88,7 +88,7 @@ const Units = () => {
             short_name: formData.shortName,
             is_active: formData.isActive,
           })
-          .eq('id', Number(editingUnit.id));
+          .eq('id', editingUnit.id);
         if (error) { toast.error(error.message); return; }
         setUnits(prev => prev.map(unit =>
           unit.id === editingUnit.id
