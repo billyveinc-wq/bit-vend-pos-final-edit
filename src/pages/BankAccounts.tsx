@@ -76,6 +76,29 @@ const BankAccounts = () => {
     account.accountNumber.includes(searchTerm)
   );
 
+  const setAsDefaultPayout = async (accountId: string) => {
+    try {
+      // Resolve current company (first or linked one)
+      let companyId: number | null = null;
+      try {
+        const { data: cu } = await supabase.from('company_users').select('company_id').limit(1).maybeSingle();
+        companyId = cu?.company_id || null;
+      } catch {}
+      if (!companyId) {
+        const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        companyId = (comp as any)?.id || null;
+      }
+      if (!companyId) { toast.error('No company found'); return; }
+      const { error } = await supabase
+        .from('billing_settings')
+        .upsert({ business_id: companyId, payout_account_id: Number(accountId) }, { onConflict: 'business_id' });
+      if (error) { toast.error(error.message); return; }
+      toast.success('Default payout account updated');
+    } catch (e) {
+      toast.error('Failed to set default payout');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
