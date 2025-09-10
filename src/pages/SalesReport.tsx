@@ -552,6 +552,17 @@ const SalesReport: React.FC = () => {
             </div>
             
             <div className="space-y-2 md:col-span-3">
+              <div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full md:w-32"
+                  onClick={handleRefresh}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
               <Label>Payment Method</Label>
               <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
                 <SelectTrigger className="w-full md:w-44 h-9">
@@ -567,6 +578,17 @@ const SalesReport: React.FC = () => {
             </div>
             
             <div className="space-y-2 md:col-span-2">
+              <div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full md:w-32 whitespace-nowrap"
+                  onClick={handleExportData}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </div>
               <Label>Status</Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-full md:w-36 h-9">
@@ -581,26 +603,6 @@ const SalesReport: React.FC = () => {
               </Select>
             </div>
 
-            <div className="md:col-span-3 grid grid-cols-2 gap-2 w-full">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full md:w-32"
-                onClick={handleRefresh}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full md:w-32 whitespace-nowrap"
-                onClick={handleExportData}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
