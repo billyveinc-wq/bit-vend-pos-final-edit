@@ -622,7 +622,11 @@ const Settings = () => {
     printDensity: 100
   });
   const [barcodeSettings, setBarcodeSettings] = useState({
-    testInput: ''
+    testInput: '',
+    scannerType: 'keyboard_wedge',
+    prefix: '',
+    suffix: '',
+    autoSubmit: true
   });
   const [cashDrawerSettings, setCashDrawerSettings] = useState({
     openCode: '27,112,0,25,250'
