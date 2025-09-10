@@ -59,11 +59,11 @@ const Brands = () => {
             id: String(row.id),
             name: row.name,
             description: row.description || '',
-            logoUrl: row.logo_url || undefined,
-            website: row.website || '',
-            contactEmail: row.contact_email || '',
+            logoUrl: row.image_url || undefined,
+            website: '',
+            contactEmail: '',
             isActive: !!row.is_active,
-            productCount: Number(row.product_count) || 0,
+            productCount: 0,
             createdAt: row.created_at,
           }));
           setBrands(mapped);
@@ -95,12 +95,10 @@ const Brands = () => {
           .update({
             name: formData.name,
             description: formData.description || null,
-            logo_url: logoPreview || null,
-            website: formData.website || null,
-            contact_email: formData.contactEmail || null,
+            image_url: logoPreview || null,
             is_active: formData.isActive,
           })
-          .eq('id', Number(editingBrand.id));
+          .eq('id', editingBrand.id);
         if (error) { toast.error(error.message); return; }
         setBrands(prev => prev.map(brand =>
           brand.id === editingBrand.id
@@ -114,9 +112,7 @@ const Brands = () => {
           .insert({
             name: formData.name,
             description: formData.description || null,
-            logo_url: logoPreview || null,
-            website: formData.website || null,
-            contact_email: formData.contactEmail || null,
+            image_url: logoPreview || null,
             is_active: formData.isActive,
           })
           .select('*')
@@ -159,7 +155,7 @@ const Brands = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this brand?')) {
       try {
-        const { error } = await supabase.from('brands').delete().eq('id', Number(id));
+        const { error } = await supabase.from('brands').delete().eq('id', id);
         if (error) { toast.error(error.message); return; }
         setBrands(prev => prev.filter(brand => brand.id !== id));
         toast.success('Brand deleted successfully!');
