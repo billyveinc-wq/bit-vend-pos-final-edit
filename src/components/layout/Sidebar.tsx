@@ -62,26 +62,40 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
 
   useEffect(() => {
     let isMounted = true;
-    if (isAdmin) {
-      setAllowedPages(null);
-      return;
-    }
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
         if (!user) return;
-        const { data } = await supabase.from('system_users').select('user_metadata').eq('id', user.id).maybeSingle();
-        const meta = (data as any)?.user_metadata || {};
-        const restr = meta?.restrictions;
-        if (isMounted && restr && restr.enabled && Array.isArray(restr.pages)) {
-          setAllowedPages(restr.pages as string[]);
+        // Determine payment settings access: super admin OR company owner/admin OR first system user
+        if (isAdmin) { if (isMounted) setCanManagePayments(true); }
+        try {
+          const { data: cu } = await supabase.from('company_users').select('role').eq('user_id', user.id).maybeSingle();
+          const role = (cu as any)?.role;
+          if ((role === 'owner' || role === 'admin') && isMounted) setCanManagePayments(true);
+        } catch {}
+        try {
+          const { count } = await supabase.from('system_users').select('id', { count: 'exact', head: true });
+          if ((count || 0) === 1 && isMounted) setCanManagePayments(true);
+        } catch {}
+        // Restrictions metadata for other pages
+        if (!isAdmin) {
+          const { data } = await supabase.from('system_users').select('user_metadata').eq('id', user.id).maybeSingle();
+          const meta = (data as any)?.user_metadata || {};
+          const restr = meta?.restrictions;
+          if (isMounted && restr && restr.enabled && Array.isArray(restr.pages)) {
+            setAllowedPages(restr.pages as string[]);
+          } else if (isMounted) {
+            setAllowedPages(null);
+          }
         } else if (isMounted) {
           setAllowedPages(null);
         }
       } catch (err) {
-        // fail-open if restriction fetch fails
-        if (isMounted) setAllowedPages(null);
+        if (isMounted) {
+          setAllowedPages(null);
+          setCanManagePayments(isAdmin);
+        }
       }
     })();
     return () => { isMounted = false; };
