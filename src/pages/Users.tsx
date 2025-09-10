@@ -104,6 +104,7 @@ const Users = () => {
 
   const [users, setUsers] = useState<User[]>([]);
   const [companyId, setCompanyId] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -116,10 +117,29 @@ const Users = () => {
           if (cu?.company_id) cId = Number(cu.company_id);
         }
         setCompanyId(cId);
+        setCurrentUserId(uid);
+
+        if (uid) {
+          const { data: existing } = await supabase.from('system_users').select('id, company_id').eq('id', uid).maybeSingle();
+          if (!existing) {
+            const { data: meData } = await supabase.auth.getUser();
+            const me = meData.user;
+            const meta = (me as any)?.user_metadata || {};
+            await supabase.from('system_users').upsert({
+              id: uid,
+              email: me?.email || '',
+              user_metadata: meta,
+              created_at: new Date().toISOString(),
+              company_id: cId
+            });
+          } else if (cId && !existing.company_id) {
+            await supabase.from('system_users').update({ company_id: cId }).eq('id', uid);
+          }
+        }
 
         const { data, error } = await supabase.from('system_users').select('*').order('created_at', { ascending: false }).eq('company_id', cId);
         if (error) throw error;
-        const filtered = (data || []).filter((row: any) => Boolean(row.user_metadata?.created_by_admin));
+        const filtered = (data || []).filter((row: any) => Boolean(row.user_metadata?.created_by_admin) || row.id === uid);
         const mapped: User[] = filtered.map((row: any) => {
           const meta = row.user_metadata || {};
           return {
@@ -694,13 +714,15 @@ const Users = () => {
                           >
                             <Edit2 size={14} />
                           </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(user.id)}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
+                          {user.id !== currentUserId && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(user.id)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
