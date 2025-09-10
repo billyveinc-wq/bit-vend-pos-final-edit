@@ -12,12 +12,32 @@ const TaxSettings: React.FC = () => {
 
   const [tax, setTax] = useState('15');
   useEffect(() => {
-    const saved = localStorage.getItem('pos-default-tax');
-    if (saved) setTax(saved);
+    const load = async () => {
+      let val: string | null = null;
+      try {
+        const mod = await import('@/integrations/supabase/client');
+        const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        if (comp?.id) {
+          const { data } = await mod.supabase.from('app_settings').select('value').eq('company_id', comp.id).eq('key', 'default_tax').maybeSingle();
+          if (data?.value?.percent) val = String((data.value as any).percent);
+          else if (data?.value) val = String(data.value);
+        }
+      } catch {}
+      if (!val) val = localStorage.getItem('pos-default-tax');
+      if (val) setTax(val);
+    };
+    load();
   }, []);
 
-  const save = () => {
+  const save = async () => {
     localStorage.setItem('pos-default-tax', tax);
+    try {
+      const mod = await import('@/integrations/supabase/client');
+      const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+      if (comp?.id) {
+        await mod.supabase.from('app_settings').upsert({ company_id: comp.id, key: 'default_tax', value: { percent: Number(tax) } }, { onConflict: 'company_id,key' });
+      }
+    } catch {}
     toast({ title: 'Saved', description: 'Tax settings updated.' });
   };
 
