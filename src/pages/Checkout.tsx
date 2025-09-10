@@ -135,48 +135,52 @@ const Checkout = () => {
       const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
       const invoiceNo = `INV-${dateStr}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-      // Persist sale
+      // Persist sale (align with Supabase schema)
       const { data: saleInsert, error: saleErr } = await supabase
         .from('sales')
         .insert({
-          invoice_no: invoiceNo,
-          date: new Date().toISOString().split('T')[0],
-          time: new Date().toLocaleTimeString(),
+          invoice_number: invoiceNo,
           subtotal: cartTotal,
-          tax,
-          discount: 0,
-          total: finalTotal,
+          tax_amount: tax,
+          discount_amount: 0,
+          total_amount: finalTotal,
           payment_method: paymentMethod.toLowerCase(),
-          status: 'completed',
-          sales_person: 'Current User',
-          receipt_template: settings.receiptTemplate || 'classic-receipt'
+          payment_status: 'completed',
+          notes: null
         })
         .select('id')
         .single();
       if (saleErr) throw saleErr;
-      const dbSaleId = saleInsert?.id as number;
+      const dbSaleId = saleInsert?.id as string;
 
-      // Persist sale items
-      const itemsPayload = saleItems.map(si => ({
+      // Persist sale items (expects product_id)
+      const itemsPayload = cart.map(item => ({
         sale_id: dbSaleId,
-        product_sku: si.sku,
-        product_name: si.productName,
-        quantity: si.quantity,
-        unit_price: si.unitPrice,
-        total: si.total
+        product_id: item.product.id,
+        quantity: item.quantity,
+        unit_price: item.product.price,
+        discount_amount: 0,
+        tax_amount: 0,
+        total_amount: item.product.price * item.quantity
       }));
       const { error: itemsErr } = await supabase.from('sale_items').insert(itemsPayload);
       if (itemsErr) throw itemsErr;
 
       // Update inventory for each item and record movement
-      for (const si of saleItems) {
-        if (!si.sku) continue;
+      for (const item of cart) {
         // Read current stock, decrement, update
-        const { data: prodRow } = await supabase.from('products').select('stock').eq('sku', si.sku).maybeSingle();
-        const current = (prodRow?.stock as number) ?? 0;
-        const next = Math.max(0, current - si.quantity);
-        await supabase.from('products').update({ stock: next }).eq('sku', si.sku);
-        await supabase.from('inventory_movements').insert({ product_sku: si.sku, change: -si.quantity, reason: 'sale', sale_id: dbSaleId });
+        const { data: prodRow } = await supabase.from('products').select('stock_quantity').eq('id', item.product.id).maybeSingle();
+        const current = Number(prodRow?.stock_quantity || 0);
+        const next = Math.max(0, current - item.quantity);
+        await supabase.from('products').update({ stock_quantity: next }).eq('id', item.product.id);
+        await supabase.from('stock_movements').insert({
+          product_id: item.product.id,
+          movement_type: 'sale',
+          quantity: item.quantity,
+          reference_type: 'sale',
+          reference_id: dbSaleId,
+          reason: 'sale'
+        });
       }
 
       // Update local state (context) for immediate UI and receipt flow
