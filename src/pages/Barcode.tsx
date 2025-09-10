@@ -223,10 +223,14 @@ const Barcode = () => {
           <CardContent>
             {selectedProductData ? (
               <div className="text-center space-y-4">
-                <div className="p-8 bg-white border rounded-lg">
+                <div className="p-6 bg-white border rounded-lg">
                   <div className="space-y-2">
-                    <div className="h-16 bg-black/10 flex items-center justify-center text-xs text-muted-foreground">
-                      Barcode Preview
+                    <div className="flex items-center justify-center h-24 w-full overflow-hidden">
+                      {selectedProductData.barcode || selectedProductData.sku ? (
+                        <Code39Barcode value={selectedProductData.barcode || selectedProductData.sku || ''} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No barcode</span>
+                      )}
                     </div>
                     <p className="text-sm font-mono">{selectedProductData.barcode || selectedProductData.sku || 'No barcode'}</p>
                   </div>
