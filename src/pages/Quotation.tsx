@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  FileText, 
+import {
+  Plus,
+  Search,
+  Filter,
+  FileText,
   Calendar,
   DollarSign,
   Package,
@@ -27,6 +27,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Create a new quotation page component
 const NewQuotationPage = () => {
@@ -142,14 +143,82 @@ const Quotation = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
-  const [quotations] = useState([]);
+  interface QuoteItem { name: string; quantity: number; price: number; total: number; }
+  interface Quote { id: string; quoteNo: string; customer: string; customerEmail: string; phone?: string; date: string; validUntil?: string; notes?: string; template?: string; status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'; subtotal: number; tax: number; total: number; items: QuoteItem[]; }
+
+  const [quotations, setQuotations] = useState<Quote[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('quotations')
+          .select('id, quote_no, customer, email, phone, date, valid_until, notes, template, status, subtotal, tax, total, quotation_items(id, name, quantity, price, total)')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Quote[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          quoteNo: row.quote_no,
+          customer: row.customer,
+          customerEmail: row.email,
+          phone: row.phone || undefined,
+          date: row.date,
+          validUntil: row.valid_until || undefined,
+          notes: row.notes || undefined,
+          template: row.template || undefined,
+          status: (row.status || 'draft') as Quote['status'],
+          subtotal: Number(row.subtotal) || 0,
+          tax: Number(row.tax) || 0,
+          total: Number(row.total) || 0,
+          items: (row.quotation_items || []).map((it: any) => ({
+            name: it.name,
+            quantity: it.quantity,
+            price: Number(it.price) || 0,
+            total: Number(it.total) || 0,
+          })),
+        }));
+        setQuotations(mapped);
+      } catch (e) {
+        console.warn('quotations not available');
+      }
+    };
+    load();
+  }, []);
   
   // Add missing handlers for quotation actions
-  const handleSendQuotation = (id: string) => {
+  const handleSendQuotation = async (id: string) => {
+    try { await supabase.from('quotations').update({ status: 'sent' }).eq('id', Number(id)); } catch {}
+    setQuotations(prev => prev.map(q => q.id === id ? { ...q, status: 'sent' } : q));
     toast.success('Quotation sent to customer successfully!');
   };
   
-  const handleDuplicateQuotation = (id: string) => {
+  const handleDuplicateQuotation = async (id: string) => {
+    const q = quotations.find(x => x.id === id);
+    if (!q) return;
+    try {
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+      const { data: countData } = await supabase.from('quotations').select('id', { count: 'exact', head: true }).like('quote_no', `Q-${dateStr}-%`);
+      const seq = ((countData as any)?.count || 0) + 1;
+      const quoteNo = `Q-${dateStr}-${String(seq).padStart(4, '0')}`;
+      const { data, error } = await supabase.from('quotations').insert({
+        quote_no: quoteNo,
+        customer: q.customer,
+        email: q.customerEmail,
+        phone: q.phone || null,
+        date: today.toISOString().split('T')[0],
+        valid_until: q.validUntil || null,
+        notes: q.notes || null,
+        template: q.template || null,
+        status: 'draft',
+        subtotal: q.subtotal,
+        tax: q.tax,
+        total: q.total,
+      }).select('id').single();
+      if (!error && data?.id) {
+        setQuotations(prev => [{ ...q, id: String(data.id), quoteNo, status: 'draft' }, ...prev]);
+      }
+    } catch {}
     toast.success('Quotation duplicated successfully!');
   };
   
