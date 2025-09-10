@@ -648,7 +648,8 @@ const Settings = () => {
     inAppAlerts: true
   });
   const [appTheme, setAppTheme] = useState({
-    theme: localStorage.getItem('pos-theme') === 'dark' ? 'dark' : 'light'
+    theme: localStorage.getItem('pos-theme') === 'dark' ? 'dark' : 'light',
+    accentColor: localStorage.getItem('pos-accent-color') || '#3b82f6'
   });
 
   // Security settings state
