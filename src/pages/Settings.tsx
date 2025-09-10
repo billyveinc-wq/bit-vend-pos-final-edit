@@ -1344,6 +1344,43 @@ const Settings = () => {
                     <Label>Print Logo</Label>
                   </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Connection Type</Label>
+                    <Select value={printerSettings.connectionType} onValueChange={(v)=>setPrinterSettings(p=>({...p, connectionType:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="usb">USB</SelectItem>
+                        <SelectItem value="bluetooth">Bluetooth</SelectItem>
+                        <SelectItem value="network">Network</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Device Name</Label>
+                    <Input value={printerSettings.deviceName} onChange={(e)=>setPrinterSettings(p=>({...p, deviceName:e.target.value}))} placeholder="Printer name" />
+                  </div>
+                  <div>
+                    <Label>IP Address (for network)</Label>
+                    <Input value={printerSettings.ipAddress} onChange={(e)=>setPrinterSettings(p=>({...p, ipAddress:e.target.value}))} placeholder="192.168.1.100" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={printerSettings.cutPaper} onCheckedChange={(c)=>setPrinterSettings(p=>({...p, cutPaper:c}))} />
+                    <Label>Cut Paper</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={printerSettings.kickDrawerAfterPrint} onCheckedChange={(c)=>setPrinterSettings(p=>({...p, kickDrawerAfterPrint:c}))} />
+                    <Label>Kick Drawer After Print</Label>
+                  </div>
+                  <div>
+                    <Label>Print Density (%)</Label>
+                    <Input type="number" value={printerSettings.printDensity} onChange={(e)=>setPrinterSettings(p=>({...p, printDensity:Number(e.target.value||100)}))} />
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={()=>{ saveLocal('pos-printer-settings', printerSettings); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=>window.print()}>Test Print</Button>
