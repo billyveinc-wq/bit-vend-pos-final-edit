@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import {
   Eye
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Customer {
   id: string;
@@ -54,36 +55,112 @@ const Customers = () => {
 
   const [customers, setCustomers] = useState<Customer[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          const mapped: Customer[] = data.map((row: any) => ({
+            id: String(row.id),
+            name: row.name,
+            email: row.email || '',
+            phone: row.phone || '',
+            address: row.address || '',
+            city: row.city || '',
+            country: row.country || '',
+            customerType: (row.customer_type || 'individual') as Customer['customerType'],
+            totalPurchases: Number(row.total_purchases) || 0,
+            lastPurchase: row.last_purchase || undefined,
+            isActive: !!row.is_active,
+            notes: row.notes || '',
+            createdAt: row.created_at,
+          }));
+          setCustomers(mapped);
+        }
+      } catch (e) {
+        console.warn('Failed to load customers');
+      }
+    };
+    load();
+  }, []);
+
   const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (customer.phone && customer.phone.includes(searchTerm))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name) {
       toast.error('Please enter a customer name');
       return;
     }
-    
-    if (editingCustomer) {
-      setCustomers(prev => prev.map(customer =>
-        customer.id === editingCustomer.id
-          ? { ...customer, ...formData }
-          : customer
-      ));
-      toast.success('Customer updated successfully!');
-    } else {
-      const newCustomer: Customer = {
-        id: Date.now().toString(),
-        ...formData,
-        totalPurchases: 0,
-        createdAt: new Date().toISOString()
-      };
-      setCustomers(prev => [...prev, newCustomer]);
-      toast.success('Customer created successfully!');
+
+    try {
+      if (editingCustomer) {
+        const { error } = await supabase
+          .from('customers')
+          .update({
+            name: formData.name,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            address: formData.address || null,
+            city: formData.city || null,
+            country: formData.country || null,
+            customer_type: formData.customerType,
+            notes: formData.notes || null,
+            is_active: formData.isActive,
+          })
+          .eq('id', Number(editingCustomer.id));
+        if (error) { toast.error(error.message); return; }
+        setCustomers(prev => prev.map(customer =>
+          customer.id === editingCustomer.id
+            ? { ...customer, ...formData }
+            : customer
+        ));
+        toast.success('Customer updated successfully!');
+      } else {
+        const { data, error } = await supabase
+          .from('customers')
+          .insert({
+            name: formData.name,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            address: formData.address || null,
+            city: formData.city || null,
+            country: formData.country || null,
+            customer_type: formData.customerType,
+            notes: formData.notes || null,
+            is_active: formData.isActive,
+          })
+          .select('*')
+          .single();
+        if (error) { toast.error(error.message); return; }
+        const newCustomer: Customer = {
+          id: String(data.id),
+          name: data.name,
+          email: data.email || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          city: data.city || '',
+          country: data.country || '',
+          customerType: (data.customer_type || 'individual') as Customer['customerType'],
+          totalPurchases: Number(data.total_purchases) || 0,
+          lastPurchase: data.last_purchase || undefined,
+          isActive: !!data.is_active,
+          notes: data.notes || '',
+          createdAt: data.created_at,
+        };
+        setCustomers(prev => [newCustomer, ...prev]);
+        toast.success('Customer created successfully!');
+      }
+    } catch (err) {
+      toast.error('Failed to save customer');
     }
 
     setIsDialogOpen(false);
@@ -106,10 +183,16 @@ const Customers = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this customer?')) {
-      setCustomers(prev => prev.filter(customer => customer.id !== id));
-      toast.success('Customer deleted successfully!');
+      try {
+        const { error } = await supabase.from('customers').delete().eq('id', Number(id));
+        if (error) { toast.error(error.message); return; }
+        setCustomers(prev => prev.filter(customer => customer.id !== id));
+        toast.success('Customer deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete customer');
+      }
     }
   };
 
