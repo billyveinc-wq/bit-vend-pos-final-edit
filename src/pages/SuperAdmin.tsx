@@ -783,6 +783,40 @@ const SuperAdmin = () => {
                   </CardContent>
                 </Card>
               </div>
+
+              <Dialog open={billingWizardOpen} onOpenChange={setBillingWizardOpen}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Billing Setup Wizard</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Step 1: Add your bank account</h4>
+                      <p className="text-sm text-muted-foreground">Add your business bank and set it as default payout.</p>
+                      <Button variant="secondary" onClick={() => (window.location.href = '/dashboard/bank-accounts')}>Go to Bank Accounts</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Step 2: Configure a payment provider</h4>
+                      <p className="text-sm text-muted-foreground">Open Payment Settings and enter live or sandbox credentials. Set the default provider.</p>
+                      <Button variant="outline" onClick={() => (window.location.href = '/dashboard/payment-settings')}>Open Payment Settings</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Step 3: Register webhooks on provider dashboards</h4>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={() => copyWebhook('mpesa')}>Copy M-Pesa webhook</Button>
+                        <Button size="sm" variant="secondary" onClick={() => copyWebhook('paypal')}>Copy PayPal webhook</Button>
+                        <Button size="sm" variant="outline" onClick={() => copyWebhook('flutterwave')}>Copy Flutterwave webhook</Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Step 4: Test a sandbox subscription checkout</h4>
+                      <p className="text-sm text-muted-foreground">Run a test plan purchase to confirm invoice/payment updates.</p>
+                      <Button onClick={() => (window.location.href = '/dashboard/subscription?startCheckout=1&plan=standard')}>Start Test Checkout</Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
             </CardContent>
           </Card>
         </TabsContent>
