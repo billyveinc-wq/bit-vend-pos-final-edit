@@ -565,6 +565,14 @@ const Settings = () => {
     template: 'classic',
     showTax: true,
     showTotals: true,
+    paperSize: '80mm',
+    showCustomerInfo: true,
+    showBarcode: false,
+    showQRCode: false,
+    includeCashierName: true,
+    includeRegisterId: true,
+    showChangeDue: true,
+    businessHeader: '',
     businessFooter: ''
   });
   const [terminalBehavior, setTerminalBehavior] = useState({
