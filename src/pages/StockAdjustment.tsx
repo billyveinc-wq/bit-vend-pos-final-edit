@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockAdjustment {
   id: string;
@@ -50,13 +51,36 @@ const StockAdjustment = () => {
 
   const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('stock_adjustments').select('*').order('created_at', { ascending: false });
+        const mapped: StockAdjustment[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          productId: 0,
+          productName: row.product_name,
+          adjustmentType: (row.adjustment_type || 'increase') as StockAdjustment['adjustmentType'],
+          quantity: row.quantity,
+          reason: row.reason || '',
+          notes: row.notes || '',
+          adjustmentDate: row.adjustment_date,
+          adjustedBy: row.adjusted_by || 'System',
+          status: row.status || 'pending',
+          createdAt: row.created_at,
+        }));
+        setAdjustments(mapped);
+      } catch (e) { console.warn('stock_adjustments not available'); }
+    };
+    load();
+  }, []);
+
   const filteredAdjustments = adjustments.filter(adjustment =>
     adjustment.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     adjustment.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
     adjustment.adjustedBy.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
 
@@ -85,6 +109,22 @@ const StockAdjustment = () => {
     };
     
     setAdjustments(prev => [...prev, newAdjustment]);
+
+    try {
+      const { error } = await supabase.from('stock_adjustments').insert({
+        product_sku: product.sku || null,
+        product_name: product.name,
+        adjustment_type: formData.adjustmentType,
+        quantity: parseInt(formData.quantity),
+        reason: formData.reason || null,
+        notes: formData.notes || null,
+        adjustment_date: formData.adjustmentDate,
+        adjusted_by: 'Current User',
+        status: 'pending',
+      });
+      if (error) console.warn('Failed to insert stock_adjustment', error);
+    } catch {}
+
     toast.success('Stock adjustment created successfully!');
     setIsDialogOpen(false);
     resetForm();
@@ -101,10 +141,23 @@ const StockAdjustment = () => {
     });
   };
 
-  const handleApproveAdjustment = (id: string) => {
+  const handleApproveAdjustment = async (id: string) => {
+    const adj = adjustments.find(a => a.id === id);
     setAdjustments(prev => prev.map(adj =>
       adj.id === id ? { ...adj, status: 'approved' } : adj
     ));
+    try {
+      await supabase.from('stock_adjustments').update({ status: 'approved' }).eq('id', Number(id));
+      const product = products.find(p => p.name === adj?.productName);
+      if (product?.sku && adj) {
+        const { data: prodRow } = await supabase.from('products').select('stock').eq('sku', product.sku).maybeSingle();
+        const current = Number(prodRow?.stock || 0);
+        const delta = adj.adjustmentType === 'increase' ? adj.quantity : -adj.quantity;
+        const next = Math.max(0, current + delta);
+        await supabase.from('products').update({ stock: next }).eq('sku', product.sku);
+        await supabase.from('inventory_movements').insert({ product_sku: product.sku, change: delta, reason: 'stock_adjustment' });
+      }
+    } catch (e) { console.warn('Approve adjustment failed', e); }
     toast.success('Stock adjustment approved!');
   };
 
