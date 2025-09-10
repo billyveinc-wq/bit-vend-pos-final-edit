@@ -69,7 +69,11 @@ const AuthPage = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         if ((new URLSearchParams(window.location.search)).get('mode') === 'reset') return;
-        navigate('/dashboard', { replace: true });
+        const qp = new URLSearchParams(window.location.search);
+        const redirect = qp.get('redirect');
+        const stored = localStorage.getItem('last-route');
+        const target = (redirect && redirect.startsWith('/')) ? redirect : (stored && stored.startsWith('/') ? stored : '/dashboard');
+        navigate(target, { replace: true });
       }
     });
 
