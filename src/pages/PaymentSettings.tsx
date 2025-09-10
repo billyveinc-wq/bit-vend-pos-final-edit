@@ -184,7 +184,7 @@ const ProviderSection: React.FC<{
 
 const PaymentSettings: React.FC = () => {
   const { toast } = useToast();
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin, isChecking } = useAdminAuth();
   const { companyId } = useCompany();
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<Record<ProviderKey, ProviderSettings>>({
