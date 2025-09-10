@@ -655,7 +655,13 @@ const Settings = () => {
   // Security settings state
   const [securityGeneral, setSecurityGeneral] = useState({
     requireStrongPasswords: true,
-    twoFactorAuth: false
+    twoFactorAuth: false,
+    minPasswordLength: 8,
+    lockoutAfterFailedAttempts: 5,
+    sessionTimeoutMinutes: 60,
+    restrictByIP: false,
+    allowedIPs: '',
+    requireDevicePIN: false
   });
   const [auditLogs] = useState<string[]>(() => {
     const saved = localStorage.getItem('pos-audit-log');
