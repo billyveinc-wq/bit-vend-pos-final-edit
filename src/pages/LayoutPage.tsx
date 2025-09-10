@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 const saveAppSetting = async (key: string, value: any) => {
   try {
@@ -39,6 +41,19 @@ const saveAppSetting = async (key: string, value: any) => {
 
 const LayoutPage = () => {
   const { theme, setTheme } = useTheme();
+  const { isAdmin } = useAdminAuth();
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>You do not have permission to access Layout settings.</CardContent>
+        </Card>
+      </div>
+    );
+  }
   const [layoutSettings, setLayoutSettings] = useState({
     sidebarCollapsed: false,
     sidebarPosition: 'left',
