@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
@@ -42,7 +43,7 @@ const Layout: React.FC<LayoutProps> = () => {
       if (adminSession) return;
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await safeGetSession();
         if (!session?.user) {
           // Only redirect to auth if user is not authenticated
           window.location.href = '/auth';
