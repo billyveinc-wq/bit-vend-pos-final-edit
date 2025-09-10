@@ -480,7 +480,7 @@ const Topbar: React.FC<TopbarProps> = ({
 
       {/* User email compose dialog */}
       <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-        <DialogContent className="sm:max-w-3xl max-w-[95vw] w-full overflow-hidden">
+        <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Message</DialogTitle>
           </DialogHeader>
@@ -542,7 +542,7 @@ const Topbar: React.FC<TopbarProps> = ({
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const url = window.prompt('Enter URL'); if (url) document.execCommand('createLink', false, url); }}><LinkIcon className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const url = window.prompt('Image URL'); if (url) document.execCommand('insertImage', false, url); }}><ImageIcon className="h-4 w-4" /></Button>
               </div>
-              <div className="min-h-[180px] p-3 outline-none" style={{ fontFamily: fontMap[fontFamilyKey] }} contentEditable ref={editorRef} data-placeholder="Write your message..." onInput={(e) => setCompose(prev => ({ ...prev, body: (e.target as HTMLDivElement).innerText }))}></div>
+              <div className="min-h[180px] p-3 outline-none" style={{ fontFamily: fontMap[fontFamilyKey] }} contentEditable ref={editorRef} data-placeholder="Write your message..." onInput={(e) => setCompose(prev => ({ ...prev, body: (e.target as HTMLDivElement).innerText }))}></div>
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2">Attachments</Label>
@@ -561,24 +561,9 @@ const Topbar: React.FC<TopbarProps> = ({
                   <Paperclip className="h-4 w-4" />
                   Attach
                 </Button>
-                <Button type="button" size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={async () => {
+                <Button type="button" size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
                   const toVal = (compose.to && compose.to.trim()) || (supportEmail || '');
                   const bodyVal = (editorRef.current?.innerText || compose.body || '').trim();
-                  if (emailWebhookUrl) {
-                    try {
-                      const res = await fetch(emailWebhookUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ to: toVal, cc: compose.cc || undefined, bcc: compose.bcc || undefined, subject: compose.subject || '', text: bodyVal, html: bodyVal.replace(/\n/g,'<br/>') })
-                      });
-                      if (!res.ok) throw new Error(await res.text());
-                      toast.success('Email sent');
-                      setShowEmailDialog(false);
-                      return;
-                    } catch (e) {
-                      toast.error('Direct send failed. Opening Gmail...');
-                    }
-                  }
                   const params = new URLSearchParams();
                   if (toVal) params.set('to', toVal);
                   if (compose.cc) params.set('cc', compose.cc);
@@ -587,7 +572,6 @@ const Topbar: React.FC<TopbarProps> = ({
                   if (bodyVal) params.set('body', bodyVal);
                   const url = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
                   window.open(url, '_blank');
-                  setShowEmailDialog(false);
                 }}>
                   <SendIcon className="h-4 w-4" />
                   Send
@@ -611,19 +595,6 @@ const Topbar: React.FC<TopbarProps> = ({
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
-                  const toVal = (compose.to && compose.to.trim()) || (supportEmail || '');
-                  const bodyVal = (editorRef.current?.innerText || compose.body || '').trim();
-                  const params = new URLSearchParams();
-                  if (toVal) params.set('to', toVal);
-                  if (compose.cc) params.set('cc', compose.cc);
-                  if (compose.bcc) params.set('bcc', compose.bcc);
-                  if (compose.subject) params.set('su', compose.subject);
-                  if (bodyVal) params.set('body', bodyVal);
-                  const url = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
-                  window.open(url, '_blank');
-                  setShowEmailDialog(false);
-                }}>Open in Gmail</Button>
                 <Button onClick={() => {
                   const qp: string[] = [];
                   const enc = (s: string) => encodeURIComponent(s);
