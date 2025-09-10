@@ -230,8 +230,10 @@ const SuperAdmin = () => {
           const plan = (plans || []).find((p: any) => p.id === sub?.plan_id);
           // find company that this owner belongs to
           const companyEntry = Array.from(firstUserByCompany.entries()).find(([, v]) => v.user_id === u.id);
-          const companyId = companyEntry ? companyEntry[0] : String(u.company_id || '');
-          const companyName = companyId ? (companyById.get(String(companyId)) || '-') : (u.user_metadata?.company_name || u.user_metadata?.company || '-');
+          if (!companyEntry) return null; // exclude users without a company mapping
+          const companyId = companyEntry[0];
+          const companyName = companyById.get(String(companyId)) || '-';
+          if (!companyName || companyName === '-') return null; // exclude if company name is missing
           const up = (ups || []).find((p: any) => p.user_id === u.id);
 
           return {
@@ -247,9 +249,9 @@ const SuperAdmin = () => {
             createdAt: u.created_at || u.createdAt || '-',
             lastLogin: u.last_sign_in_at || u.lastLogin || '-',
           };
-        });
+        }).filter(Boolean);
 
-        setRegistrations(regs);
+        setRegistrations(regs as any[]);
       } catch (err) {
         console.error('Failed loading registrations', err);
         setRegistrations([]);
