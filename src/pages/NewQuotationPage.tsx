@@ -96,6 +96,9 @@ const NewQuotationPage = () => {
       const { count } = await supabase.from('quotations').select('id', { count: 'exact', head: true }).like('quote_no', `Q-${dateStr}-%`);
       const seq = (count || 0) + 1;
       const quoteNo = `Q-${dateStr}-${String(seq).padStart(4, '0')}`;
+      const detailsLines = Object.keys(extraFields).length
+        ? ['\n--- Template Details ---', ...Object.entries(extraFields).map(([k,v]) => `${k}: ${v || '-'}`)].join('\n')
+        : '';
       const { error } = await supabase.from('quotations').insert({
         quote_no: quoteNo,
         customer: formData.customer,
@@ -103,7 +106,7 @@ const NewQuotationPage = () => {
         phone: formData.phone || null,
         date: today.toISOString().split('T')[0],
         valid_until: formData.validUntil || null,
-        notes: formData.notes || null,
+        notes: ((formData.notes || '') + detailsLines) || null,
         template: formData.template,
         status: 'draft',
         subtotal: 0,
