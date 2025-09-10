@@ -121,6 +121,15 @@ const AuthPage = () => {
         password,
       });
 
+      if (!error) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from('system_users').upsert({ id: user.id, last_sign_in_at: new Date().toISOString() }, { onConflict: 'id' });
+          }
+        } catch {}
+      }
+
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
           toast.error('Invalid email or password. Please check your credentials.');
