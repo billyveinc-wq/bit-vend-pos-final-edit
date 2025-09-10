@@ -134,7 +134,10 @@ const Topbar: React.FC<TopbarProps> = ({
         if (!companyId) return;
         const { data } = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', 'support_email').maybeSingle();
         const val = (data as any)?.value;
-        if (typeof val === 'string') setSupportEmail(val);
+        if (typeof val === 'string' && val) { setSupportEmail(val); return; }
+        const app = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', 'application_settings').maybeSingle();
+        const appVal = (app.data as any)?.value;
+        if (appVal?.supportEmail) setSupportEmail(appVal.supportEmail);
       } catch {}
     };
     loadSupportEmail();
