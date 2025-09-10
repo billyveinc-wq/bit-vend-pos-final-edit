@@ -50,16 +50,24 @@ const Checkout = () => {
   // Load enabled providers per company
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: cu } = await supabase.from('company_users').select('company_id').eq('user_id', user.id).maybeSingle();
-      if (!cu?.company_id) return;
-      const { data: settingsRows } = await supabase
-        .from('payment_provider_settings')
-        .select('provider_key, enabled')
-        .eq('company_id', cu.company_id);
-      const enabled = (settingsRows || []).filter(r => r.enabled).map(r => r.provider_key as string);
-      setEnabledProviders(enabled);
+      try {
+        // Skip when offline to avoid network errors
+        if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+        const res = await supabase.auth.getUser();
+        const user = res?.data?.user || null;
+        if (!user) return;
+        const { data: cu } = await supabase.from('company_users').select('company_id').eq('user_id', user.id).maybeSingle();
+        if (!cu?.company_id) return;
+        const { data: settingsRows } = await supabase
+          .from('payment_provider_settings')
+          .select('provider_key, enabled')
+          .eq('company_id', cu.company_id);
+        const enabled = (settingsRows || []).filter(r => r.enabled).map(r => r.provider_key as string);
+        setEnabledProviders(enabled);
+      } catch (e) {
+        console.warn('Failed to load payment providers, continuing without:', e);
+        setEnabledProviders([]);
+      }
     })();
   }, []);
 
