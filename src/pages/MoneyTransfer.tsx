@@ -21,6 +21,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface MoneyTransfer {
   id: string;
@@ -50,13 +51,32 @@ const MoneyTransfer = () => {
   });
 
   const [transfers, setTransfers] = useState<MoneyTransfer[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<{ id: string; name: string; }[]>([]);
 
-  // Mock bank accounts for selection
-  const bankAccounts = [
-    { id: '1', name: 'Business Checking - ****1234', bank: 'Chase Bank' },
-    { id: '2', name: 'Business Savings - ****5678', bank: 'Wells Fargo' },
-    { id: '3', name: 'Petty Cash Account - ****9012', bank: 'Local Bank' }
-  ];
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: accs } = await supabase.from('bank_accounts').select('id, account_name, bank_name');
+        setBankAccounts((accs || []).map((a: any) => ({ id: String(a.id), name: `${a.account_name}` })));
+      } catch {}
+      try {
+        const { data: txs } = await supabase.from('money_transfers').select('*').order('created_at', { ascending: false });
+        setTransfers((txs || []).map((t: any) => ({
+          id: String(t.id),
+          fromAccount: String(t.from_account_id || ''),
+          toAccount: String(t.to_account_id || ''),
+          amount: Number(t.amount) || 0,
+          transferDate: t.transfer_date,
+          reference: t.reference,
+          description: t.description || '',
+          status: t.status || 'pending',
+          transferFee: Number(t.transfer_fee) || 0,
+          createdAt: t.created_at,
+        })));
+      } catch {}
+    };
+    load();
+  }, []);
 
   const filteredTransfers = transfers.filter(transfer =>
     transfer.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -69,7 +89,7 @@ const MoneyTransfer = () => {
     setFormData(prev => ({ ...prev, reference: randomRef }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
 
@@ -82,17 +102,45 @@ const MoneyTransfer = () => {
       toast.error('From and To accounts cannot be the same');
       return;
     }
-    const newTransfer: MoneyTransfer = {
-      id: Date.now().toString(),
-      ...formData,
-      amount: parseFloat(formData.amount),
-      transferFee: parseFloat(formData.transferFee) || 0,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-    
-    setTransfers(prev => [...prev, newTransfer]);
-    toast.success('Money transfer initiated successfully!');
+    const fromAcc = bankAccounts.find(b => b.name === formData.fromAccount);
+    const toAcc = bankAccounts.find(b => b.name === formData.toAccount);
+
+    try {
+      const { data, error } = await supabase.from('money_transfers').insert({
+        from_account_id: fromAcc ? Number(fromAcc.id) : null,
+        to_account_id: toAcc ? Number(toAcc.id) : null,
+        amount: parseFloat(formData.amount),
+        transfer_date: formData.transferDate,
+        reference: formData.reference,
+        description: formData.description || null,
+        transfer_fee: parseFloat(formData.transferFee) || 0,
+        status: 'pending',
+      }).select('*').single();
+      if (error) { toast.error(error.message); return; }
+
+      if (fromAcc) await supabase.rpc('noop');
+      if (fromAcc) await supabase.from('bank_accounts').update({ balance: supabase.sql`balance - ${parseFloat(formData.amount)}` }).eq('id', Number(fromAcc.id));
+      if (toAcc) await supabase.from('bank_accounts').update({ balance: supabase.sql`balance + ${parseFloat(formData.amount)}` }).eq('id', Number(toAcc.id));
+      await supabase.from('money_transfers').update({ status: 'completed' }).eq('id', data.id);
+
+      const newTransfer: MoneyTransfer = {
+        id: String(data.id),
+        fromAccount: fromAcc ? fromAcc.id : '',
+        toAccount: toAcc ? toAcc.id : '',
+        amount: Number(data.amount) || 0,
+        transferDate: data.transfer_date,
+        reference: data.reference,
+        description: data.description || '',
+        status: 'completed',
+        transferFee: Number(data.transfer_fee) || 0,
+        createdAt: data.created_at,
+      };
+      setTransfers(prev => [newTransfer, ...prev]);
+      toast.success('Money transfer completed!');
+    } catch (err: any) {
+      toast.error('Failed to create transfer');
+    }
+
     setIsDialogOpen(false);
     resetForm();
   };
