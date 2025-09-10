@@ -208,7 +208,7 @@ const LandingPage = () => {
               </div>
 
               {/* Typewriter: Integrated with ... */}
-              <div className="relative inline-flex items-center mt-2">
+              <div className="relative inline-flex items-center mt-4">
                 <div className={`absolute -inset-1 rounded-lg blur-lg bg-gradient-to-r ${providerPhrases[pIndex].glow} to-transparent transition-all duration-700`} aria-hidden="true" />
                 <div className="relative z-10 text-sm font-medium">
                   <span className="text-muted-foreground">Integrated with </span>
