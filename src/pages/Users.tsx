@@ -104,6 +104,35 @@ const Users = () => {
 
   const [users, setUsers] = useState<User[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase.from('system_users').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: User[] = (data || []).map((row: any) => {
+          const meta = row.user_metadata || {};
+          return {
+            id: String(row.id),
+            username: meta.username || meta.full_name || row.email?.split('@')[0] || 'user',
+            email: row.email || meta.email || '',
+            firstName: meta.first_name || (meta.full_name ? String(meta.full_name).split(' ')[0] : ''),
+            lastName: meta.last_name || (meta.full_name ? String(meta.full_name).split(' ').slice(1).join(' ') : ''),
+            phone: meta.phone || '',
+            role: meta.role || 'cashier',
+            status: 'active',
+            lastLogin: undefined,
+            createdAt: row.created_at,
+            permissions: Array.isArray(meta.permissions) ? meta.permissions : (meta.restrictions?.actions || []),
+          };
+        });
+        setUsers(mapped);
+      } catch (e) {
+        console.warn('Failed to load system users');
+      }
+    };
+    load();
+  }, []);
+
   const roles = [
     { id: 'admin', name: 'Administrator', permissions: ['all'] },
     { id: 'manager', name: 'Manager', permissions: ['sales', 'inventory', 'reports'] },
@@ -200,10 +229,16 @@ const Users = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this user?')) {
-      setUsers(prev => prev.filter(user => user.id !== id));
-      toast.success('User deleted successfully!');
+      try {
+        const { error } = await supabase.from('system_users').delete().eq('id', id);
+        if (error) { toast.error(error.message); return; }
+        setUsers(prev => prev.filter(user => user.id !== id));
+        toast.success('User deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete user');
+      }
     }
   };
 
