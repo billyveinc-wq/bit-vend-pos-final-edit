@@ -63,6 +63,18 @@ const NewQuotationPage = () => {
     setFormData(prev => ({ ...prev, template: tpl, notes: noteDefaults[tpl] || '', validUntil: formatted }));
     setNotesTouched(false);
     setValidTouched(false);
+    const templateFieldPresets: Record<string, Record<string, string>> = {
+      service: { scope: '', hours: '', rate: '' },
+      product: { delivery_method: '', warranty: '' },
+      wholesale: { moq: '', bulk_discount: '' },
+      pro_forma: { company_address: '', payment_terms: '' },
+      subscription: { billing_cycle: 'monthly', start_date: '', end_date: '' },
+      maintenance: { plan_level: '', visits_per_year: '' },
+      consulting: { hourly_rate: '', estimated_hours: '' },
+      rental: { rental_period: '', deposit: '' },
+      installation: { site_address: '', install_date: '' }
+    };
+    setExtraFields(templateFieldPresets[tpl] || {});
   };
 
   useEffect(() => {
