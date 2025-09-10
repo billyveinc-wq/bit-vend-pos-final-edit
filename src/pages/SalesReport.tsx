@@ -506,8 +506,8 @@ const SalesReport: React.FC = () => {
 
       {/* Filters */}
       <Card className="animate-slideInLeft">
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
+        <CardHeader className="flex items-center justify-between gap-3 flex-wrap">
+          <CardTitle className="flex items-center whitespace-nowrap mr-2">
             <Filter className="h-5 w-5 mr-2" />
             Filters & Date Range
           </CardTitle>
