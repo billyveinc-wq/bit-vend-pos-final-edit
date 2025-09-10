@@ -656,28 +656,56 @@ const SuperAdmin = () => {
                 <div className="flex items-center gap-4">
                   <Input placeholder="Search registrations..." onChange={(e) => setSearchTerm(e.target.value)} className="w-64" />
                   <Button onClick={async () => {
-                    // Refresh registrations by reloading from system_users
                     try {
                       setLoadingRegistrations(true);
-                      const { data } = await supabase.from('system_users').select('*');
-                      // trigger a simple reload of registrations by re-running existing effect: update state
-                      setRegistrations((data || []).map(u => ({
-                        id: u.id,
-                        email: u.email,
-                        fullName: u.user_metadata?.full_name || '-',
-                        companyName: u.company_id || '-',
-                        planName: '-',
-                        planExpires: null,
-                        subscriptionStatus: 'free',
-                        promoCode: u.promo_code || '-',
-                        influencerName: u.influencer_name || '-',
-                        createdAt: u.created_at || '-',
-                        lastLogin: u.last_sign_in_at || '-'
-                      })));
-                      toast.success(`Loaded ${data?.length || 0} system users`);
+                      const [{ data: comps }, { data: cu }] = await Promise.all([
+                        supabase.from('companies').select('id, name'),
+                        supabase.from('company_users').select('company_id, user_id, created_at')
+                      ]);
+                      const companyById = new Map((comps || []).map((c: any) => [String(c.id), c.name]));
+                      const firstUserByCompany = new Map<string, { user_id: string; created_at: string }>();
+                      (cu || []).forEach((row: any) => {
+                        const key = String(row.company_id);
+                        const prev = firstUserByCompany.get(key);
+                        if (!prev || new Date(row.created_at).getTime() < new Date(prev.created_at).getTime()) {
+                          firstUserByCompany.set(key, { user_id: row.user_id, created_at: row.created_at });
+                        }
+                      });
+                      const ownerIds = Array.from(firstUserByCompany.values()).map(v => v.user_id).filter(Boolean);
+                      const { data: systemUsers } = await supabase.from('system_users').select('*').in('id', ownerIds.length ? ownerIds : ['none']);
+                      const users = (systemUsers || []) as any[];
+                      const userIds = users.map(u => u.id);
+                      const [{ data: subs }, { data: plans }, { data: ups }] = await Promise.all([
+                        supabase.from('user_subscriptions').select('*').in('user_id', userIds.length ? userIds : ['none']),
+                        supabase.from('subscription_plans').select('*'),
+                        supabase.from('user_promotions').select('*, promo_code:promo_codes(id, code, influencer_name)').in('user_id', userIds.length ? userIds : ['none'])
+                      ]);
+                      const regs = users.map((u: any) => {
+                        const sub = (subs || []).find((s: any) => s.user_id === u.id);
+                        const plan = (plans || []).find((p: any) => p.id === sub?.plan_id);
+                        const companyEntry = Array.from(firstUserByCompany.entries()).find(([, v]) => v.user_id === u.id);
+                        const companyId = companyEntry ? companyEntry[0] : String(u.company_id || '');
+                        const companyName = companyId ? (companyById.get(String(companyId)) || '-') : (u.user_metadata?.company_name || u.user_metadata?.company || '-');
+                        const up = (ups || []).find((p: any) => p.user_id === u.id);
+                        return {
+                          id: u.id,
+                          email: u.email || u.user_email || '-',
+                          fullName: u.user_metadata?.full_name || u.user_metadata?.fullName || '-',
+                          companyName,
+                          planName: plan?.name || (sub?.plan_id || 'starter'),
+                          planExpires: sub?.expires_at || null,
+                          subscriptionStatus: sub?.status || 'free',
+                          promoCode: up?.promo_code?.code || up?.promo_code_id || (u.user_metadata?.referral_code || '-'),
+                          influencerName: up?.promo_code?.influencer_name || up?.influencer_name || (u.user_metadata?.referral_name || '-'),
+                          createdAt: u.created_at || u.createdAt || '-',
+                          lastLogin: u.last_sign_in_at || u.lastLogin || '-',
+                        };
+                      });
+                      setRegistrations(regs);
+                      toast.success(`Loaded ${regs.length} registrations (company creators only)`);
                     } catch (err) {
-                      console.error('Refresh system_users error', err);
-                      toast.error('Failed to load system users; ensure system_users table exists');
+                      console.error('Refresh registrations error', err);
+                      toast.error('Failed to load registrations');
                     } finally { setLoadingRegistrations(false); }
                   }}>Refresh</Button>
                 </div>
