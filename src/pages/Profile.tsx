@@ -28,7 +28,7 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await safeGetSession();
         const user = session?.user || null;
         if (!user) { setLoading(false); return; }
 
