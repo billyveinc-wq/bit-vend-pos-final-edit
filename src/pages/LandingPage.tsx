@@ -426,17 +426,19 @@ const LandingPage = () => {
                   </CardHeader>
                   
                   <CardContent className="space-y-4">
-                    <Button 
-                      asChild 
+                    <Button
+                      asChild
                       className={`w-full ${
-                        plan.popular 
-                          ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white' 
+                        plan.popular
+                          ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white'
                           : ''
                       }`}
                       variant={plan.popular ? 'default' : 'outline'}
                       size="sm"
                     >
-                      <Link to="/auth">
+                      <Link to={`/auth?mode=signup&plan=${
+                        plan.name === 'Starter Plan' ? 'starter' : plan.name === 'Standard Plan' ? 'standard' : plan.name === 'Pro Plan' ? 'pro' : 'enterprise'
+                      }`}>
                         {plan.name === 'Starter Plan' ? 'Start Free Trial' : `Choose ${plan.name}`}
                       </Link>
                     </Button>
