@@ -260,7 +260,7 @@ const NewQuotationPage = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handleSave} className="bg-save hover:bg-save-hover text-save-foreground">
+            <Button onClick={handleSave} className="bg-save hover:bg-save-hover text-white dark:text-white">
               <Save className="w-4 h-4 mr-2" />
               Save Quotation
             </Button>
