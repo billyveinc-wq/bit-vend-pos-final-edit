@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CheckCircle, Star, CreditCard, Smartphone, Building2, Crown, Lock, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const subscriptionPlans = [
   {
@@ -102,11 +104,31 @@ const paymentMethods = [
 
 const Subscription = () => {
   const navigate = useNavigate();
+  const { subscription, refreshSubscription } = useSubscription();
   const [selectedPlan, setSelectedPlan] = useState<string>('standard');
   const [selectedPayment, setSelectedPayment] = useState<string>('card');
-  const [currentPlan] = useState<string>('starter'); // Current active plan
+  const [currentPlan, setCurrentPlan] = useState<string>('starter');
   const [showCvv, setShowCvv] = useState<boolean>(false);
-  
+  const [plans, setPlans] = useState<typeof subscriptionPlans>(subscriptionPlans);
+
+  useEffect(() => {
+    setCurrentPlan(subscription?.plan_id || 'starter');
+    if (subscription?.plan_id) setSelectedPlan(subscription.plan_id);
+  }, [subscription]);
+
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const { data } = await supabase.from('subscription_plans').select('id, name, price, features');
+        if (Array.isArray(data) && data.length) {
+          const mapped = data.map((p: any) => ({ id: p.id, name: p.name, price: Number(p.price) || 0, period: 'month', description: 'Plan', icon: Crown, popular: p.id === 'standard', features: Array.isArray(p.features) ? p.features : [] }));
+          setPlans(mapped as any);
+        }
+      } catch {}
+    };
+    loadPlans();
+  }, []);
+
   // Payment form data
   const [cardData, setCardData] = useState({
     cardNumber: '',
@@ -159,7 +181,7 @@ const Subscription = () => {
   };
 
   const handleMpesaSTKPush = () => {
-    const plan = subscriptionPlans.find(p => p.id === selectedPlan);
+    const plan = plans.find(p => p.id === selectedPlan);
     if (!mpesaData.phoneNumber || !plan) {
       toast.error('Please enter a valid phone number');
       return;
@@ -175,7 +197,7 @@ const Subscription = () => {
   };
 
   const handleSTKConfirm = () => {
-    const plan = subscriptionPlans.find(p => p.id === selectedPlan);
+    const plan = plans.find(p => p.id === selectedPlan);
     
     if (stkPushModal.pin.length !== 4) {
       toast.error('Please enter your 4-digit M-Pesa PIN');
@@ -198,8 +220,8 @@ const Subscription = () => {
     setStkPushModal({ isOpen: false, amount: 0, phone: '', pin: '' });
   };
 
-  const handleSubscribe = () => {
-    const plan = subscriptionPlans.find(p => p.id === selectedPlan);
+  const handleSubscribe = async () => {
+    const plan = plans.find(p => p.id === selectedPlan);
     const payment = paymentMethods.find(p => p.id === selectedPayment);
     
     // Check for referral code discount
@@ -246,21 +268,30 @@ const Subscription = () => {
     }
     
     if (plan && payment) {
-      const message = referralCode 
-        ? `Subscription to ${plan.name} ($${finalPrice}/month, $${discountAmount} discount applied) via ${paymentInfo} is ready for backend processing`
-        : `Subscription to ${plan.name} ($${plan.price}/month) via ${paymentInfo} is ready for backend processing`;
-      
-      toast.success(message);
-      console.log('Payment Data Ready:', {
-        plan: plan.id,
-        paymentMethod: selectedPayment,
-        referralCode,
-        originalPrice: plan.price,
-        discountAmount,
-        finalPrice,
-        paymentData: selectedPayment === 'card' ? cardData : 
-                     selectedPayment === 'paypal' ? paypalData : mpesaData
-      });
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { toast.error('Please sign in to subscribe'); return; }
+        const expires = new Date();
+        expires.setMonth(expires.getMonth() + 1);
+        const payload: any = {
+          user_id: user.id,
+          plan_id: plan.id,
+          status: 'active',
+          started_at: new Date().toISOString(),
+          expires_at: expires.toISOString(),
+          payment_method: selectedPayment,
+          payment_details: selectedPayment === 'card' ? { last4: cardData.cardNumber.slice(-4) } : selectedPayment === 'paypal' ? { email: paypalData.email } : { phone: mpesaData.phoneNumber },
+          referral_code: referralCode || null,
+          discount_applied: discountAmount || 0,
+        };
+        await supabase.from('user_subscriptions').upsert(payload, { onConflict: 'user_id' });
+        await refreshSubscription();
+        toast.success(`Subscribed to ${plan.name} successfully`);
+        navigate('/dashboard/subscription/manage');
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to activate subscription');
+      }
     }
   };
 
@@ -283,7 +314,7 @@ const Subscription = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-success" />
-                Current Plan: Starter Plan
+                Current Plan: {currentPlan ? currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1) : 'Starter'} Plan
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Next billing date: January 15, 2024
@@ -298,7 +329,7 @@ const Subscription = () => {
 
       {/* Subscription Plans */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
-        {subscriptionPlans.map((plan, index) => {
+        {plans.map((plan, index) => {
           const IconComponent = plan.icon;
           const isCurrentPlan = plan.id === currentPlan;
           const isSelected = plan.id === selectedPlan;
