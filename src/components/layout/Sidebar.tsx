@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     let isMounted = true;
     (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await (await import('@/integrations/supabase/safeAuth')).safeGetSession();
         const user = session?.user;
         if (!user) return;
         // Determine payment settings access: super admin OR company owner/admin OR first system user
