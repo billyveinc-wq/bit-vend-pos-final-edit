@@ -773,7 +773,7 @@ const Settings = () => {
                 <div className="flex items-center justify-between">
                   <Button
                     onClick={() => {
-                      const newLoc = { id: Date.now().toString(), code: '', name: '', manager: '', phone: '', email: '', address: '', city: '', state: '', postalCode: '', country: 'US', currency: 'USD', taxRegion: '', isActive: true, isMain: false, notes: '' };
+                      const newLoc = { id: Date.now().toString(), code: '', name: '', manager: '', phone: '', email: '', address: '', city: '', state: '', postalCode: '', country: 'US', currency: 'USD', taxRegion: '', isActive: true, isMain: false, notes: '', companyId: companies[0]?.id || '' };
                       setLocations(prev => [...prev, newLoc]);
                     }}
                     size="sm"
