@@ -303,7 +303,7 @@ const LandingPage = () => {
               <CardContent className="text-sm text-muted-foreground space-y-3">
                 <p>Native mobile money payments for East Africa with STK Push and Paybill/Till support.</p>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-green-100 text-green-800">Popular</Badge>
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">Popular</Badge>
                   <Badge variant="outline">STK Push</Badge>
                   <Badge variant="outline">Paybill</Badge>
                 </div>
