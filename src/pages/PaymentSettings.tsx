@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, PlugZap, Smartphone, CreditCard, Globe2, Eye, EyeOff, Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetUser, safeGetSession } from '@/integrations/supabase/safeAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
