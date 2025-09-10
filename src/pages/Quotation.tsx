@@ -485,26 +485,26 @@ const Quotation = () => {
               )}
 
               <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleDuplicateQuotation(quote.id)}>
                   <Copy className="w-4 h-4 mr-1" />
                   Duplicate
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(quote.id)}>
                   <Download className="w-4 h-4 mr-1" />
                   PDF
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleViewQuotation(quote.id)}>
                   <Eye className="w-4 h-4 mr-1" />
                   View
                 </Button>
                 {quote.status === 'draft' && (
-                  <Button size="sm">
+                  <Button size="sm" onClick={() => handleSendQuotation(quote.id)}>
                     <Send className="w-4 h-4 mr-1" />
                     Send
                   </Button>
                 )}
                 {quote.status === 'sent' && (
-                  <Button size="sm" className="bg-success hover:bg-success/90">
+                  <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => handleEditQuotation(quote.id)}>
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
                   </Button>
