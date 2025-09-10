@@ -261,6 +261,9 @@ const PaymentSettings: React.FC = () => {
     }
   };
 
+  if (isChecking) {
+    return <div className="p-6 text-muted-foreground">Loading...</div>;
+  }
   if (!isAdmin) {
     return (
       <Card className="mt-6">
