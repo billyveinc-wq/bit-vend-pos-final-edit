@@ -249,7 +249,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
               )}
               <ul className="space-y-1 px-3">
                 {section.items
-                  .filter((item: any) => (item.requiresAdmin ? isAdmin : (isAdmin || !allowedPages || allowedPages.includes(item.href))))
+                  .filter((item: any) => {
+                    if (item.requiresPaymentAdmin) return isAdmin || canManagePayments;
+                    if (item.requiresAdmin) return isAdmin;
+                    return (isAdmin || !allowedPages || allowedPages.includes(item.href));
+                  })
                   .map((item) => {
                     const Icon = item.icon;
                     const isActive = item.href === '/dashboard'
