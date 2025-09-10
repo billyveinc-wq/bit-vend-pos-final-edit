@@ -56,6 +56,33 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
+  const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isAdmin) {
+      setAllowedPages(null);
+      return;
+    }
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from('system_users').select('user_metadata').eq('id', user.id).maybeSingle();
+        const meta = (data as any)?.user_metadata || {};
+        const restr = meta?.restrictions;
+        if (isMounted && restr && restr.enabled && Array.isArray(restr.pages)) {
+          setAllowedPages(restr.pages as string[]);
+        } else if (isMounted) {
+          setAllowedPages(null);
+        }
+      } catch (err) {
+        // fail-open if restriction fetch fails
+        if (isMounted) setAllowedPages(null);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [isAdmin]);
 
   // Build menu sections with Admin-only pushed to top when available
   const baseSections = [
