@@ -349,8 +349,8 @@ const PaymentSettings: React.FC = () => {
     (async () => {
       if (isAdmin) { setAllow(true); return; }
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const userId = session?.user?.id;
+        const { data } = await safeGetSession();
+        const userId = data?.session?.user?.id;
         if (!userId) { setAllow(false); return; }
         if (role === 'owner' || role === 'admin') { setAllow(true); return; }
         const { count } = await supabase.from('system_users').select('id', { count: 'exact', head: true });
