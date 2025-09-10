@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockInRecord {
   id: string;
