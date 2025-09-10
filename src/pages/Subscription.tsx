@@ -10,6 +10,7 @@ import { CheckCircle, Star, CreditCard, Smartphone, Building2, Crown, Lock, Eye,
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const subscriptionPlans = [
@@ -269,7 +270,7 @@ const Subscription = () => {
     
     if (plan && payment) {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await safeGetSession();
         const user = session?.user;
         if (!user) { toast.error('Please sign in to subscribe'); return; }
         const expires = new Date();
