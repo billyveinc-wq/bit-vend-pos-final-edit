@@ -1532,6 +1532,14 @@ const Settings = () => {
                   <Switch checked={notifications.lowStockPush} onCheckedChange={(c)=>setNotifications(p=>({...p, lowStockPush:c}))} />
                   <Label>Low stock push notification</Label>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={notifications.smsAlerts} onCheckedChange={(c)=>setNotifications(p=>({...p, smsAlerts:c}))} />
+                  <Label>SMS Alerts</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={notifications.inAppAlerts} onCheckedChange={(c)=>setNotifications(p=>({...p, inAppAlerts:c}))} />
+                  <Label>In-app Alerts</Label>
+                </div>
                 <Button onClick={()=>{ saveLocal('pos-notifications', notifications); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
