@@ -71,9 +71,9 @@ const Customers = () => {
             address: row.address || '',
             city: row.city || '',
             country: row.country || '',
-            customerType: (row.customer_type || 'individual') as Customer['customerType'],
+            customerType: 'individual' as Customer['customerType'],
             totalPurchases: Number(row.total_purchases) || 0,
-            lastPurchase: row.last_purchase || undefined,
+            lastPurchase: undefined,
             isActive: !!row.is_active,
             notes: row.notes || '',
             createdAt: row.created_at,
@@ -112,11 +112,10 @@ const Customers = () => {
             address: formData.address || null,
             city: formData.city || null,
             country: formData.country || null,
-            customer_type: formData.customerType,
             notes: formData.notes || null,
             is_active: formData.isActive,
           })
-          .eq('id', Number(editingCustomer.id));
+          .eq('id', editingCustomer.id);
         if (error) { toast.error(error.message); return; }
         setCustomers(prev => prev.map(customer =>
           customer.id === editingCustomer.id
@@ -134,7 +133,6 @@ const Customers = () => {
             address: formData.address || null,
             city: formData.city || null,
             country: formData.country || null,
-            customer_type: formData.customerType,
             notes: formData.notes || null,
             is_active: formData.isActive,
           })
@@ -186,7 +184,7 @@ const Customers = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this customer?')) {
       try {
-        const { error } = await supabase.from('customers').delete().eq('id', Number(id));
+        const { error } = await supabase.from('customers').delete().eq('id', id);
         if (error) { toast.error(error.message); return; }
         setCustomers(prev => prev.filter(customer => customer.id !== id));
         toast.success('Customer deleted successfully!');
