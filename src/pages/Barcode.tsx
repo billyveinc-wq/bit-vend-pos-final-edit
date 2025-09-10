@@ -106,8 +106,15 @@ const Barcode = () => {
   };
 
   const generateBarcode = () => {
+    if (!selectedProduct) {
+      toast.error('Please select a product first');
+      return;
+    }
     const randomBarcode = `BC-${Math.random().toString().substr(2, 10)}`;
-    toast.success(`Generated barcode: ${randomBarcode}`);
+    const idNum = Number(selectedProduct);
+    if (!Number.isFinite(idNum)) { toast.error('Invalid product'); return; }
+    updateProduct(idNum, { barcode: randomBarcode });
+    toast.success(`Assigned barcode: ${randomBarcode}`);
   };
 
   return (
