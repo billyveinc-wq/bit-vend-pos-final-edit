@@ -192,7 +192,24 @@ const AuthPage = () => {
         }));
         toast.success('Admin account created! Redirecting to admin dashboard...');
         navigate('/dashboard/superadmin');
+        // Also insert into system_users table for admin visibility
+        try {
+          if (signUpData?.user) {
+            await supabase.from('system_users').upsert({ id: signUpData.user.id, email, user_metadata: { full_name: fullName, company_name: companyName, phone }, created_at: new Date().toISOString() });
+          }
+        } catch (err) {
+          console.warn('Failed to upsert admin into system_users', err);
+        }
         return;
+      }
+
+      // Insert basic system_users row so admin dashboard can see this new user (mirror of auth.users)
+      try {
+        if (signUpData?.user) {
+          await supabase.from('system_users').upsert({ id: signUpData.user.id, email, user_metadata: { full_name: fullName, company_name: companyName, phone }, created_at: new Date().toISOString() });
+        }
+      } catch (err) {
+        console.warn('Failed to upsert new user into system_users', err);
       }
 
       // If a promo/referral code was provided, check if it exists and attach to user_promotions
