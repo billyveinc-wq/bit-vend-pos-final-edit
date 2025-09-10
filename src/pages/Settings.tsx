@@ -812,7 +812,7 @@ const Settings = () => {
                     </div>
                   </div>
                 ))}
-                <Button onClick={() => { saveLocal('pos-locations', locations); showSaveToast(); }} className="bg-save hover:bg-save-hover text-save-foreground">
+                <Button onClick={async () => { try { const mod = await import('@/integrations/supabase/client'); await mod.supabase.from('locations').upsert(locations.map(l=>({ id:l.id, code:(l as any).code || null, name:l.name, manager:(l as any).manager || null, phone:(l as any).phone || null, email:(l as any).email || null, address:l.address, city:(l as any).city || null, state:(l as any).state || null, postal_code:(l as any).postalCode || null, country:(l as any).country || null, currency:(l as any).currency || null, tax_region:(l as any).taxRegion || null, is_active:l.isActive, is_main:(l as any).isMain || false, notes:(l as any).notes || null, company_id: (l as any).companyId && (l as any).companyId !== 'unassigned' ? Number((l as any).companyId) : null })), { onConflict: 'id' }); } catch {} saveLocal('pos-locations', locations); showSaveToast(); }} className="bg-save hover:bg-save-hover text-save-foreground">
                   <Save className="h-4 w-4 mr-2" />
                   Save Locations
                 </Button>
