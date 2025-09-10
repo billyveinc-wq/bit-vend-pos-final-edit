@@ -18,6 +18,52 @@ import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
 import { supabase } from '@/integrations/supabase/client';
 
+// Minimal Code39 SVG renderer (supports 0-9, A-Z, space and - . $ / + %)
+const CODE39_MAP: Record<string, string> = {
+  '0':'nnnwwnwnw','1':'wnnwnnnnw','2':'nnwwnnnnw','3':'wnwwnnnnn','4':'nnnwwnnnw','5':'wnnwwnnnn','6':'nnwwwnnnn','7':'nnnwnnwnw','8':'wnnwnnwnn','9':'nnwwnnwnn',
+  'A':'wnnnnwnnw','B':'nnwnnwnnw','C':'wnwnnwnnn','D':'nnnnwwnnw','E':'wnnnwwnnn','F':'nnwnwwnnn','G':'nnnnnwwnw','H':'wnnnnwwnn','I':'nnwnnwwnn','J':'nnnnwwwnn',
+  'K':'wnnnnnnww','L':'nnwnnnnww','M':'wnwnnnnwn','N':'nnnnwnnww','O':'wnnnwnnwn','P':'nnwnwnnwn','Q':'nnnnnnwww','R':'wnnnnnwwn','S':'nnwnnnwwn','T':'nnnnwnwwn',
+  'U':'wwnnnnnnw','V':'nwwnnnnnw','W':'wwwnnnnnn','X':'nwnnwnnnw','Y':'wwnnwnnnn','Z':'nwwnwnnnn','-':'nwnnnnwnw','.':'wwnnnnwnn',' ':'nwwnnnwnn',
+  '$':'nwnwnwnnn','/':'nwnwnnnwn','+':'nwnnnwnwn','%':'nnnwnwnwn','*':'nwnnwnwnn'
+};
+
+const Code39Barcode: React.FC<{ value: string; height?: number; unit?: number; className?: string }> = ({ value, height = 48, unit = 2, className }) => {
+  const text = `*${(value || '').toUpperCase().replace(/[^0-9A-Z\-\. \$/\+%]/g, '-') }*`;
+  let totalUnits = 0;
+  const seq: { isBar: boolean; w: number }[] = [];
+  for (let ci = 0; ci < text.length; ci++) {
+    const ch = text[ci];
+    const pat = CODE39_MAP[ch];
+    if (!pat) continue;
+    for (let i = 0; i < pat.length; i++) {
+      const isBar = i % 2 === 0;
+      const w = pat[i] === 'w' ? 3 : 1;
+      seq.push({ isBar, w });
+      totalUnits += w;
+    }
+    // Inter-character narrow space (one unit)
+    seq.push({ isBar: false, w: 1 });
+    totalUnits += 1;
+  }
+  const width = totalUnits * unit;
+  let x = 0;
+  return (
+    <div className={className}>
+      <svg width={width} height={height} role="img" aria-label={`Barcode ${value}`}>
+        {seq.map((seg, idx) => {
+          const segWidth = seg.w * unit;
+          const rect = seg.isBar ? (
+            <rect key={idx} x={x} y={0} width={segWidth} height={height} fill="currentColor" />
+          ) : null;
+          x += segWidth;
+          return rect;
+        })}
+      </svg>
+      <div className="text-center text-xs font-mono mt-1 text-muted-foreground">{value}</div>
+    </div>
+  );
+};
+
 const categories = ["Electronics", "Beverages", "Food", "Clothing", "Books", "Health"];
 const brands = ["Apple", "Samsung", "Nike", "Adidas", "Generic"];
 const suppliers = ["Supplier A", "Supplier B", "Supplier C"];
@@ -385,7 +431,7 @@ const ProductAdd = () => {
                       onChange={(e) => handleInputChange('sku', e.target.value)}
                       className="dark:bg-settings-form dark:text-white"
                     />
-                    <Button type="button" variant="outline" onClick={generateSKU} className="dark:bg-settings-form dark:text-white">
+                    <Button type="button" onClick={generateSKU} className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600">
                       Generate
                     </Button>
                   </div>
@@ -401,7 +447,7 @@ const ProductAdd = () => {
                       onChange={(e) => handleInputChange('barcode', e.target.value)}
                       className="dark:bg-settings-form dark:text-white"
                     />
-                    <Button type="button" variant="outline" onClick={generateBarcode} className="dark:bg-settings-form dark:text-white">
+                    <Button type="button" onClick={generateBarcode} className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600">
                       Generate
                     </Button>
                   </div>
@@ -447,8 +493,12 @@ const ProductAdd = () => {
                 </div>
                 <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '1.6s' }}>
                   <Label>Barcode Preview</Label>
-                  <div className="h-10 bg-gray-100 dark:bg-settings-form rounded border flex items-center justify-center text-xs text-muted-foreground">
-                    {formData.barcode || 'Generate barcode to preview'}
+                  <div className="bg-gray-100 dark:bg-settings-form rounded border flex items-center justify-center p-3">
+                    {formData.barcode ? (
+                      <Code39Barcode value={formData.barcode} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Generate barcode to preview</span>
+                    )}
                   </div>
                 </div>
               </div>
