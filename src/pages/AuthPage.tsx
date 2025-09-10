@@ -139,6 +139,8 @@ const AuthPage = () => {
 
       if (!error) {
         try {
+          // Clear any stale local admin session when a regular user signs in
+          try { localStorage.removeItem('admin-session'); } catch {}
           const { data: { session } } = await supabase.auth.getSession();
           const user = session?.user;
           if (user) {
