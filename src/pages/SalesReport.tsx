@@ -506,31 +506,11 @@ const SalesReport: React.FC = () => {
 
       {/* Filters */}
       <Card className="animate-slideInLeft">
-        <CardHeader className="w-full flex flex-row items-center justify-between gap-3">
-          <CardTitle className="flex items-center whitespace-nowrap">
+        <CardHeader>
+          <CardTitle className="flex items-center">
             <Filter className="h-5 w-5 mr-2" />
             Filters & Date Range
           </CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="whitespace-nowrap"
-              onClick={handleRefresh}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="whitespace-nowrap"
-              onClick={handleExportData}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
@@ -599,6 +579,27 @@ const SalesReport: React.FC = () => {
                   <SelectItem value="refunded">Refunded</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="md:col-span-12 flex justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="whitespace-nowrap"
+                onClick={handleRefresh}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="whitespace-nowrap"
+                onClick={handleExportData}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
             </div>
 
           </div>
