@@ -267,7 +267,7 @@ const ProviderSection: React.FC<{
 const PaymentSettings: React.FC = () => {
   const { toast } = useToast();
   const { isAdmin, isChecking } = useAdminAuth();
-  const { companyId } = useCompany();
+  const { companyId, role } = useCompany();
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<Record<ProviderKey, ProviderSettings>>({
     mpesa: { enabled: false, credentials: {}, env: 'sandbox', status: 'not_configured' },
