@@ -119,6 +119,12 @@ const Topbar: React.FC<TopbarProps> = ({
   const [compose, setCompose] = useState<{ to: string; cc: string; bcc: string; subject: string; body: string; attachments: File[] }>({ to: '', cc: '', bcc: '', subject: '', body: '', attachments: [] });
   const editorRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [fontFamilyKey, setFontFamilyKey] = useState<'sans' | 'serif' | 'mono'>('sans');
+  const fontMap: Record<typeof fontFamilyKey, string> = {
+    sans: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif',
+    serif: 'Times New Roman, Times, Georgia, serif',
+    mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  } as any;
 
   useEffect(() => {
     const loadSupportEmail = async () => {
