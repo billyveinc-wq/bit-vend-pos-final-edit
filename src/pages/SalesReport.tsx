@@ -121,6 +121,43 @@ const SalesReport: React.FC = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const loadQuotes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('quotations')
+          .select('id, quote_no, customer, email, phone, date, valid_until, notes, template, status, subtotal, tax, total, quotation_items(id, name, quantity, price, total)')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Quote[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          quoteNo: row.quote_no,
+          customer: row.customer,
+          customerEmail: row.email,
+          phone: row.phone || undefined,
+          date: row.date,
+          validUntil: row.valid_until || undefined,
+          notes: row.notes || undefined,
+          template: row.template || undefined,
+          status: (row.status || 'draft') as Quote['status'],
+          subtotal: Number(row.subtotal) || 0,
+          tax: Number(row.tax) || 0,
+          total: Number(row.total) || 0,
+          items: (row.quotation_items || []).map((it: any) => ({
+            name: it.name,
+            quantity: it.quantity,
+            price: Number(it.price) || 0,
+            total: Number(it.total) || 0,
+          })),
+        }));
+        setQuotations(mapped);
+      } catch (e) {
+        console.warn('Failed to load quotations');
+      }
+    };
+    loadQuotes();
+  }, []);
+
   // Filter sales based on date range and filters
   const filteredSales = useMemo(() => {
     return sales.filter(sale => {
