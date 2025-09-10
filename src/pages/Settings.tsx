@@ -1563,6 +1563,10 @@ const Settings = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="mt-4">
+                  <Label>Accent Color</Label>
+                  <Input type="color" value={appTheme.accentColor as string} onChange={(e)=>{ setAppTheme(p=>({ ...p, accentColor: e.target.value })); localStorage.setItem('pos-accent-color', e.target.value); }} />
+                </div>
               </CardContent>
             </Card>
           );
