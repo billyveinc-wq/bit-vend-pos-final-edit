@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import PaymentSettings from './PaymentSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,7 @@ import {
   Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
+import React, { useMemo } from 'react';
 
 const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -325,6 +327,7 @@ const Settings = () => {
       title: 'System',
       icon: SettingsIcon,
       items: [
+        { id: 'payment-settings', label: 'Payment Settings', icon: CreditCard },
         { id: 'general', label: 'General', icon: SettingsIcon },
         { id: 'email-templates', label: 'Email Templates', icon: Mail },
         { id: 'backup', label: 'Backup', icon: Database }
@@ -554,8 +557,11 @@ const Settings = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="max-h-64 overflow-auto">
-                    {countries.map((country) => (
-                      <SelectItem key={country.code} value={country.code}>
+                    {useMemo(() => {
+                      const seen = new Set<string>();
+                      return countries.filter(c => { if (seen.has(c.code)) return false; seen.add(c.code); return true; });
+                    }, []).map((country) => (
+                      <SelectItem key={`${country.code}-${country.name}`} value={country.code}>
                         {country.name}
                       </SelectItem>
                     ))}
@@ -789,6 +795,9 @@ const Settings = () => {
   }, []);
 
   const renderContent = () => {
+    if (section === 'system' && subsection === 'payment-settings') {
+      return <PaymentSettings />;
+    }
     if (section === 'business') {
       switch (subsection) {
         case 'business-info':
@@ -1031,7 +1040,7 @@ const Settings = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {countries.map((c)=>(<SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>))}
+                            {useMemo(() => { const seen = new Set<string>(); return countries.filter(c => { if (seen.has(c.code)) return false; seen.add(c.code); return true; }); }, []).map((c)=>(<SelectItem key={`${c.code}-${c.name}`} value={c.code}>{c.name}</SelectItem>))}
                           </SelectContent>
                         </Select>
                       </div>
