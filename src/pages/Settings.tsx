@@ -869,7 +869,7 @@ const Settings = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label>Company</Label>
-                        <Select value={loc.companyId || ''} onValueChange={(v)=>{ const next=[...locations]; next[index]={...loc, companyId:v}; setLocations(next); }}>
+                        <Select value={loc.companyId || 'unassigned'} onValueChange={(v)=>{ const next=[...locations]; next[index]={...loc, companyId:v}; setLocations(next); }}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a company" />
                           </SelectTrigger>
