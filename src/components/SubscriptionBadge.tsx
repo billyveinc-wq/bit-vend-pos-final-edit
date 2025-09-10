@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import React from 'react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Star, Zap } from 'lucide-react';
