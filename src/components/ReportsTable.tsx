@@ -364,39 +364,29 @@ const ReportsTable: React.FC = () => {
         </CardHeader>
       <CardContent>
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-          <div className="flex gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Category:</span>
-            </div>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className="rounded-full"
-              >
-                {category}
-              </Button>
-            ))}
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Category:</span>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
-          {/* Type Filter */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted-foreground">Type:</span>
-            {types.map((type) => (
-              <Button
-                key={type}
-                variant={selectedType === type ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedType(type)}
-                className="rounded-full capitalize"
-              >
-                {type}
-              </Button>
-            ))}
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-40 capitalize"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {types.map((t) => (
+                  <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
