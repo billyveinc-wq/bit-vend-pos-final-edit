@@ -53,8 +53,11 @@ const AuthPage = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          // If user is already authenticated, redirect to dashboard instead of staying on auth page
-          navigate('/dashboard', { replace: true });
+          const qp = new URLSearchParams(window.location.search);
+          const redirect = qp.get('redirect');
+          const stored = localStorage.getItem('last-route');
+          const target = (redirect && redirect.startsWith('/')) ? redirect : (stored && stored.startsWith('/') ? stored : '/dashboard');
+          navigate(target, { replace: true });
         }
       } catch (err) {
         console.warn('Auth check failed (offline or misconfigured Supabase). Proceeding without redirect.');
