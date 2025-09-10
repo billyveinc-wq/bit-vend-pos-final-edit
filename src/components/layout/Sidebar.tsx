@@ -58,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
+  const [canManagePayments, setCanManagePayments] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
