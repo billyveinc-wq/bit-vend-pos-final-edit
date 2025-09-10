@@ -329,17 +329,17 @@ const Settings = () => {
         { id: 'display-settings', label: 'Display Settings', icon: Eye }
       ]
     },
-    {
+    ...(isAdmin ? [{
       section: 'system',
       title: 'System',
       icon: SettingsIcon,
       items: [
-        ...(isAdmin ? [{ id: 'payment-settings', label: 'Payment Settings', icon: CreditCard }] : []),
+        { id: 'payment-settings', label: 'Payment Settings', icon: CreditCard },
         { id: 'general', label: 'General', icon: SettingsIcon },
         { id: 'email-templates', label: 'Email Templates', icon: Mail },
         { id: 'backup', label: 'Backup', icon: Database }
       ]
-    },
+    }] : []),
     {
       section: 'hardware',
       title: 'Hardware',
