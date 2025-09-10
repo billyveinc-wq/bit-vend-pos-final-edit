@@ -20,6 +20,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Employee {
   id: string;
