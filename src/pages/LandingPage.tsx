@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,40 @@ import { useTheme } from 'next-themes';
 
 const LandingPage = () => {
   const { theme, setTheme } = useTheme();
-  
+
+  // Typewriter for provider integrations
+  const providerPhrases = useMemo(() => ([
+    { name: 'M-Pesa', color: 'text-green-600 dark:text-green-400', glow: 'from-green-500/20', dot: 'bg-green-500' },
+    { name: 'PayPal', color: 'text-blue-600 dark:text-blue-400', glow: 'from-blue-500/20', dot: 'bg-blue-500' },
+    { name: 'Flutterwave', color: 'text-orange-600 dark:text-orange-400', glow: 'from-orange-500/20', dot: 'bg-orange-500' }
+  ]), []);
+  const [pIndex, setPIndex] = useState(0);
+  const [typed, setTyped] = useState('');
+  const [phase, setPhase] = useState<'typing' | 'pausing' | 'deleting'>('typing');
+
+  useEffect(() => {
+    const phrase = providerPhrases[pIndex].name;
+    let t: any;
+    if (phase === 'typing') {
+      if (typed.length < phrase.length) {
+        t = setTimeout(() => setTyped(phrase.slice(0, typed.length + 1)), 90);
+      } else {
+        setPhase('pausing');
+        t = setTimeout(() => setPhase('deleting'), 1100);
+      }
+    } else if (phase === 'deleting') {
+      if (typed.length > 0) {
+        t = setTimeout(() => setTyped(phrase.slice(0, typed.length - 1)), 50);
+      } else {
+        setPhase('typing');
+        setPIndex((i) => (i + 1) % providerPhrases.length);
+      }
+    } else {
+      t = setTimeout(() => setPhase('deleting'), 600);
+    }
+    return () => clearTimeout(t);
+  }, [typed, phase, pIndex, providerPhrases]);
+
   const features = [
     {
       icon: BarChart3,
@@ -172,6 +205,16 @@ const LandingPage = () => {
                 <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
                   #1 Rated POS System
                 </span>
+              </div>
+
+              {/* Typewriter: Integrated with ... */}
+              <div className="relative inline-flex items-center mt-2">
+                <div className={`absolute -inset-1 rounded-lg blur-lg bg-gradient-to-r ${providerPhrases[pIndex].glow} to-transparent transition-all duration-700`} aria-hidden="true" />
+                <div className="relative z-10 text-sm font-medium">
+                  <span className="text-muted-foreground">Integrated with </span>
+                  <span className={providerPhrases[pIndex].color}>{typed}</span>
+                  <span className="inline-block w-[2px] h-4 ml-0.5 align-middle bg-foreground animate-pulse" />
+                </div>
               </div>
               
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
