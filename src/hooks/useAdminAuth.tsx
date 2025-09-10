@@ -10,59 +10,53 @@ export const useAdminAuth = () => {
   useEffect(() => {
     let mounted = true;
 
-    const checkLocalAdmin = () => {
-      const session = localStorage.getItem('admin-session');
-      if (session) {
-        try {
-          const parsedSession = JSON.parse(session);
-          setAdminSession(parsedSession);
-          setIsAdmin(true);
-          if (mounted) setIsChecking(false);
-          return true;
-        } catch {
-          setIsAdmin(false);
-          setAdminSession(null);
-        }
-      } else {
-        setAdminSession(null);
-      }
-      return false;
-    };
-
-    const checkStrictAdmin = async () => {
-      if (mounted) setIsChecking(true);
-      let admin = false;
+    const readLocalAdmin = () => {
+      const raw = localStorage.getItem('admin-session');
+      if (!raw) { setAdminSession(null); return null; }
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const email = session?.user?.email || null;
-        admin = isAllowedAdminEmail(email);
-      } catch {
-        admin = false;
-      } finally {
-        if (mounted) {
-          setIsAdmin(admin);
-          setIsChecking(false);
+        const parsed = JSON.parse(raw);
+        if (!isAllowedAdminEmail(parsed?.email)) {
+          setAdminSession(null);
+          return null;
         }
+        setAdminSession(parsed);
+        return parsed;
+      } catch {
+        setAdminSession(null);
+        return null;
       }
     };
 
-    const init = async () => {
-      const isLocalAdmin = checkLocalAdmin();
-      if (!isLocalAdmin) await checkStrictAdmin();
+    const computeAdmin = async () => {
+      if (mounted) setIsChecking(true);
+      try {
+        const local = readLocalAdmin();
+        const { data: { session } } = await supabase.auth.getSession();
+        const supaEmail = session?.user?.email || null;
+        let admin = false;
+        if (supaEmail) {
+          admin = isAllowedAdminEmail(supaEmail);
+        } else if (local) {
+          admin = isAllowedAdminEmail(local.email);
+        } else {
+          admin = false;
+        }
+        if (mounted) setIsAdmin(admin);
+      } catch {
+        if (mounted) setIsAdmin(false);
+      } finally {
+        if (mounted) setIsChecking(false);
+      }
     };
 
-    init();
+    computeAdmin();
 
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
-      const isLocalAdmin = checkLocalAdmin();
-      if (!isLocalAdmin) checkStrictAdmin();
+      computeAdmin();
     });
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'admin-session') {
-        const isLocalAdmin = checkLocalAdmin();
-        if (!isLocalAdmin) checkStrictAdmin();
-      }
+      if (e.key === 'admin-session') computeAdmin();
     };
 
     window.addEventListener('storage', handleStorageChange);
