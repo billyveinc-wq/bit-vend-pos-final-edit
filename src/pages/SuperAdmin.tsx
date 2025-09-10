@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { isAllowedAdminEmail } from '@/lib/admin';
 
 interface SystemUser {
   id: number;
@@ -49,6 +51,7 @@ interface SystemMetric {
 }
 
 const SuperAdmin = () => {
+  const { isAdmin } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -135,6 +138,21 @@ const SuperAdmin = () => {
     };
     return variants[status];
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>
+            You do not have permission to access the Super Admin panel.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getMetricStatusColor = (status: SystemMetric['status']) => {
     const colors = {
@@ -418,7 +436,7 @@ const SuperAdmin = () => {
                 try {
                   const { data: { session } } = await supabase.auth.getSession();
                   const user = session?.user || null;
-                  if (user && user.email === 'admn.bitvend@gmail.com') {
+                  if (user && isAllowedAdminEmail(user.email)) {
                     const { error } = await supabase.auth.updateUser({ password: newPassword });
                     if (error) {
                       console.error('Supabase password update failed', error);
