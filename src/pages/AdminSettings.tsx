@@ -73,7 +73,7 @@ const AdminSettings = () => {
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await (await import('@/integrations/supabase/safeAuth')).safeGetSession();
       const user = session?.user || null;
       if (user && user.email === adminSession?.email) {
         const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword });
