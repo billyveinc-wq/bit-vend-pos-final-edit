@@ -42,7 +42,6 @@ import {
   Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
