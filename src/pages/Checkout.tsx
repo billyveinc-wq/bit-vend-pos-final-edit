@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { products } = useProducts();
+  const { products, updateProduct } = useProducts();
   const { addSale } = useSales();
   const { settings } = useSettings();
   const [selectedCategory, setSelectedCategory] = useState("All");
