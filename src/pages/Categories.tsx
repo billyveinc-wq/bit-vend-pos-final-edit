@@ -56,10 +56,10 @@ const Categories = () => {
             id: String(row.id),
             name: row.name,
             description: row.description || '',
-            color: row.color || '#3b82f6',
-            parentId: row.parent_id ? String(row.parent_id) : '',
+            color: '#3b82f6',
+            parentId: '',
             isActive: !!row.is_active,
-            productCount: Number(row.product_count) || 0,
+            productCount: 0,
             createdAt: row.created_at,
           }));
           setCategories(mapped);
@@ -91,11 +91,9 @@ const Categories = () => {
           .update({
             name: formData.name,
             description: formData.description || null,
-            color: formData.color || null,
-            parent_id: formData.parentId ? Number(formData.parentId) : null,
             is_active: formData.isActive,
           })
-          .eq('id', Number(editingCategory.id));
+          .eq('id', editingCategory.id);
         if (error) { toast.error(error.message); return; }
         setCategories(prev => prev.map(category =>
           category.id === editingCategory.id
@@ -109,8 +107,6 @@ const Categories = () => {
           .insert({
             name: formData.name,
             description: formData.description || null,
-            color: formData.color || null,
-            parent_id: formData.parentId ? Number(formData.parentId) : null,
             is_active: formData.isActive,
           })
           .select('*')
@@ -152,7 +148,7 @@ const Categories = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this category?')) {
       try {
-        const { error } = await supabase.from('categories').delete().eq('id', Number(id));
+        const { error } = await supabase.from('categories').delete().eq('id', id);
         if (error) { toast.error(error.message); return; }
         setCategories(prev => prev.filter(category => category.id !== id));
         toast.success('Category deleted successfully!');
