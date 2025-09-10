@@ -269,7 +269,8 @@ const Subscription = () => {
     
     if (plan && payment) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         if (!user) { toast.error('Please sign in to subscribe'); return; }
         const expires = new Date();
         expires.setMonth(expires.getMonth() + 1);
