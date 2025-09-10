@@ -38,7 +38,7 @@ const TaxSettings: React.FC = () => {
               <Input id="tax" type="number" step="0.01" placeholder="15" value={tax} onChange={(e)=>setTax(e.target.value)} />
             </div>
             <div className="md:col-span-2">
-              <Button onClick={() => toast({ title: 'Saved', description: 'Tax settings updated.' })}>
+              <Button onClick={save}>
                 Save Changes
               </Button>
             </div>
