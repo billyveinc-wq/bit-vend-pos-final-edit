@@ -221,8 +221,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         {!collapsed && (
           <Link to="/dashboard" className="flex items-center space-x-2 text-white hover:text-white/90 transition-colors">
             <span className="text-xl font-bold flex items-center">
-              <span className="bg-gradient-to-r from-orange-500 to-blue-600 bg-clip-text text-transparent">Bit Vend</span>
-              <span className="bg-gradient-to-r from-orange-500 to-blue-600 bg-clip-text text-transparent ml-1">POS</span>
+              <span className="bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent">Bit Vend</span>
+              <span className="bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent ml-1">POS</span>
               <ShoppingCart size={20} className="ml-2 text-orange-500" />
             </span>
           </Link>
