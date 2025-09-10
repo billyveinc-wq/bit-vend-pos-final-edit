@@ -71,6 +71,11 @@ const Settings = () => {
     country: 'US'
   });
 
+  const uniqueCountries = useMemo(() => {
+    const seen = new Set<string>();
+    return countries.filter(c => { if (seen.has(c.code)) return false; seen.add(c.code); return true; });
+  }, []);
+
   const [operatingHours, setOperatingHours] = useState({
     monday: { open: '09:00', close: '17:00', closed: false },
     tuesday: { open: '09:00', close: '17:00', closed: false },
@@ -557,10 +562,7 @@ const Settings = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="max-h-64 overflow-auto">
-                    {useMemo(() => {
-                      const seen = new Set<string>();
-                      return countries.filter(c => { if (seen.has(c.code)) return false; seen.add(c.code); return true; });
-                    }, []).map((country) => (
+                    {uniqueCountries.map((country) => (
                       <SelectItem key={`${country.code}-${country.name}`} value={country.code}>
                         {country.name}
                       </SelectItem>
@@ -1040,7 +1042,7 @@ const Settings = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {useMemo(() => { const seen = new Set<string>(); return countries.filter(c => { if (seen.has(c.code)) return false; seen.add(c.code); return true; }); }, []).map((c)=>(<SelectItem key={`${c.code}-${c.name}`} value={c.code}>{c.name}</SelectItem>))}
+                            {uniqueCountries.map((c)=>(<SelectItem key={`${c.code}-${c.name}`} value={c.code}>{c.name}</SelectItem>))}
                           </SelectContent>
                         </Select>
                       </div>
