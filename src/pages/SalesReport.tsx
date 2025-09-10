@@ -506,11 +506,31 @@ const SalesReport: React.FC = () => {
 
       {/* Filters */}
       <Card className="animate-slideInLeft">
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="flex items-center">
             <Filter className="h-5 w-5 mr-2" />
             Filters & Date Range
           </CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={handleRefresh}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={handleExportData}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
@@ -552,17 +572,6 @@ const SalesReport: React.FC = () => {
             </div>
             
             <div className="space-y-2 md:col-span-3">
-              <div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full md:w-32"
-                  onClick={handleRefresh}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
-              </div>
               <Label>Payment Method</Label>
               <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
                 <SelectTrigger className="w-full md:w-44 h-9">
@@ -577,18 +586,7 @@ const SalesReport: React.FC = () => {
               </Select>
             </div>
             
-            <div className="space-y-2 md:col-span-2">
-              <div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full md:w-32 whitespace-nowrap"
-                  onClick={handleExportData}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </div>
+            <div className="space-y-2 md:col-span-3">
               <Label>Status</Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-full md:w-36 h-9">
