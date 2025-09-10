@@ -23,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ProductVariant {
   id: string;
-  productId: number;
+  productId: string;
   productName: string;
   variantType: 'size' | 'color' | 'material' | 'style' | 'other';
   variantName: string;
@@ -104,7 +104,7 @@ const Variants = () => {
       const { error } = await supabase
         .from('product_variants')
         .update({
-          product_id: parseInt(formData.productId),
+          product_id: formData.productId,
           variant_name: formData.variantName,
           sku: formData.sku || null,
           selling_price: formData.price ? parseFloat(formData.price) : null,
@@ -117,7 +117,7 @@ const Variants = () => {
         variant.id === editingVariant.id
           ? {
             ...variant,
-            productId: parseInt(formData.productId),
+            productId: formData.productId,
             productName: product.name,
             variantName: formData.variantName,
             variantValue: formData.variantName,
@@ -133,7 +133,7 @@ const Variants = () => {
       const { data, error } = await supabase
         .from('product_variants')
         .insert({
-          product_id: parseInt(formData.productId),
+          product_id: formData.productId,
           variant_name: formData.variantName,
           sku: formData.sku || null,
           selling_price: formData.price ? parseFloat(formData.price) : null,
@@ -145,7 +145,7 @@ const Variants = () => {
       if (error) { toast.error(error.message); return; }
       const newVariant: ProductVariant = {
         id: String((data as any).id),
-        productId: parseInt(formData.productId),
+        productId: formData.productId,
         productName: product.name,
         variantType: formData.variantType,
         variantName: formData.variantName,
@@ -167,7 +167,7 @@ const Variants = () => {
   const handleEdit = (variant: ProductVariant) => {
     setEditingVariant(variant);
     setFormData({
-      productId: variant.productId.toString(),
+      productId: variant.productId,
       variantType: variant.variantType,
       variantName: variant.variantName,
       variantValue: variant.variantValue,
