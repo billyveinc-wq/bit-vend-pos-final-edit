@@ -598,7 +598,12 @@ const Settings = () => {
   const [systemGeneral, setSystemGeneral] = useState({
     appName: 'Bit Vend POS',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    language: 'en'
+    language: 'en',
+    currency: 'USD',
+    dateFormat: 'YYYY-MM-DD',
+    numberFormat: '1,234.56',
+    taxMode: 'exclusive',
+    fiscalYearStartMonth: 'January'
   });
   const [emailTemplates, setEmailTemplates] = useState([
     { id: 'order-confirmation', name: 'Order Confirmation', subject: 'Your order has been received', body: 'Thank you for your order.' },
