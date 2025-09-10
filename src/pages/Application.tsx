@@ -25,6 +25,7 @@ import {
   Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const saveAppSetting = async (key: string, value: any) => {
   try {
@@ -37,6 +38,19 @@ const saveAppSetting = async (key: string, value: any) => {
 };
 
 const Application = () => {
+  const { isAdmin } = useAdminAuth();
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>You do not have permission to access Application settings.</CardContent>
+        </Card>
+      </div>
+    );
+  }
   const [appSettings, setAppSettings] = useState({
     appName: 'POS System',
     appVersion: '2.1.0',
