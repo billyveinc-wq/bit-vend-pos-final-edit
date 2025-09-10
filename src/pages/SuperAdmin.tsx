@@ -320,7 +320,6 @@ const SuperAdmin = () => {
         <div className="flex items-center gap-2">
           <Button onClick={() => setPromoDialogOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">Promo Code</Button>
           <Button onClick={() => setManagePassOpen(true)} className="bg-save hover:bg-save-hover text-save-foreground">Manage Password</Button>
-          <Button variant="outline" onClick={() => setShowAdminKeyDialog(true)}>Admin Key</Button>
 
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
