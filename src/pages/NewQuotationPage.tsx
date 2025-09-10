@@ -21,6 +21,7 @@ const NewQuotationPage = () => {
     template: 'standard'
   });
   const [notesTouched, setNotesTouched] = useState(false);
+  const [validTouched, setValidTouched] = useState(false);
 
   useEffect(() => {
     const t = (location.state as any)?.template;
@@ -34,11 +35,43 @@ const NewQuotationPage = () => {
       detailed: 'Detailed quotation including terms and conditions. Payment due within 14 days of acceptance.',
       service: 'Service quotation. Scope of work as discussed. Timesheets will be provided on completion.',
       product: 'Product quotation. Delivery within 3-5 business days from payment confirmation.',
-      wholesale: 'Wholesale quotation. MOQ applies. Bulk discount included as specified.'
+      wholesale: 'Wholesale quotation. MOQ applies. Bulk discount included as specified.',
+      pro_forma: 'Pro forma invoice-style quote. Subject to final confirmation.',
+      subscription: 'Recurring subscription quote. Billed monthly unless cancelled.',
+      maintenance: 'Maintenance plan quotation. Includes scheduled visits and support.',
+      consulting: 'Consulting services quotation. Time & materials basis unless otherwise agreed.',
+      rental: 'Rental quotation. Items remain property of the company. Late fees may apply.',
+      installation: 'Installation quotation. Includes setup, configuration, and basic training.'
     };
     const next = defaults[formData.template as keyof typeof defaults] || '';
     setFormData(prev => ({ ...prev, notes: next }));
   }, [formData.template, notesTouched]);
+
+  useEffect(() => {
+    if (validTouched) return;
+    const validityDays: Record<string, number> = {
+      standard: 7,
+      detailed: 14,
+      service: 30,
+      product: 10,
+      wholesale: 15,
+      pro_forma: 30,
+      subscription: 30,
+      maintenance: 60,
+      consulting: 30,
+      rental: 7,
+      installation: 14
+    };
+    const days = validityDays[formData.template as keyof typeof validityDays];
+    if (!days) return;
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const formatted = `${yyyy}-${mm}-${dd}`;
+    setFormData(prev => ({ ...prev, validUntil: formatted }));
+  }, [formData.template, validTouched]);
 
   const handleSave = async () => {
     if (!formData.customer || !formData.email) {
@@ -130,7 +163,7 @@ const NewQuotationPage = () => {
                 id="validUntil"
                 type="date"
                 value={formData.validUntil}
-                onChange={(e) => setFormData({...formData, validUntil: e.target.value})}
+                onChange={(e) => { setFormData({...formData, validUntil: e.target.value}); setValidTouched(true); }}
               />
             </div>
           </div>
