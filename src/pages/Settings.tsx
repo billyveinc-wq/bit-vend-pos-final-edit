@@ -951,7 +951,8 @@ const Settings = () => {
                     </div>
 
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={()=>{
+                      <Button variant="outline" size="sm" onClick={async ()=>{
+                        try { const mod = await import('@/integrations/supabase/client'); await mod.supabase.from('locations').delete().eq('id', loc.id); } catch {}
                         setLocations(prev => prev.filter(l => l.id !== loc.id));
                         toast.success('Branch removed');
                       }}>Remove</Button>
