@@ -820,10 +820,10 @@ const ProductAdd = () => {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 border-t dark:border-gray-600 animate-fadeInUp">
             <div className="flex gap-2 order-2 sm:order-1">
-              <Button type="button" variant="outline" onClick={handleReset} className="gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border-gray-300 text-foreground">
+              <Button type="button" onClick={handleReset} className="gap-2 bg-amber-500 hover:bg-amber-600 text-black">
                 <RotateCcw className="h-4 w-4" /> Reset
               </Button>
-              <Button type="button" variant="outline" onClick={handleCancel} className="gap-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950">
+              <Button type="button" onClick={handleCancel} className="gap-2 bg-red-600 hover:bg-red-700 text-white">
                 <X className="h-4 w-4" /> Cancel
               </Button>
             </div>
