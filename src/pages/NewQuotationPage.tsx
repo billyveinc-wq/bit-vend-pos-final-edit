@@ -20,14 +20,38 @@ const NewQuotationPage = () => {
     template: 'standard'
   });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.customer || !formData.email) {
       toast.error('Please fill in customer name and email');
       return;
     }
 
-    toast.success('Quotation created successfully!');
-    navigate('/dashboard/quotation');
+    try {
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+      const { count } = await supabase.from('quotations').select('id', { count: 'exact', head: true }).like('quote_no', `Q-${dateStr}-%`);
+      const seq = (count || 0) + 1;
+      const quoteNo = `Q-${dateStr}-${String(seq).padStart(4, '0')}`;
+      const { error } = await supabase.from('quotations').insert({
+        quote_no: quoteNo,
+        customer: formData.customer,
+        email: formData.email,
+        phone: formData.phone || null,
+        date: today.toISOString().split('T')[0],
+        valid_until: formData.validUntil || null,
+        notes: formData.notes || null,
+        template: formData.template,
+        status: 'draft',
+        subtotal: 0,
+        tax: 0,
+        total: 0,
+      });
+      if (error) { toast.error(error.message); return; }
+      toast.success('Quotation created successfully!');
+      navigate('/dashboard/quotation');
+    } catch (e) {
+      toast.error('Failed to create quotation');
+    }
   };
 
   return (
