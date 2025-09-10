@@ -80,7 +80,7 @@ const Settings = () => {
   });
 
   const [locations, setLocations] = useState([
-    { id: '1', code: 'MAIN', name: 'Main Store', manager: '', phone: '', email: '', address: '', city: '', state: '', postalCode: '', country: 'US', currency: 'USD', taxRegion: '', isActive: true, isMain: true, notes: '', companyId: '' }
+    { id: '1', code: 'MAIN', name: 'Main Store', manager: '', phone: '', email: '', address: '', city: '', state: '', postalCode: '', country: 'US', currency: 'USD', taxRegion: '', isActive: true, isMain: true, notes: '', companyId: 'unassigned' }
   ]);
 
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
