@@ -71,7 +71,7 @@ const StockIn = () => {
     (record.batchNumber && record.batchNumber.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.productId || !formData.quantity || !formData.unitCost || !formData.supplier) {
