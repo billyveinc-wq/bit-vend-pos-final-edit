@@ -1500,6 +1500,16 @@ const Settings = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Header Logo URL</Label>
+                    <Input value={invoiceTemplates.headerLogoUrl} onChange={(e)=>setInvoiceTemplates(p=>({...p, headerLogoUrl:e.target.value}))} placeholder="https://..." />
+                  </div>
+                  <div>
+                    <Label>Terms & Notes</Label>
+                    <Textarea value={invoiceTemplates.terms} onChange={(e)=>setInvoiceTemplates(p=>({...p, terms:e.target.value}))} placeholder="Payment terms, return policy" />
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={()=>{ saveLocal('pos-invoice-template', invoiceTemplates); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=> navigate('/dashboard/invoice-settings')}>Open Invoice Settings</Button>
