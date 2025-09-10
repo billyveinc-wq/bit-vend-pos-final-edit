@@ -43,7 +43,7 @@ const AuthPage = () => {
   const [phone, setPhone] = useState('');
   const [referralCodeInput, setReferralCodeInput] = useState(referralCode);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [currentMode, setCurrentMode] = useState<'signin' | 'signup' | 'forgot'>(mode as any);
+  const [currentMode, setCurrentMode] = useState<'signin' | 'signup' | 'forgot' | 'reset'>(mode as any);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
