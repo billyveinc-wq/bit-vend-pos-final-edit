@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useBusiness } from '@/contexts/BusinessContext';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { countries } from '@/data/countries';
 import { showSaveToast, showUploadToast } from '@/components/SettingsToast';
 import SystemUsersReferrals from '@/components/SystemUsersReferrals';
@@ -49,6 +50,7 @@ const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { businesses, currentBusiness, addBusiness, updateBusiness, deleteBusiness } = useBusiness();
+  const { isAdmin } = useAdminAuth();
   
   const section = searchParams.get('section') || 'business';
   const subsection = searchParams.get('subsection') || 'business-info';
@@ -332,7 +334,7 @@ const Settings = () => {
       title: 'System',
       icon: SettingsIcon,
       items: [
-        { id: 'payment-settings', label: 'Payment Settings', icon: CreditCard },
+        ...(isAdmin ? [{ id: 'payment-settings', label: 'Payment Settings', icon: CreditCard }] : []),
         { id: 'general', label: 'General', icon: SettingsIcon },
         { id: 'email-templates', label: 'Email Templates', icon: Mail },
         { id: 'backup', label: 'Backup', icon: Database }
