@@ -155,17 +155,37 @@ const Users = () => {
     }
 
     if (editingUser) {
-      const selectedRole = roles.find(r => r.id === formData.role);
-      setUsers(prev => prev.map(user =>
-        user.id === editingUser.id
-          ? {
-            ...user,
-            ...formData,
-            permissions: selectedRole?.permissions || []
-          }
-          : user
-      ));
-      toast.success('User updated successfully!');
+      try {
+        const selectedRole = roles.find(r => r.id === formData.role);
+        const updatedMeta = {
+          username: formData.username,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          role: formData.role,
+          restrictions: restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false }
+        };
+        // Persist to DB (system_users mirror)
+        const { error } = await supabase.from('system_users').update({
+          email: formData.email,
+          user_metadata: updatedMeta
+        }).eq('id', editingUser.id);
+        if (error) { toast.error(error.message); return; }
+        // Update local state
+        setUsers(prev => prev.map(user =>
+          user.id === editingUser.id
+            ? {
+              ...user,
+              ...formData,
+              permissions: selectedRole?.permissions || []
+            }
+            : user
+        ));
+        toast.success('User updated successfully!');
+      } catch (e) {
+        toast.error('Failed to update user');
+        return;
+      }
     } else {
       try {
         // Validate password input on create
@@ -232,6 +252,11 @@ const Users = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
+        // Remove related public data
+        await supabase.from('user_subscriptions').delete().eq('user_id', id);
+        await supabase.from('user_promotions').delete().eq('user_id', id);
+        await supabase.from('company_users').delete().eq('user_id', id);
+        await supabase.from('user_roles').delete().eq('user_id', id);
         const { error } = await supabase.from('system_users').delete().eq('id', id);
         if (error) { toast.error(error.message); return; }
         setUsers(prev => prev.filter(user => user.id !== id));
