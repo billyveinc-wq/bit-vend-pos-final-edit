@@ -71,7 +71,7 @@ const SalesReport: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [activeView, setActiveView] = useState<'overview' | 'detailed' | 'products' | 'customers'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'detailed' | 'products' | 'customers' | 'quotations'>('overview');
 
   // Load sales from Supabase
   const [sales, setSales] = useState<Sale[]>([]);
