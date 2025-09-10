@@ -40,7 +40,8 @@ import {
   Edit,
   Trash2,
   FileText,
-  Crown
+  Crown,
+  CreditCard
 } from 'lucide-react';
 import { toast } from 'sonner';
 
