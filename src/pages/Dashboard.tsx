@@ -88,7 +88,7 @@ const Dashboard: React.FC = () => {
     {
       title: 'Advanced Reports',
       description: 'View detailed business analytics',
-      action: () => navigate('/sales-report'),
+      action: () => navigate('/dashboard/sales-report'),
       color: 'bg-green-500 hover:bg-green-600',
       feature: 'advanced_reports' as const,
     },
