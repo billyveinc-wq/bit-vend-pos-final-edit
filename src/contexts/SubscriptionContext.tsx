@@ -104,8 +104,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         .maybeSingle();
 
       if (subError && subError.code !== 'PGRST116') {
-        console.error('Error fetching subscription:', subError);
-        // Continue with default features instead of failing
+        const info = (subError as any)?.message || (subError as any)?.details || (subError as any)?.hint || JSON.stringify(subError);
+        console.warn('Subscription not available, using defaults:', info);
         setSubscription(null);
         setFeatures(DEFAULT_FEATURES);
         return;
