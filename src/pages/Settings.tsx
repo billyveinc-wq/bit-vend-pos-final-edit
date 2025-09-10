@@ -839,7 +839,7 @@ const Settings = () => {
                     <Plus className="h-4 w-4" />
                     Add Branch
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => { saveLocal('pos-locations', locations); showSaveToast(); }}>Save Branches</Button>
+                  <Button variant="outline" size="sm" onClick={async () => { try { const mod = await import('@/integrations/supabase/client'); await mod.supabase.from('locations').upsert(locations.map(l=>({ id:l.id, code:l.code, name:l.name, manager:l.manager, phone:l.phone, email:l.email, address:l.address, city:l.city, state:l.state, postal_code:l.postalCode, country:l.country, currency:l.currency, tax_region:l.taxRegion, is_active:l.isActive, is_main:l.isMain, notes:l.notes, company_id: l.companyId && l.companyId !== 'unassigned' ? Number(l.companyId) : null })), { onConflict: 'id' }); } catch {} saveLocal('pos-locations', locations); showSaveToast(); }}>Save Branches</Button>
                 </div>
 
                 {locations.map((loc, index) => (
