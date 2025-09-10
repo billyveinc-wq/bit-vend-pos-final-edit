@@ -50,10 +50,14 @@ const AuthPage = () => {
   // Check if user is already authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // If user is already authenticated, redirect to dashboard instead of staying on auth page
-        navigate('/dashboard', { replace: true });
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          // If user is already authenticated, redirect to dashboard instead of staying on auth page
+          navigate('/dashboard', { replace: true });
+        }
+      } catch (err) {
+        console.warn('Auth check failed (offline or misconfigured Supabase). Proceeding without redirect.');
       }
     };
     checkAuth();
