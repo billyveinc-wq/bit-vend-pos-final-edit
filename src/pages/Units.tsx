@@ -86,9 +86,6 @@ const Units = () => {
           .update({
             name: formData.name,
             short_name: formData.shortName,
-            type: formData.type,
-            base_unit: formData.baseUnit || null,
-            conversion_factor: formData.conversionFactor || null,
             is_active: formData.isActive,
           })
           .eq('id', Number(editingUnit.id));
