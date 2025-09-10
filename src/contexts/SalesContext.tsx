@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useProducts } from './ProductContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface SaleItem {
   productId: number;
