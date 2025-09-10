@@ -112,6 +112,49 @@ const Settings = () => {
   useEffect(() => {
     if (companies.length) localStorage.setItem('pos-companies', JSON.stringify(companies));
   }, [companies]);
+
+  useEffect(() => {
+    const loadLocations = async () => {
+      let loaded: any[] = [];
+      try {
+        const mod = await import('@/integrations/supabase/client');
+        const { data, error } = await mod.supabase
+          .from('locations')
+          .select('id, code, name, manager, phone, email, address, city, state, postal_code, country, currency, tax_region, is_active, is_main, notes, company_id')
+          .order('created_at');
+        if (!error && data) {
+          loaded = data.map((d: any) => ({
+            id: String(d.id),
+            code: d.code || '',
+            name: d.name || '',
+            manager: d.manager || '',
+            phone: d.phone || '',
+            email: d.email || '',
+            address: d.address || '',
+            city: d.city || '',
+            state: d.state || '',
+            postalCode: d.postal_code || '',
+            country: d.country || 'US',
+            currency: d.currency || 'USD',
+            taxRegion: d.tax_region || '',
+            isActive: d.is_active ?? true,
+            isMain: d.is_main ?? false,
+            notes: d.notes || '',
+            companyId: d.company_id ? String(d.company_id) : 'unassigned',
+          }));
+        }
+      } catch {}
+      if (!loaded.length) {
+        const local = localStorage.getItem('pos-locations');
+        if (local) {
+          try { loaded = JSON.parse(local); } catch {}
+        }
+      }
+      if (loaded.length) setLocations(loaded);
+    };
+    loadLocations();
+  }, []);
+
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
 
   // Load business data when editing
