@@ -103,13 +103,24 @@ const Users = () => {
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
 
   const [users, setUsers] = useState<User[]>([]);
+  const [companyId, setCompanyId] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const { data, error } = await supabase.from('system_users').select('*').order('created_at', { ascending: false });
+        const { data: sessionData } = await supabase.auth.getSession();
+        const uid = sessionData?.session?.user?.id || null;
+        let cId: number | null = null;
+        if (uid) {
+          const { data: cu } = await supabase.from('company_users').select('company_id').eq('user_id', uid).maybeSingle();
+          if (cu?.company_id) cId = Number(cu.company_id);
+        }
+        setCompanyId(cId);
+
+        const { data, error } = await supabase.from('system_users').select('*').order('created_at', { ascending: false }).eq('company_id', cId);
         if (error) throw error;
-        const mapped: User[] = (data || []).map((row: any) => {
+        const filtered = (data || []).filter((row: any) => Boolean(row.user_metadata?.created_by_admin));
+        const mapped: User[] = filtered.map((row: any) => {
           const meta = row.user_metadata || {};
           return {
             id: String(row.id),
@@ -120,7 +131,7 @@ const Users = () => {
             phone: meta.phone || '',
             role: meta.role || 'cashier',
             status: 'active',
-            lastLogin: undefined,
+            lastLogin: row.last_sign_in_at,
             createdAt: row.created_at,
             permissions: Array.isArray(meta.permissions) ? meta.permissions : (meta.restrictions?.actions || []),
           };
