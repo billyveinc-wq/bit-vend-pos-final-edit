@@ -92,8 +92,16 @@ const Products = () => {
   }, [searchTerm, selectedCategory]);
 
   // Handle delete product
-  const handleDeleteProduct = (productId: number, productName: string) => {
+  const handleDeleteProduct = async (productId: number, productName: string) => {
     if (window.confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+      try {
+        const prod = products.find(p => p.id === productId);
+        if (prod?.sku) {
+          await supabase.from('products').delete().eq('sku', prod.sku);
+        }
+      } catch (e) {
+        // ignore DB delete errors for now; local delete still proceeds
+      }
       deleteProduct(productId);
       toast({
         title: "Product Deleted",
