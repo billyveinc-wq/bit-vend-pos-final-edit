@@ -162,6 +162,10 @@ const Topbar: React.FC<TopbarProps> = ({
   const profileTooltip = useAutoHideTooltip(2000);
 
   useEffect(() => {
+    if (editorRef.current) editorRef.current.style.fontFamily = fontMap[fontFamilyKey];
+  }, [fontFamilyKey]);
+
+  useEffect(() => {
     const el = document.querySelector('.pos-content');
     const handleScroll = () => {
       const y = (el as HTMLElement | null)?.scrollTop ?? window.scrollY;
