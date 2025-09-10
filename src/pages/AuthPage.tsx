@@ -253,9 +253,10 @@ const AuthPage = () => {
         console.warn('Failed to create trial subscription', err);
       }
 
-      // Link user to company (create if missing) and reflect in registrations
+      // Link user to company (create if missing). Make first user admin by default.
       try {
         if (signUpData?.user && companyName) {
+          const { id: newUserId } = signUpData.user;
           // Find or create company
           const { data: existing } = await supabase.from('companies').select('id').eq('name', companyName).maybeSingle();
           let companyId = existing?.id as number | undefined;
@@ -264,8 +265,25 @@ const AuthPage = () => {
             if (!cErr) companyId = created.id;
           }
           if (companyId) {
-            await supabase.from('company_users').upsert({ company_id: companyId, user_id: signUpData.user.id, role: 'owner' });
-            await supabase.from('system_users').update({ company_id: companyId }).eq('id', signUpData.user.id);
+            // How many users linked to this company?
+            const { count } = await supabase.from('company_users').select('id', { count: 'exact', head: true }).eq('company_id', companyId);
+            const isFirst = (count || 0) === 0;
+            // Set company_users role accordingly
+            await supabase.from('company_users').upsert({ company_id: companyId, user_id: newUserId, role: isFirst ? 'owner' : 'member' });
+            await supabase.from('system_users').update({ company_id: companyId }).eq('id', newUserId);
+            if (isFirst) {
+              // Ensure an 'admin' role exists and assign it to the first user
+              const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
+              let roleId = adminRole?.id as number | undefined;
+              if (!roleId) {
+                const { data: createdRole } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+                roleId = createdRole?.id;
+              }
+              if (roleId) {
+                const { data: existingUR } = await supabase.from('user_roles').select('user_id, role_id').eq('user_id', newUserId).eq('role_id', roleId).maybeSingle();
+                if (!existingUR) await supabase.from('user_roles').insert({ user_id: newUserId, role_id: roleId });
+              }
+            }
           }
         }
       } catch (err) {
