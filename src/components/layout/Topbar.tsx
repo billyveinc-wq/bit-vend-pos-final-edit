@@ -542,7 +542,7 @@ const Topbar: React.FC<TopbarProps> = ({
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const url = window.prompt('Enter URL'); if (url) document.execCommand('createLink', false, url); }}><LinkIcon className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const url = window.prompt('Image URL'); if (url) document.execCommand('insertImage', false, url); }}><ImageIcon className="h-4 w-4" /></Button>
               </div>
-              <div className="min-h[180px] p-3 outline-none" style={{ fontFamily: fontMap[fontFamilyKey] }} contentEditable ref={editorRef} data-placeholder="Write your message..." onInput={(e) => setCompose(prev => ({ ...prev, body: (e.target as HTMLDivElement).innerText }))}></div>
+              <div className="min-h-[180px] p-3 outline-none" style={{ fontFamily: fontMap[fontFamilyKey] }} contentEditable ref={editorRef} data-placeholder="Write your message..." onInput={(e) => setCompose(prev => ({ ...prev, body: (e.target as HTMLDivElement).innerText }))}></div>
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2">Attachments</Label>
