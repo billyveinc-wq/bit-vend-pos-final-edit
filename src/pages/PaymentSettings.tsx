@@ -346,12 +346,32 @@ const PaymentSettings: React.FC = () => {
   if (isChecking) {
     return <div className="p-6 text-muted-foreground">Loading...</div>;
   }
-  if (!isAdmin) {
+  const [allow, setAllow] = useState(false);
+  useEffect(() => {
+    (async () => {
+      if (isAdmin) { setAllow(true); return; }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        if (!userId) { setAllow(false); return; }
+        // Company role owner/admin allowed
+        if (role === 'owner' || role === 'admin') { setAllow(true); return; }
+        // First ever system user gets access
+        const { count } = await supabase.from('system_users').select('id', { count: 'exact', head: true });
+        if ((count || 0) === 1) { setAllow(true); return; }
+        setAllow(false);
+      } catch {
+        setAllow(false);
+      }
+    })();
+  }, [isAdmin, role]);
+
+  if (!allow) {
     return (
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Access Denied</CardTitle>
-          <CardDescription>Only Admins can manage Payment Settings.</CardDescription>
+          <CardDescription>Only your business owner/admin or super admin can manage Payment Settings.</CardDescription>
         </CardHeader>
       </Card>
     );
