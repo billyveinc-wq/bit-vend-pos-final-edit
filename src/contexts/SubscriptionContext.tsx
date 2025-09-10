@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export type SubscriptionPlan = 'starter' | 'standard' | 'pro' | 'enterprise';
@@ -86,7 +87,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
 
       // First get the session to avoid AuthSessionMissingError when no session exists
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await safeGetSession();
       if (sessionError) {
         console.warn('Error fetching session:', sessionError);
         setSubscription(null);
