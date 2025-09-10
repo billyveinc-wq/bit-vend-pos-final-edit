@@ -205,6 +205,21 @@ const NewQuotationPage = () => {
             </div>
           </div>
 
+          {/* Template-specific details */}
+          {Object.keys(extraFields).length > 0 && (
+            <div className="border rounded-md p-4 space-y-3">
+              <p className="text-sm font-medium">Template Details</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(extraFields).map(([key, val]) => (
+                  <div key={key}>
+                    <Label htmlFor={`ef-${key}`}>{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Label>
+                    <Input id={`ef-${key}`} value={val} onChange={(e) => setExtraFields(prev => ({ ...prev, [key]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
