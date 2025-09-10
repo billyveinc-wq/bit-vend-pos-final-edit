@@ -53,7 +53,7 @@ const Index: React.FC = () => {
     {
       title: 'Start POS Session',
       description: 'Begin a new point of sale session',
-      action: () => navigate('/checkout'),
+      action: () => navigate('/dashboard/checkout'),
       color: 'bg-primary hover:bg-primary/90'
     },
     {
@@ -156,7 +156,7 @@ const Index: React.FC = () => {
               <Button
                 variant="outline"
                 className="mt-4"
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate('/dashboard/checkout')}
               >
                 Start Your First Sale
               </Button>
