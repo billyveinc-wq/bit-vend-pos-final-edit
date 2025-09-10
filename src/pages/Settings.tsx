@@ -1013,6 +1013,46 @@ const Settings = () => {
                     <Label>Show Totals</Label>
                   </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Paper Size</Label>
+                    <Select value={receiptSettings.paperSize} onValueChange={(v)=>setReceiptSettings(p=>({...p, paperSize:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="58mm">58mm</SelectItem>
+                        <SelectItem value="80mm">80mm</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2 mt-6 md:mt-0">
+                    <Switch checked={receiptSettings.showCustomerInfo} onCheckedChange={(c)=>setReceiptSettings(p=>({...p, showCustomerInfo:c}))} />
+                    <Label>Show Customer Info</Label>
+                  </div>
+                  <div className="flex items-center gap-2 mt-6 md:mt-0">
+                    <Switch checked={receiptSettings.showChangeDue} onCheckedChange={(c)=>setReceiptSettings(p=>({...p, showChangeDue:c}))} />
+                    <Label>Show Change Due</Label>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={receiptSettings.showBarcode} onCheckedChange={(c)=>setReceiptSettings(p=>({...p, showBarcode:c}))} />
+                    <Label>Show Barcode</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={receiptSettings.showQRCode} onCheckedChange={(c)=>setReceiptSettings(p=>({...p, showQRCode:c}))} />
+                    <Label>Show QR Code</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={receiptSettings.includeCashierName} onCheckedChange={(c)=>setReceiptSettings(p=>({...p, includeCashierName:c}))} />
+                    <Label>Include Cashier Name</Label>
+                  </div>
+                </div>
+                <div>
+                  <Label>Header Text</Label>
+                  <Textarea value={receiptSettings.businessHeader} onChange={(e)=>setReceiptSettings(p=>({...p, businessHeader:e.target.value}))} placeholder="Store name, address, VAT" />
+                </div>
                 <div>
                   <Label>Footer Text</Label>
                   <Textarea value={receiptSettings.businessFooter} onChange={(e)=>setReceiptSettings(p=>({...p, businessFooter:e.target.value}))} placeholder="Thank you for shopping!" />
