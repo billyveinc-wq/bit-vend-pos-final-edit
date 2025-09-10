@@ -184,7 +184,7 @@ const StockOut = () => {
         const next = Math.max(0, current - rec.quantity);
         await supabase.from('products').update({ stock: next }).eq('sku', product.sku);
         await supabase.from('inventory_movements').insert({ product_sku: product.sku, change: -rec.quantity, reason: 'stock_out' });
-        try { const { updateProduct } = await import('@/contexts/ProductContext'); } catch {}
+        try { updateProduct(product.id, { stock: next }); } catch {}
       }
     } catch (e) { console.warn('Dispatch update failed', e); }
     toast.success('Stock dispatched successfully!');
