@@ -67,7 +67,7 @@ const Profile: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await safeGetSession();
       const user = session?.user || null;
       if (!user) { toast.error('Not signed in'); return; }
 
