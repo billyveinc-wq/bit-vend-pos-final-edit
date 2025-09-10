@@ -186,7 +186,7 @@ const ProductEdit = () => {
       const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave?');
       if (!confirmed) return;
     }
-    navigate('/products');
+    navigate('/dashboard/products');
   };
 
   const handleGoBack = () => {
