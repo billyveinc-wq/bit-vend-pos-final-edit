@@ -197,11 +197,10 @@ const Checkout = () => {
       // Adjust local product stocks
       saleItems.forEach(si => {
         const p = products.find(pr => pr.id === si.productId);
-        if (p && typeof p.stock === 'number') {
-          const newStock = Math.max(0, p.stock - si.quantity);
-          // Using update via context
-          // @ts-ignore - updateProduct exists via context
-          // we import updateProduct? keep local minimal
+        if (p) {
+          const curr = typeof p.stock === 'number' ? p.stock : 0;
+          const newStock = Math.max(0, curr - si.quantity);
+          updateProduct(p.id, { stock: newStock });
         }
       });
 
