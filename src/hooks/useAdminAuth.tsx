@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const useAdminAuth = () => {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const [adminSession, setAdminSession] = useState<any>(null);
 
   useEffect(() => {
@@ -15,6 +16,7 @@ export const useAdminAuth = () => {
           const parsedSession = JSON.parse(session);
           setAdminSession(parsedSession);
           setIsAdmin(true);
+          if (mounted) setIsChecking(false);
           return true;
         } catch {
           setIsAdmin(false);
@@ -27,35 +29,43 @@ export const useAdminAuth = () => {
     };
 
     const checkDbAdmin = async () => {
+      if (mounted) setIsChecking(true);
+      let admin = false;
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
-        if (!user) { if (mounted) setIsAdmin(false); return; }
-
-        // Company-level owner/admin implies admin access
-        const { data: compRole } = await supabase
-          .from('company_users')
-          .select('role')
-          .eq('user_id', user.id)
-          .in('role', ['owner', 'admin'])
-          .maybeSingle();
-        if (compRole?.role === 'owner' || compRole?.role === 'admin') { if (mounted) setIsAdmin(true); return; }
-
-        // Role-based admin via roles/user_roles
-        const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
-        const adminRoleId = adminRole?.id as number | undefined;
-        if (!adminRoleId) { if (mounted) setIsAdmin(false); return; }
-
-        const { data: hasRole } = await supabase
-          .from('user_roles')
-          .select('user_id, role_id')
-          .eq('user_id', user.id)
-          .eq('role_id', adminRoleId)
-          .maybeSingle();
-
-        if (mounted) setIsAdmin(!!hasRole);
+        if (user) {
+          // Company-level owner/admin implies admin access
+          const { data: compRole } = await supabase
+            .from('company_users')
+            .select('role')
+            .eq('user_id', user.id)
+            .in('role', ['owner', 'admin'])
+            .maybeSingle();
+          if (compRole?.role === 'owner' || compRole?.role === 'admin') {
+            admin = true;
+          } else {
+            // Role-based admin via roles/user_roles
+            const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
+            const adminRoleId = adminRole?.id as number | undefined;
+            if (adminRoleId) {
+              const { data: hasRole } = await supabase
+                .from('user_roles')
+                .select('user_id, role_id')
+                .eq('user_id', user.id)
+                .eq('role_id', adminRoleId)
+                .maybeSingle();
+              admin = !!hasRole;
+            }
+          }
+        }
       } catch {
-        if (mounted) setIsAdmin(false);
+        admin = false;
+      } finally {
+        if (mounted) {
+          setIsAdmin(admin);
+          setIsChecking(false);
+        }
       }
     };
 
@@ -67,7 +77,6 @@ export const useAdminAuth = () => {
     init();
 
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
-      // Re-evaluate when auth state changes
       const isLocalAdmin = checkLocalAdmin();
       if (!isLocalAdmin) checkDbAdmin();
     });
@@ -95,6 +104,7 @@ export const useAdminAuth = () => {
 
   return {
     isAdmin,
+    isChecking,
     adminSession,
     logout
   };
