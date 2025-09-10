@@ -56,11 +56,11 @@ const Income = () => {
             id: String(row.id),
             title: row.title,
             amount: Number(row.amount) || 0,
-            category: row.category,
-            source: row.source,
-            date: row.date,
+            category: '',
+            source: '',
+            date: row.income_date,
             description: row.description || '',
-            status: (row.status || 'received') as Income['status'],
+            status: 'received' as Income['status'],
             paymentMethod: row.payment_method || '',
           }));
           setIncomes(mapped);
@@ -93,13 +93,11 @@ const Income = () => {
           .update({
             title: formData.title,
             amount: parseFloat(formData.amount) || 0,
-            category: formData.category,
-            source: formData.source,
-            date: formData.date,
+            income_date: formData.date,
             description: formData.description || null,
             payment_method: formData.paymentMethod || null,
           })
-          .eq('id', Number(editingIncome.id));
+          .eq('id', editingIncome.id);
         if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
         setIncomes(prev => prev.map(i => i.id === editingIncome.id ? {
           ...i,
@@ -118,11 +116,8 @@ const Income = () => {
           .insert({
             title: formData.title,
             amount: parseFloat(formData.amount) || 0,
-            category: formData.category,
-            source: formData.source,
-            date: formData.date,
+            income_date: formData.date,
             description: formData.description || null,
-            status: 'received',
             payment_method: formData.paymentMethod || null,
           })
           .select('*')
@@ -132,11 +127,11 @@ const Income = () => {
           id: String(data.id),
           title: data.title,
           amount: Number(data.amount) || 0,
-          category: data.category,
-          source: data.source,
-          date: data.date,
+          category: '',
+          source: '',
+          date: data.income_date,
           description: data.description || '',
-          status: (data.status || 'received') as Income['status'],
+          status: 'received' as Income['status'],
           paymentMethod: data.payment_method || '',
         };
         setIncomes(prev => [newIncome, ...prev]);
@@ -179,7 +174,7 @@ const Income = () => {
   const handleDelete = async (id?: string) => {
     if (!id) return;
     try {
-      const { error } = await supabase.from('income').delete().eq('id', Number(id));
+      const { error } = await supabase.from('income').delete().eq('id', id);
       if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
       setIncomes(prev => prev.filter(i => i.id !== id));
       toast({ title: 'Income Deleted', description: 'Income record has been deleted successfully' });
