@@ -106,6 +106,11 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const dbUpdates: any = {};
         if (updates.stock !== undefined) dbUpdates.stock = updates.stock;
         if (updates.minStock !== undefined) dbUpdates.min_stock = updates.minStock;
+        if (updates.barcode !== undefined) dbUpdates.barcode = updates.barcode;
+        if (updates.price !== undefined) dbUpdates.price = updates.price;
+        if (updates.status !== undefined) dbUpdates.status = updates.status;
+        if (updates.brand !== undefined) dbUpdates.brand = updates.brand;
+        if (updates.supplier !== undefined) dbUpdates.supplier = updates.supplier;
         if (Object.keys(dbUpdates).length > 0) {
           supabase.from('products').update(dbUpdates).eq('sku', sku);
         }
