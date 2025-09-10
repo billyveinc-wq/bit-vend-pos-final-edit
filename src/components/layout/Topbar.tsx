@@ -510,11 +510,23 @@ const Topbar: React.FC<TopbarProps> = ({
               <div className="min-h-[180px] p-3 outline-none" contentEditable ref={editorRef} data-placeholder="Write your message..." onInput={(e) => setCompose(prev => ({ ...prev, body: (e.target as HTMLDivElement).innerText }))}></div>
             </div>
             <div className="space-y-2">
-              <Label>Attachments</Label>
-              <Input type="file" multiple onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                setCompose(prev => ({ ...prev, attachments: files as File[] }));
-              }} />
+              <Label className="flex items-center gap-2">Attachments</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={(el) => (fileInputRef = el as any)}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setCompose(prev => ({ ...prev, attachments: files as File[] }));
+                  }}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={() => (fileInputRef as any)?.click()} className="gap-2">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-8.49 8.49a5 5 0 01-7.07-7.07l8.49-8.49a3.5 3.5 0 015 5l-8.49 8.49a2 2 0 11-2.83-2.83l7.78-7.78"/></svg>
+                  Attach
+                </Button>
+              </div>
               {compose.attachments.length > 0 && (
                 <div className="max-h-32 overflow-auto border rounded p-2 text-sm">
                   {compose.attachments.map((f, i) => (
