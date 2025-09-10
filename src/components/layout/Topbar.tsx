@@ -116,6 +116,7 @@ const Topbar: React.FC<TopbarProps> = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const { businesses, currentBusiness, setCurrentBusiness } = useBusiness();
   const [supportEmail, setSupportEmail] = useState<string | null>(null);
+  const [emailWebhookUrl, setEmailWebhookUrl] = useState<string | null>(null);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showSupportDialog, setShowSupportDialog] = useState(false);
   const [compose, setCompose] = useState<{ to: string; cc: string; bcc: string; subject: string; body: string; attachments: File[] }>({ to: '', cc: '', bcc: '', subject: '', body: '', attachments: [] });
@@ -136,10 +137,13 @@ const Topbar: React.FC<TopbarProps> = ({
         if (!companyId) return;
         const { data } = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', 'support_email').maybeSingle();
         const val = (data as any)?.value;
-        if (typeof val === 'string' && val) { setSupportEmail(val); return; }
+        if (typeof val === 'string' && val) setSupportEmail(val);
+        const webhook = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', 'email_webhook_url').maybeSingle();
+        const whVal = (webhook.data as any)?.value;
+        if (typeof whVal === 'string' && whVal) setEmailWebhookUrl(whVal);
         const app = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', 'application_settings').maybeSingle();
         const appVal = (app.data as any)?.value;
-        if (appVal?.supportEmail) setSupportEmail(appVal.supportEmail);
+        if (appVal?.supportEmail && !val) setSupportEmail(appVal.supportEmail);
       } catch {}
     };
     loadSupportEmail();
@@ -557,9 +561,24 @@ const Topbar: React.FC<TopbarProps> = ({
                   <Paperclip className="h-4 w-4" />
                   Attach
                 </Button>
-                <Button type="button" size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
+                <Button type="button" size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={async () => {
                   const toVal = (compose.to && compose.to.trim()) || (supportEmail || '');
                   const bodyVal = (editorRef.current?.innerText || compose.body || '').trim();
+                  if (emailWebhookUrl) {
+                    try {
+                      const res = await fetch(emailWebhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ to: toVal, cc: compose.cc || undefined, bcc: compose.bcc || undefined, subject: compose.subject || '', text: bodyVal, html: bodyVal.replace(/\n/g,'<br/>') })
+                      });
+                      if (!res.ok) throw new Error(await res.text());
+                      toast.success('Email sent');
+                      setShowEmailDialog(false);
+                      return;
+                    } catch (e) {
+                      toast.error('Direct send failed. Opening Gmail...');
+                    }
+                  }
                   const params = new URLSearchParams();
                   if (toVal) params.set('to', toVal);
                   if (compose.cc) params.set('cc', compose.cc);
@@ -635,6 +654,10 @@ const Topbar: React.FC<TopbarProps> = ({
               <Label htmlFor="support-email">Support Email</Label>
               <Input id="support-email" type="email" value={supportEmail || ''} onChange={(e) => setSupportEmail(e.target.value)} placeholder="support@company.com" />
             </div>
+            <div>
+              <Label htmlFor="email-webhook">Email Webhook URL (Zapier/Resend/Server)</Label>
+              <Input id="email-webhook" value={emailWebhookUrl || ''} onChange={(e) => setEmailWebhookUrl(e.target.value)} placeholder="https://hooks.zapier.com/..." />
+            </div>
             <div className="flex justify-between">
               <Button variant="destructive" onClick={async () => {
                 try {
@@ -663,8 +686,12 @@ const Topbar: React.FC<TopbarProps> = ({
                     if (!supportEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(supportEmail)) { toast.error('Enter a valid email'); return; }
                     const { error } = await supabase.from('app_settings').upsert({ company_id: companyId, key: 'support_email', value: supportEmail }, { onConflict: 'company_id,key' });
                     if (error) { toast.error(error.message); return; }
+                    if (emailWebhookUrl) {
+                      const { error: e2 } = await supabase.from('app_settings').upsert({ company_id: companyId, key: 'email_webhook_url', value: emailWebhookUrl }, { onConflict: 'company_id,key' });
+                      if (e2) { toast.error(e2.message); return; }
+                    }
                     setShowSupportDialog(false);
-                    toast.success('Support email saved');
+                    toast.success('Support settings saved');
                   } catch { toast.error('Failed to save'); }
                 }}>Save</Button>
               </div>
