@@ -629,7 +629,10 @@ const Settings = () => {
     autoSubmit: true
   });
   const [cashDrawerSettings, setCashDrawerSettings] = useState({
-    openCode: '27,112,0,25,250'
+    openCode: '27,112,0,25,250',
+    openOn: 'cash_only',
+    port: '',
+    pulseOnOpen: true
   });
 
   // App settings state
