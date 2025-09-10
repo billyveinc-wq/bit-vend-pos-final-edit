@@ -122,7 +122,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .single();
 
         if (planError) {
-          console.error('Error fetching plan features:', planError);
+          const info = (planError as any)?.message || (planError as any)?.details || (planError as any)?.hint || JSON.stringify(planError);
+          console.warn('Plan features not available, keeping defaults:', info);
           return;
         }
 
