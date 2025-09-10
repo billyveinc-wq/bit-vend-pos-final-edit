@@ -801,7 +801,8 @@ const Settings = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
+                          onClick={async () => {
+                            try { const mod = await import('@/integrations/supabase/client'); await mod.supabase.from('locations').delete().eq('id', location.id); } catch {}
                             setLocations(prev => prev.filter(l => l.id !== location.id));
                             toast.success('Location removed');
                           }}
