@@ -171,11 +171,7 @@ const Checkout = () => {
       // Update inventory for each item and record movement
       for (const si of saleItems) {
         if (!si.sku) continue;
-        await supabase.rpc('noop'); // placeholder to keep sequential awaits grouped; ignored if function missing
-        await supabase
-          .from('products')
-          .update({ stock: supabase.rpc })
-        // We cannot do atomic dec in a single call via rpc here; fallback to read-modify-write
+        // Read current stock, decrement, update
         const { data: prodRow } = await supabase.from('products').select('stock').eq('sku', si.sku).maybeSingle();
         const current = (prodRow?.stock as number) ?? 0;
         const next = Math.max(0, current - si.quantity);
