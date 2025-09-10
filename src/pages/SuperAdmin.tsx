@@ -53,6 +53,18 @@ interface SystemMetric {
 const SuperAdmin = () => {
   const { isAdmin } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [adminEmails, setAdminEmails] = useState<string[]>([]);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+
+  useEffect(() => {
+    const loadAdmins = async () => {
+      try {
+        const { data } = await supabase.from('app_admins').select('email').order('email');
+        setAdminEmails((data || []).map((r: any) => r.email));
+      } catch {}
+    };
+    loadAdmins();
+  }, []);
   const [roleFilter, setRoleFilter] = useState('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<SystemUser | null>(null);
