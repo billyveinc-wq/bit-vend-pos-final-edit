@@ -220,17 +220,20 @@ const SuperAdmin = () => {
         const { data: subs } = await supabase.from('user_subscriptions').select('*').in('user_id', userIds || []);
         const { data: plans } = await supabase.from('subscription_plans').select('*');
         const { data: ups } = await supabase.from('user_promotions').select('*, promo_code:promo_codes(id, code, influencer_name)').in('user_id', userIds || []);
+        const { data: comps } = await supabase.from('companies').select('id, name');
+        const companyById = new Map((comps || []).map((c: any) => [String(c.id), c.name]));
 
         const regs = (users || []).map((u: any) => {
           const sub = (subs || []).find((s: any) => s.user_id === u.id);
           const plan = (plans || []).find((p: any) => p.id === sub?.plan_id);
           const up = (ups || []).find((p: any) => p.user_id === u.id);
+          const companyName = u.company_id ? (companyById.get(String(u.company_id)) || '-') : (u.user_metadata?.company_name || u.user_metadata?.company || '-');
 
           return {
             id: u.id,
             email: u.email || u.user_email || '-',
             fullName: u.user_metadata?.full_name || u.user_metadata?.fullName || '-',
-            companyName: u.user_metadata?.company_name || u.user_metadata?.company || '-',
+            companyName,
             planName: plan?.name || (sub?.plan_id || 'starter'),
             planExpires: sub?.expires_at || null,
             subscriptionStatus: sub?.status || 'free',
