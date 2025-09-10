@@ -572,6 +572,7 @@ const Topbar: React.FC<TopbarProps> = ({
                   if (bodyVal) params.set('body', bodyVal);
                   const url = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
                   window.open(url, '_blank');
+                  setShowEmailDialog(false);
                 }}>
                   <SendIcon className="h-4 w-4" />
                   Send
