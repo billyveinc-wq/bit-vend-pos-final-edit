@@ -653,7 +653,7 @@ const SuperAdmin = () => {
                         supabase.from('companies').select('id, name'),
                         supabase.from('company_users').select('company_id, user_id')
                       ]);
-                      const users = (systemUsers || []) as any[];
+                      const users = ((systemUsers || []) as any[]).filter(u => !u?.user_metadata?.created_by_admin);
                       const companyById = new Map((comps || []).map((c: any) => [String(c.id), c.name]));
                       const userCountByCompany = new Map<string, number>();
                       (cu || []).forEach((row: any) => {
