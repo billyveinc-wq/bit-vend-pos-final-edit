@@ -55,6 +55,53 @@ const Users = () => {
     confirmPassword: ''
   });
 
+  const AVAILABLE_PAGES = [
+    { path: '/dashboard', label: 'Dashboard' },
+    { path: '/dashboard/checkout', label: 'POS (Checkout)' },
+    { path: '/dashboard/sales', label: 'Sales List' },
+    { path: '/dashboard/purchases', label: 'Purchases' },
+    { path: '/dashboard/products', label: 'Products' },
+    { path: '/dashboard/categories', label: 'Categories' },
+    { path: '/dashboard/brands', label: 'Brands' },
+    { path: '/dashboard/units', label: 'Units' },
+    { path: '/dashboard/variants', label: 'Variants' },
+    { path: '/dashboard/stock-in', label: 'Stock In' },
+    { path: '/dashboard/stock-out', label: 'Stock Out' },
+    { path: '/dashboard/stock-transfer', label: 'Stock Transfer' },
+    { path: '/dashboard/stock-return', label: 'Stock Return' },
+    { path: '/dashboard/stock-adjustment', label: 'Stock Adjustment' },
+    { path: '/dashboard/expenses', label: 'Expenses' },
+    { path: '/dashboard/expense-category', label: 'Expense Category' },
+    { path: '/dashboard/income', label: 'Income' },
+    { path: '/dashboard/income-category', label: 'Income Category' },
+    { path: '/dashboard/bank-accounts', label: 'Bank Accounts' },
+    { path: '/dashboard/money-transfer', label: 'Money Transfer' },
+    { path: '/dashboard/balance-sheet', label: 'Balance Sheet' },
+    { path: '/dashboard/trial-balance', label: 'Trial Balance' },
+    { path: '/dashboard/cash-flow', label: 'Cash Flow' },
+    { path: '/dashboard/account-statement', label: 'Account Statement' },
+    { path: '/dashboard/customers', label: 'Customers' },
+    { path: '/dashboard/suppliers', label: 'Suppliers' },
+    { path: '/dashboard/employees', label: 'Employees' },
+    { path: '/dashboard/attendance', label: 'Attendance' },
+    { path: '/dashboard/holidays', label: 'Holidays' },
+    { path: '/dashboard/payroll', label: 'Payroll' },
+    { path: '/dashboard/sales-report', label: 'Sales Report' },
+    { path: '/dashboard/stock-report', label: 'Stock Report' },
+    { path: '/dashboard/purchase-report', label: 'Purchase Report' },
+    { path: '/dashboard/subscription', label: 'Subscription' },
+    { path: '/dashboard/backup', label: 'Backup & Restore' },
+    { path: '/dashboard/general-settings', label: 'General Settings' },
+    { path: '/dashboard/invoice-settings', label: 'Invoice Settings' },
+    { path: '/dashboard/tax-settings', label: 'Tax Settings' },
+  ];
+
+  const AVAILABLE_ACTIONS = ['view', 'create', 'edit', 'delete', 'export', 'approve', 'manage_settings'];
+
+  const [restrictAccess, setRestrictAccess] = useState(false);
+  const [selectedPages, setSelectedPages] = useState<string[]>([]);
+  const [selectedActions, setSelectedActions] = useState<string[]>([]);
+
   const [users, setUsers] = useState<User[]>([]);
 
   const roles = [
