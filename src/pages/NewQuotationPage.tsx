@@ -24,6 +24,7 @@ const NewQuotationPage = () => {
   });
   const [notesTouched, setNotesTouched] = useState(false);
   const [validTouched, setValidTouched] = useState(false);
+  const [extraFields, setExtraFields] = useState<Record<string, string>>({});
 
   const applyTemplateDefaults = (tpl: string) => {
     const noteDefaults: Record<string, string> = {
