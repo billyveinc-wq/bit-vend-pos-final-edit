@@ -622,22 +622,32 @@ const Topbar: React.FC<TopbarProps> = ({
                 try {
                   const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
                   const companyId = (comp as any)?.id;
-                  if (!companyId) return;
-                  await supabase.from('app_settings').delete().eq('company_id', companyId).eq('key', 'support_email');
+                  if (!companyId) { alert('No company configured. Please save settings first.'); return; }
+                  const { error } = await supabase.from('app_settings').delete().eq('company_id', companyId).eq('key', 'support_email');
+                  if (error) { alert(error.message); return; }
                   setSupportEmail(null);
                   setShowSupportDialog(false);
-                } catch {}
+                  alert('Support email deleted');
+                } catch (e) { alert('Failed to delete'); }
               }}>Delete</Button>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setShowSupportDialog(false)}>Cancel</Button>
                 <Button onClick={async () => {
                   try {
+                    let companyId: any;
                     const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
-                    const companyId = (comp as any)?.id;
-                    if (!companyId) return;
-                    await supabase.from('app_settings').upsert({ company_id: companyId, key: 'support_email', value: supportEmail }, { onConflict: 'company_id,key' });
+                    companyId = (comp as any)?.id;
+                    if (!companyId) {
+                      const { data: created, error: cErr } = await supabase.from('companies').insert({ name: 'Default Company' }).select('id').single();
+                      if (cErr) { alert('Failed to create company'); return; }
+                      companyId = created?.id;
+                    }
+                    if (!supportEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(supportEmail)) { alert('Enter a valid email'); return; }
+                    const { error } = await supabase.from('app_settings').upsert({ company_id: companyId, key: 'support_email', value: supportEmail }, { onConflict: 'company_id,key' });
+                    if (error) { alert(error.message); return; }
                     setShowSupportDialog(false);
-                  } catch {}
+                    alert('Support email saved');
+                  } catch { alert('Failed to save'); }
                 }}>Save</Button>
               </div>
             </div>
