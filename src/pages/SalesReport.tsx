@@ -493,6 +493,14 @@ const SalesReport: React.FC = () => {
             <Package className="h-4 w-4 mr-2" />
             Products
           </Button>
+          <Button
+            variant={activeView === 'quotations' ? 'default' : 'outline'}
+            onClick={() => setActiveView('quotations')}
+            className="transition-all duration-200 hover:scale-105"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Quotations
+          </Button>
         </div>
       </div>
 
