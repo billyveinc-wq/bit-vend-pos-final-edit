@@ -637,7 +637,9 @@ const Settings = () => {
 
   // App settings state
   const [invoiceTemplates, setInvoiceTemplates] = useState({
-    style: 'standard'
+    style: 'standard',
+    headerLogoUrl: '',
+    terms: ''
   });
   const [notifications, setNotifications] = useState({
     salesSummaryEmail: true,
