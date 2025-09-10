@@ -284,6 +284,68 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Payment Integrations Spotlight */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Accept Payments Your Customers Love</h2>
+            <p className="text-muted-foreground">Built-in integrations with leading providers</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <Card className="relative overflow-hidden border-2 border-green-500/30">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/10 rounded-full blur-2xl" />
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Smartphone className="h-5 w-5 text-green-600" />
+                  <CardTitle className="text-lg">M-Pesa (Daraja)</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>Native mobile money payments for East Africa with STK Push and Paybill/Till support.</p>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-green-100 text-green-800">Popular</Badge>
+                  <Badge variant="outline">STK Push</Badge>
+                  <Badge variant="outline">Paybill</Badge>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="relative overflow-hidden border-2 border-blue-500/30">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl" />
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-blue-600" />
+                  <CardTitle className="text-lg">PayPal</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>Trusted global payments with one of the world’s most recognized digital wallets.</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Checkout</Badge>
+                  <Badge variant="outline">Subscriptions</Badge>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="relative overflow-hidden border-2 border-orange-500/30">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-500/10 rounded-full blur-2xl" />
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-5 w-5 text-orange-600" />
+                  <CardTitle className="text-lg">Flutterwave</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>Card, bank, and mobile money payments across Africa with robust developer tools.</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Cards</Badge>
+                  <Badge variant="outline">Bank</Badge>
+                  <Badge variant="outline">Mobile Money</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Section */}
       <section className="py-20 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 border-y border-border/50">
         <div className="container mx-auto px-4">
