@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SalesReturnItem {
   name: string;
@@ -46,7 +47,39 @@ const SalesReturn = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('today');
 
-  const [salesReturns] = useState<SalesReturn[]>([]);
+  const [salesReturns, setSalesReturns] = useState<SalesReturn[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('sales_returns')
+          .select('id, return_number, total_amount, return_date, refund_method, status, reason, return_items:sales_return_items ( name, quantity, unit_price, total_amount )')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: SalesReturn[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          customer: '',
+          originalInvoice: row.return_number || '-',
+          status: row.status || 'pending',
+          totalAmount: Number(row.total_amount) || 0,
+          returnDate: row.return_date,
+          refundMethod: row.refund_method || 'cash',
+          reason: row.reason || '',
+          items: (row.return_items || []).map((it: any) => ({
+            name: it.name || '',
+            quantity: it.quantity || 0,
+            reason: row.reason || '',
+            returnPrice: Number(it.unit_price) || 0,
+          })),
+        }));
+        setSalesReturns(mapped);
+      } catch (e) {
+        console.warn('Failed to load sales returns');
+      }
+    };
+    load();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
