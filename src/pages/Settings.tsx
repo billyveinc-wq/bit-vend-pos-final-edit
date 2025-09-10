@@ -924,7 +924,7 @@ const Settings = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {countries.slice(0, 20).map((c)=>(<SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>))}
+                            {countries.map((c)=>(<SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>))}
                           </SelectContent>
                         </Select>
                       </div>
