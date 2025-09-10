@@ -334,9 +334,9 @@ const ReportsTable: React.FC = () => {
   };
 
   return (
-    <Card className="animate-slideInLeft mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+    <Card className="animate-slideInLeft mt-6 overflow-visible">
+        <CardHeader className="overflow-visible">
+          <CardTitle className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center">
               <FileBarChart className="h-5 w-5 mr-2" />
               Comprehensive Reports Center
