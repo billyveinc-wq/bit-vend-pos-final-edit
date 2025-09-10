@@ -35,7 +35,7 @@ const TaxSettings: React.FC = () => {
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tax">Default Tax %</Label>
-              <Input id="tax" type="number" step="0.01" placeholder="15" />
+              <Input id="tax" type="number" step="0.01" placeholder="15" value={tax} onChange={(e)=>setTax(e.target.value)} />
             </div>
             <div className="md:col-span-2">
               <Button onClick={() => toast({ title: 'Saved', description: 'Tax settings updated.' })}>
