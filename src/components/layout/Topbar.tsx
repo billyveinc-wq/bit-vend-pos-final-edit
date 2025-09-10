@@ -476,7 +476,7 @@ const Topbar: React.FC<TopbarProps> = ({
 
       {/* User email compose dialog */}
       <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-        <DialogContent className="sm:max-w-3xl max-w-[95vw] w-full">
+        <DialogContent className="sm:max-w-3xl max-w-[95vw] w-full overflow-hidden">
           <DialogHeader>
             <DialogTitle>New Message</DialogTitle>
           </DialogHeader>
