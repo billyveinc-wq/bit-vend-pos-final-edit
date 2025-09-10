@@ -140,7 +140,7 @@ const NewQuotationPage = () => {
             <Textarea
               id="notes"
               value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              onChange={(e) => { setFormData({...formData, notes: e.target.value}); setNotesTouched(true); }}
               placeholder="Additional notes or terms..."
             />
           </div>
