@@ -55,10 +55,10 @@ const ExpenseCategory = () => {
             id: String(row.id),
             name: row.name,
             description: row.description || '',
-            color: row.color || '#ef4444',
+            color: '#ef4444',
             isActive: !!row.is_active,
-            expenseCount: Number(row.expense_count) || 0,
-            totalAmount: Number(row.total_amount) || 0,
+            expenseCount: 0,
+            totalAmount: 0,
             createdAt: row.created_at,
           }));
           setExpenseCategories(mapped);
@@ -90,10 +90,9 @@ const ExpenseCategory = () => {
           .update({
             name: formData.name,
             description: formData.description || null,
-            color: formData.color || null,
             is_active: formData.isActive,
           })
-          .eq('id', Number(editingCategory.id));
+          .eq('id', editingCategory.id);
         if (error) { toast.error(error.message); return; }
         setExpenseCategories(prev => prev.map(category =>
           category.id === editingCategory.id
@@ -107,7 +106,6 @@ const ExpenseCategory = () => {
           .insert({
             name: formData.name,
             description: formData.description || null,
-            color: formData.color || null,
             is_active: formData.isActive,
           })
           .select('*')
@@ -148,7 +146,7 @@ const ExpenseCategory = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this expense category?')) {
       try {
-        const { error } = await supabase.from('expense_categories').delete().eq('id', Number(id));
+        const { error } = await supabase.from('expense_categories').delete().eq('id', id);
         if (error) { toast.error(error.message); return; }
         setExpenseCategories(prev => prev.filter(category => category.id !== id));
         toast.success('Expense category deleted successfully!');
