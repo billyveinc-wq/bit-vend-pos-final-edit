@@ -36,7 +36,7 @@ const useCompany = () => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await supabase.auth.getUser();
+        const res = await safeGetUser();
         const user = res?.data?.user || null;
         if (!user) return;
 
