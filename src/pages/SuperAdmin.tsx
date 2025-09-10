@@ -75,6 +75,30 @@ const SuperAdmin = () => {
   const [systemUsersList, setSystemUsersList] = useState<any[]>([]);
   const [loadingSystemUsers, setLoadingSystemUsers] = useState(false);
 
+  type AlertLevel = 'info' | 'warning' | 'critical';
+  type AlertType = 'high_memory' | 'maintenance' | string;
+  interface SystemAlert { id: string; type: AlertType; level: AlertLevel; title: string; message: string; data?: any; timestamp?: string; scheduled_at?: string; active?: boolean; }
+  const [alerts, setAlerts] = useState<SystemAlert[]>([]);
+  const [loadingAlerts, setLoadingAlerts] = useState(false);
+
+  useEffect(() => {
+    const loadAlerts = async () => {
+      setLoadingAlerts(true);
+      try {
+        const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        const companyId = (comp as any)?.id;
+        if (!companyId) { setAlerts([]); return; }
+        const { data } = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', 'system_alerts').maybeSingle();
+        const val = (data as any)?.value;
+        setAlerts(Array.isArray(val) ? val : []);
+      } catch (err) {
+        console.warn('Failed to load system alerts');
+        setAlerts([]);
+      } finally { setLoadingAlerts(false); }
+    };
+    loadAlerts();
+  }, []);
+
 
   const systemMetrics: SystemMetric[] = [
     { name: 'CPU Usage', value: '23%', status: 'healthy', icon: Cpu },
