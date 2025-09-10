@@ -84,6 +84,23 @@ const Settings = () => {
     { id: '1', code: 'MAIN', name: 'Main Store', manager: '', phone: '', email: '', address: '', city: '', state: '', postalCode: '', country: 'US', currency: 'USD', taxRegion: '', isActive: true, isMain: true, notes: '', companyId: '' }
   ]);
 
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        const { data } = await supabase.from('companies').select('id, name').order('id');
+        setCompanies((data || []).map((c: any) => ({ id: String(c.id), name: c.name })));
+      } catch {}
+      const local = localStorage.getItem('pos-companies');
+      if (local && !companies.length) {
+        try { setCompanies(JSON.parse(local)); } catch {}
+      }
+    };
+    loadCompanies();
+  }, []);
+  useEffect(() => {
+    if (companies.length) localStorage.setItem('pos-companies', JSON.stringify(companies));
+  }, [companies]);
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
 
   // Load business data when editing
