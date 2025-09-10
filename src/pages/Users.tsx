@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 
 interface User {
   id: string;
@@ -109,7 +110,7 @@ const Users = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
+        const { data: sessionData } = await safeGetSession();
         const uid = sessionData?.session?.user?.id || null;
         let cId: number | null = null;
         if (uid) {
@@ -122,7 +123,7 @@ const Users = () => {
         if (uid) {
           const { data: existing } = await supabase.from('system_users').select('id, company_id').eq('id', uid).maybeSingle();
           if (!existing) {
-            const { data: meData } = await supabase.auth.getSession();
+            const { data: meData } = await safeGetSession();
             const me = meData.session?.user || null;
             const meta = (me as any)?.user_metadata || {};
             await supabase.from('system_users').upsert({
@@ -284,7 +285,7 @@ const Users = () => {
         }
 
         // Ensure admin stays logged in (sign out any accidental session switch)
-        try { await supabase.auth.getSession().then(async ({ data }) => { if (data.session?.user?.email === formData.email) await supabase.auth.signOut(); }); } catch {}
+        try { await safeGetSession().then(async ({ data }) => { if (data.session?.user?.email === formData.email) await supabase.auth.signOut(); }); } catch {}
 
         // Immediately reflect in UI
         if (userId) {
