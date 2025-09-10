@@ -161,9 +161,23 @@ const NewQuotationPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
-              <Badge variant="outline" className="w-full justify-center">Using: {formData.template}</Badge>
+            <div className="flex items-end gap-2">
+              <Badge variant="outline" className="justify-center">Using: {formData.template}</Badge>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="logo">Quotation Logo</Label>
+            <Input id="logo" type="file" accept="image/*" onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              const reader = new FileReader();
+              reader.onload = () => {
+                setExtraFields(prev => ({ ...prev })); // touch to trigger rerender
+                (window as any)._quoteLogoDataUrl = reader.result as string;
+              };
+              reader.readAsDataURL(f);
+            }} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
