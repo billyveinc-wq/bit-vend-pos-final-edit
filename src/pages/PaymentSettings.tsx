@@ -343,9 +343,6 @@ const PaymentSettings: React.FC = () => {
     }
   };
 
-  if (isChecking) {
-    return <div className="p-6 text-muted-foreground">Loading...</div>;
-  }
   const [allow, setAllow] = useState(false);
   useEffect(() => {
     (async () => {
@@ -354,9 +351,7 @@ const PaymentSettings: React.FC = () => {
         const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id;
         if (!userId) { setAllow(false); return; }
-        // Company role owner/admin allowed
         if (role === 'owner' || role === 'admin') { setAllow(true); return; }
-        // First ever system user gets access
         const { count } = await supabase.from('system_users').select('id', { count: 'exact', head: true });
         if ((count || 0) === 1) { setAllow(true); return; }
         setAllow(false);
@@ -365,6 +360,10 @@ const PaymentSettings: React.FC = () => {
       }
     })();
   }, [isAdmin, role]);
+
+  if (isChecking) {
+    return <div className="p-6 text-muted-foreground">Loading...</div>;
+  }
 
   if (!allow) {
     return (
