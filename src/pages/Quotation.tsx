@@ -177,6 +177,12 @@ const Quotation = () => {
                   { id: 'service', name: 'Service Quote', description: 'Template for service-based quotes' },
                   { id: 'product', name: 'Product Quote', description: 'Template for product sales' },
                   { id: 'wholesale', name: 'Wholesale Quote', description: 'Bulk pricing template' },
+                  { id: 'pro_forma', name: 'Pro Forma', description: 'Invoice-style quotation' },
+                  { id: 'subscription', name: 'Subscription', description: 'Recurring services/products quote' },
+                  { id: 'maintenance', name: 'Maintenance', description: 'Support and maintenance plan' },
+                  { id: 'consulting', name: 'Consulting', description: 'Professional services quote' },
+                  { id: 'rental', name: 'Rental', description: 'Short-term equipment rental quote' },
+                  { id: 'installation', name: 'Installation', description: 'Setup and installation quote' },
                   { id: 'custom', name: 'Custom Template', description: 'Create your own template' }
                 ].map((template) => (
                   <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
