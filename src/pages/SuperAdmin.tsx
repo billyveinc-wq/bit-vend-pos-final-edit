@@ -707,6 +707,7 @@ const SuperAdmin = () => {
                     <TableRow className="bg-blue-500 hover:bg-blue-500">
                       <TableHead className="text-white font-semibold">Email</TableHead>
                       <TableHead className="text-white font-semibold">Company</TableHead>
+                      <TableHead className="text-white font-semibold">Users</TableHead>
                       <TableHead className="text-white font-semibold">Plan</TableHead>
                       <TableHead className="text-white font-semibold">Expires</TableHead>
                       <TableHead className="text-white font-semibold">Promo Code</TableHead>
@@ -719,7 +720,8 @@ const SuperAdmin = () => {
                     {registrations.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell className="text-foreground">{r.email}</TableCell>
-                        <TableCell className="text-foreground">{r.companyName || '-'}</TableCell>
+                        <TableCell className="text-foreground">{r.companyName}</TableCell>
+                        <TableCell className="text-foreground">{r.userCount === '' ? '' : r.userCount}</TableCell>
                         <TableCell className="text-foreground">{r.planName}</TableCell>
                         <TableCell className="text-foreground">{r.planExpires ? new Date(r.planExpires).toLocaleString() : '-'}</TableCell>
                         <TableCell className="text-foreground">{r.promoCode || '-'}</TableCell>
