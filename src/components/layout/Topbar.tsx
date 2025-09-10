@@ -557,6 +557,22 @@ const Topbar: React.FC<TopbarProps> = ({
                   <Paperclip className="h-4 w-4" />
                   Attach
                 </Button>
+                <Button type="button" size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
+                  const toVal = (compose.to && compose.to.trim()) || (supportEmail || '');
+                  const bodyVal = (editorRef.current?.innerText || compose.body || '').trim();
+                  const params = new URLSearchParams();
+                  if (toVal) params.set('to', toVal);
+                  if (compose.cc) params.set('cc', compose.cc);
+                  if (compose.bcc) params.set('bcc', compose.bcc);
+                  if (compose.subject) params.set('su', compose.subject);
+                  if (bodyVal) params.set('body', bodyVal);
+                  const url = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&${params.toString()}`;
+                  window.open(url, '_blank');
+                  setShowEmailDialog(false);
+                }}>
+                  <SendIcon className="h-4 w-4" />
+                  Send
+                </Button>
               </div>
               {compose.attachments.length > 0 && (
                 <div className="max-h-32 overflow-auto border rounded p-2 text-sm">
