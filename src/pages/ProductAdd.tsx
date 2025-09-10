@@ -213,7 +213,7 @@ const ProductAdd = () => {
   return (
     <div className="space-y-6 p-6 bg-background dark:bg-settings-form min-h-screen animate-fadeInUp">
       {/* Header */}
-      <div className="flex items-center justify-between animate-slideInLeft">
+      <div className="flex items-center justify-between animate-fadeInUp">
         <div className="flex items-center gap-4">
           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
             <span className="text-white text-lg font-bold">+</span>
@@ -228,7 +228,7 @@ const ProductAdd = () => {
       </div>
 
       {/* Progress Bar */}
-      <div className="space-y-2 animate-slideInLeft" style={{ animationDelay: '0.1s' }}>
+      <div className="space-y-2 animate-fadeInUp">
         <div className="flex justify-between text-sm">
           <span className="text-foreground">Step {currentStep} of 4</span>
           <span className="text-foreground">{Math.round(progress)}%</span>
@@ -256,10 +256,10 @@ const ProductAdd = () => {
       </div>
 
       {/* Form */}
-      <Card className="bg-card dark:bg-settings-form shadow-lg border border-border animate-slideInLeft" style={{ animationDelay: '0.2s' }}>
+      <Card className="bg-card dark:bg-settings-form shadow-lg border border-border animate-fadeInUp">
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full h-12 bg-muted/50 rounded-none border-b animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
+            <TabsList className="w-full h-12 bg-muted/50 rounded-none border-b animate-fadeInUp">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
@@ -277,9 +277,9 @@ const ProductAdd = () => {
             </TabsList>
 
             {/* General Tab */}
-            <TabsContent value="general" className="p-6 space-y-6 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <TabsContent value="general" className="p-6 space-y-6 animate-fadeInUp">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="name">Product Name *</Label>
                   <Input
                     id="name"
@@ -289,7 +289,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="category">Category *</Label>
                   <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -304,7 +304,7 @@ const ProductAdd = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.7s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="addedBy">Added By</Label>
                   <Select value={formData.addedBy} onValueChange={(value) => handleInputChange('addedBy', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -320,7 +320,7 @@ const ProductAdd = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label>Created Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -346,7 +346,7 @@ const ProductAdd = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.9s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="warranty">Warranty (months)</Label>
                   <Input
                     id="warranty"
@@ -357,7 +357,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '1.0s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="productType">Product Type</Label>
                   <Select value={formData.productType} onValueChange={(value) => handleInputChange('productType', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -495,9 +495,9 @@ const ProductAdd = () => {
             </TabsContent>
 
             {/* Pricing Tab */}
-            <TabsContent value="pricing" className="p-6 space-y-6 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <TabsContent value="pricing" className="p-6 space-y-6 animate-fadeInUp">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="purchasePrice">Purchase Price *</Label>
                   <Input
                     id="purchasePrice"
@@ -509,7 +509,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="sellingPrice">Selling Price *</Label>
                   <Input
                     id="sellingPrice"
@@ -521,7 +521,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.7s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="discount">Discount</Label>
                   <div className="flex gap-2">
                     <Input
@@ -546,7 +546,7 @@ const ProductAdd = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="tax">Tax (%)</Label>
                   <Input
                     id="tax"
@@ -557,7 +557,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.9s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="profitMargin">Profit Margin</Label>
                   <Input
                     id="profitMargin"
@@ -572,7 +572,7 @@ const ProductAdd = () => {
               </div>
 
               <div className="flex items-center justify-end">
-                <div className="flex items-center space-x-2 animate-fadeInUp" style={{ animationDelay: '1.0s' }}>
+                <div className="flex items-center space-x-2 animate-fadeInUp">
                   <Switch
                     checked={formData.taxable}
                     onCheckedChange={(checked) => handleInputChange('taxable', checked)}
@@ -583,9 +583,9 @@ const ProductAdd = () => {
             </TabsContent>
 
             {/* Inventory Tab */}
-            <TabsContent value="inventory" className="p-6 space-y-6 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <TabsContent value="inventory" className="p-6 space-y-6 animate-fadeInUp">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="unit">Unit *</Label>
                   <Select value={formData.unit} onValueChange={(value) => handleInputChange('unit', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -600,7 +600,7 @@ const ProductAdd = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="stockQuantity">Stock Quantity *</Label>
                   <Input
                     id="stockQuantity"
@@ -611,7 +611,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.7s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="minStockAlert">Min Stock Alert</Label>
                   <Input
                     id="minStockAlert"
@@ -622,7 +622,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="reorderPoint">Reorder Point</Label>
                   <Input
                     id="reorderPoint"
@@ -635,7 +635,7 @@ const ProductAdd = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-settings-form rounded animate-fadeInUp" style={{ animationDelay: '0.9s' }}>
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-settings-form rounded animate-fadeInUp">
                 <div>
                   <h3 className="font-medium">Advanced Inventory Settings</h3>
                   <p className="text-sm text-muted-foreground">Track serial numbers? lot/expiry? batch-level stock?</p>
@@ -648,9 +648,9 @@ const ProductAdd = () => {
             </TabsContent>
 
             {/* Extras Tab */}
-            <TabsContent value="extras" className="p-6 space-y-6 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <TabsContent value="extras" className="p-6 space-y-6 animate-fadeInUp">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4 animate-slideInLeft" style={{ animationDelay: '0.5s' }}>
+                <div className="space-y-4 animate-fadeInUp">
                   <div className="space-y-2">
                     <Label>Product Image</Label>
                     <div 
@@ -713,7 +713,7 @@ const ProductAdd = () => {
                     </p>
                   </div>
 
-                  <div className="flex items-center space-x-2 animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
+                  <div className="flex items-center space-x-2 animate-fadeInUp">
                     <Switch
                       checked={formData.featuredProduct}
                       onCheckedChange={(checked) => handleInputChange('featuredProduct', checked)}
@@ -722,7 +722,7 @@ const ProductAdd = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4 animate-slideInLeft" style={{ animationDelay: '0.6s' }}>
+                <div className="space-y-4 animate-fadeInUp">
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
                     <Textarea
@@ -738,7 +738,7 @@ const ProductAdd = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.9s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="status">Status</Label>
                   <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -753,7 +753,7 @@ const ProductAdd = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '1.0s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="tags">Tags</Label>
                   <Input
                     id="tags"
@@ -768,7 +768,7 @@ const ProductAdd = () => {
           </Tabs>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 border-t dark:border-gray-600 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 border-t dark:border-gray-600 animate-fadeInUp">
             <div className="flex gap-2 order-2 sm:order-1">
               <Button type="button" variant="outline" onClick={handleReset} className="gap-2 dark:bg-settings-form dark:text-white">
                 <RotateCcw className="h-4 w-4" /> Reset
