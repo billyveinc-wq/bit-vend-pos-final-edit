@@ -500,7 +500,20 @@ const Topbar: React.FC<TopbarProps> = ({
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('undo')}><Undo2 className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('redo')}><Redo2 className="h-4 w-4" /></Button>
                 <div className="mx-2 h-5 w-px bg-border" />
-                <div className="text-sm px-2 py-1 rounded border bg-background">Sans Serif</div>
+                <Select value={fontFamilyKey} onValueChange={(v) => {
+                  const key = v as 'sans' | 'serif' | 'mono';
+                  setFontFamilyKey(key);
+                  try { document.execCommand('fontName', false, fontMap[key]); } catch {}
+                }}>
+                  <SelectTrigger className="h-8 w-36 text-xs">
+                    <SelectValue placeholder="Font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sans">Sans Serif</SelectItem>
+                    <SelectItem value="serif">Serif</SelectItem>
+                    <SelectItem value="mono">Fixed Width</SelectItem>
+                  </SelectContent>
+                </Select>
                 <div className="mx-2 h-5 w-px bg-border" />
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('bold', false)}><BoldIcon className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('italic', false)}><ItalicIcon className="h-4 w-4" /></Button>
