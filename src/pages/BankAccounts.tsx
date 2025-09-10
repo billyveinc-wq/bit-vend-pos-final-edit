@@ -405,6 +405,13 @@ const BankAccounts = () => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setAsDefaultPayout(account.id)}
+                        >
+                          Set default payout
+                        </Button>
+                        <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEdit(account)}
