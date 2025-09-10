@@ -95,8 +95,32 @@ const SuperAdmin = () => {
     try {
       const { data, error } = await supabase.from('system_users').select('*');
       if (error) throw error;
-      const users = (data || []).filter((u: any) => Boolean(u?.user_metadata?.created_by_admin));
-      const ids = users.map((u: any) => u.id);
+      let users = (data || []).filter((u: any) => Boolean(u?.user_metadata?.created_by_admin));
+
+      // Ensure current admin appears in the list as Super Admin
+      try {
+        const { data: sess } = await (await import('@/integrations/supabase/safeAuth')).safeGetSession();
+        const currentEmail = sess?.session?.user?.email || JSON.parse(localStorage.getItem('admin-session') || 'null')?.email || null;
+        if (currentEmail && (await import('@/lib/admin')).then) {
+          const { isAllowedAdminEmail } = await import('@/lib/admin');
+          if (isAllowedAdminEmail(currentEmail)) {
+            const exists = users.find((u: any) => (u.email || '').toLowerCase() === currentEmail.toLowerCase());
+            if (!exists) {
+              users = [
+                ...users,
+                {
+                  id: 'super-admin-local',
+                  email: currentEmail,
+                  user_metadata: { role: 'super_admin' },
+                  created_at: new Date().toISOString(),
+                }
+              ];
+            }
+          }
+        }
+      } catch {}
+
+      const ids = users.map((u: any) => u.id).filter(Boolean);
       const { data: urs } = await supabase.from('user_roles').select('user_id, role_id').in('user_id', ids.length ? ids : ['none']);
       const roleIds = Array.from(new Set((urs || []).map((r: any) => r.role_id)));
       const { data: roles } = await supabase.from('roles').select('id, name').in('id', roleIds.length ? roleIds : [0]);
@@ -108,7 +132,7 @@ const SuperAdmin = () => {
         if (name) arr.push(name);
         rolesByUser.set(r.user_id, arr);
       });
-      const enriched = users.map((u: any) => ({ ...u, roles: rolesByUser.get(u.id) || [] }));
+      const enriched = users.map((u: any) => ({ ...u, roles: rolesByUser.get(u.id) || (u.user_metadata?.role ? [u.user_metadata.role] : []) }));
       setSystemUsersList(enriched);
     } catch (err) {
       console.error('Load system users error', err);
