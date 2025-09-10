@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,9 @@ import {
   Search,
   Filter
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface PurchaseRow { id: string; orderNo: string; date: string; supplier: string; itemsCount: number; quantity: number; amount: number; status: string; paymentStatus: string; itemsLabel: string; }
 
 const PurchaseReport = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,16 +28,49 @@ const PurchaseReport = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showModal, setShowModal] = useState(false);
 
-  const [purchaseData] = useState([]);
+  const [purchaseData, setPurchaseData] = useState<PurchaseRow[]>([]);
 
-  const filteredData = purchaseData.filter(item => {
-    const matchesSearch = item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('purchases')
+          .select('id, purchase_number, purchase_date, total_amount, payment_status, suppliers:supplier_id(name), purchase_items(quantity, total_amount)')
+          .order('purchase_date', { ascending: false });
+        if (error) throw error;
+        const mapped: PurchaseRow[] = (data || []).map((row: any) => {
+          const qty = (row.purchase_items || []).reduce((s: number, it: any) => s + Number(it.quantity || 0), 0);
+          const itemsCount = (row.purchase_items || []).length;
+          const itemsLabel = `${itemsCount} item${itemsCount === 1 ? '' : 's'}`;
+          return {
+            id: String(row.id),
+            orderNo: row.purchase_number || '-',
+            date: row.purchase_date,
+            supplier: row.suppliers?.name || '—',
+            itemsCount,
+            quantity: qty,
+            amount: Number(row.total_amount || 0),
+            status: 'delivered',
+            paymentStatus: row.payment_status || 'pending',
+            itemsLabel,
+          };
+        });
+        setPurchaseData(mapped);
+      } catch (e) {
+        console.warn('Failed to load purchases');
+      }
+    };
+    load();
+  }, []);
+
+  const filteredData = useMemo(() => purchaseData.filter(item => {
+    const matchesSearch = item.orderNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.items.toLowerCase().includes(searchTerm.toLowerCase());
+                         item.itemsLabel.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSupplier = supplierFilter === 'all' || item.supplier === supplierFilter;
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
     return matchesSearch && matchesSupplier && matchesStatus;
-  });
+  }), [purchaseData, searchTerm, supplierFilter, statusFilter]);
 
   const totalAmount = filteredData.reduce((sum, item) => sum + item.amount, 0);
   const totalQuantity = filteredData.reduce((sum, item) => sum + item.quantity, 0);
@@ -165,11 +201,9 @@ const PurchaseReport = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Suppliers</SelectItem>
-                <SelectItem value="Apple Inc.">Apple Inc.</SelectItem>
-                <SelectItem value="Samsung Electronics">Samsung</SelectItem>
-                <SelectItem value="Dell Technologies">Dell</SelectItem>
-                <SelectItem value="Microsoft Corp">Microsoft</SelectItem>
-                <SelectItem value="HP Inc.">HP Inc.</SelectItem>
+                {[...new Set(purchaseData.map(p => p.supplier))].map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -209,7 +243,7 @@ const PurchaseReport = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Order ID</TableHead>
+                        <TableHead>Order #</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Supplier</TableHead>
                         <TableHead>Items</TableHead>
@@ -226,10 +260,10 @@ const PurchaseReport = () => {
                           className="hover:shadow-md transition-all duration-200 animate-fadeInUp"
                           style={{ animationDelay: `${index * 0.05}s` }}
                         >
-                          <TableCell className="font-medium">{item.id}</TableCell>
+                          <TableCell className="font-medium">{item.orderNo}</TableCell>
                           <TableCell>{item.date}</TableCell>
                           <TableCell>{item.supplier}</TableCell>
-                          <TableCell>{item.items}</TableCell>
+                          <TableCell>{item.itemsLabel}</TableCell>
                           <TableCell>{item.quantity}</TableCell>
                           <TableCell>${item.amount.toLocaleString()}</TableCell>
                           <TableCell>
@@ -270,7 +304,7 @@ const PurchaseReport = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order ID</TableHead>
+                  <TableHead>Order #</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead>Items</TableHead>
@@ -287,10 +321,10 @@ const PurchaseReport = () => {
                     className="hover:shadow-md transition-all duration-200 animate-fadeInUp"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
-                    <TableCell className="font-medium">{item.id}</TableCell>
+                    <TableCell className="font-medium">{item.orderNo}</TableCell>
                     <TableCell>{item.date}</TableCell>
                     <TableCell>{item.supplier}</TableCell>
-                    <TableCell className="max-w-xs truncate">{item.items}</TableCell>
+                    <TableCell className="max-w-xs truncate">{item.itemsLabel}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>${item.amount.toLocaleString()}</TableCell>
                     <TableCell>
