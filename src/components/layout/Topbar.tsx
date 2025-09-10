@@ -628,8 +628,8 @@ const Topbar: React.FC<TopbarProps> = ({
                   if (error) { toast.error(error.message); return; }
                   setSupportEmail(null);
                   setShowSupportDialog(false);
-                  alert('Support email deleted');
-                } catch (e) { alert('Failed to delete'); }
+                  toast.success('Support email deleted');
+                } catch (e) { toast.error('Failed to delete'); }
               }}>Delete</Button>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setShowSupportDialog(false)}>Cancel</Button>
