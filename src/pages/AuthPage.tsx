@@ -26,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import { Shield } from 'lucide-react';
+import { isAllowedAdminEmail } from '@/lib/admin';
 
 const AuthPage = () => {
   const { theme, setTheme } = useTheme();
@@ -85,8 +86,8 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      // Check if this is an admin login
-      if (email === 'admn.bitvend@gmail.com') {
+      // Check if this is an admin login (strictly allowed admin emails only)
+      if (isAllowedAdminEmail(email)) {
         // First, try authenticating with Supabase (in case admin is a Supabase user)
         try {
           const { error: supErr } = await supabase.auth.signInWithPassword({ email, password });
@@ -225,7 +226,7 @@ const AuthPage = () => {
       }
 
       // If this is the reserved admin email, create an admin session locally and redirect to admin dashboard
-      if (email === 'admn.bitvend@gmail.com') {
+      if (isAllowedAdminEmail(email)) {
         localStorage.setItem('admin-session', JSON.stringify({
           email: email,
           loginTime: new Date().toISOString(),
