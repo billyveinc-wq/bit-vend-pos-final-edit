@@ -12,9 +12,9 @@ import { PRODUCTS } from '@/data/posData';
 import ReportsTable from '@/components/ReportsTable';
 import BusinessReports from '@/components/BusinessReports';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  BarChart3, 
-  TrendingUp, 
+import {
+  BarChart3,
+  TrendingUp,
   TrendingDown,
   Calendar,
   Filter,
@@ -28,8 +28,13 @@ import {
   PieChart,
   Target,
   Clock,
-  FileBarChart
+  FileBarChart,
+  FileText,
+  Trash
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 interface SaleItem {
   productId: number;
