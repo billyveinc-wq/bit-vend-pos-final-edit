@@ -458,7 +458,7 @@ const Topbar: React.FC<TopbarProps> = ({
 
       {/* User email compose dialog */}
       <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-3xl max-w-[95vw] w-full">
           <DialogHeader>
             <DialogTitle>New Message</DialogTitle>
           </DialogHeader>
