@@ -1205,6 +1205,64 @@ const Settings = () => {
                     </Select>
                   </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Currency</Label>
+                    <Input value={systemGeneral.currency} onChange={(e)=>setSystemGeneral(p=>({...p, currency:e.target.value}))} placeholder="USD" />
+                  </div>
+                  <div>
+                    <Label>Date Format</Label>
+                    <Select value={systemGeneral.dateFormat} onValueChange={(v)=>setSystemGeneral(p=>({...p, dateFormat:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Number Format</Label>
+                    <Select value={systemGeneral.numberFormat} onValueChange={(v)=>setSystemGeneral(p=>({...p, numberFormat:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1,234.56">1,234.56</SelectItem>
+                        <SelectItem value="1.234,56">1.234,56</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Tax Mode</Label>
+                    <Select value={systemGeneral.taxMode} onValueChange={(v)=>setSystemGeneral(p=>({...p, taxMode:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inclusive">Inclusive</SelectItem>
+                        <SelectItem value="exclusive">Exclusive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Fiscal Year Start</Label>
+                    <Select value={systemGeneral.fiscalYearStartMonth} onValueChange={(v)=>setSystemGeneral(p=>({...p, fiscalYearStartMonth:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['January','February','March','April','May','June','July','August','September','October','November','December'].map(m=> (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <Button onClick={()=>{ saveLocal('pos-system-general', systemGeneral); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
