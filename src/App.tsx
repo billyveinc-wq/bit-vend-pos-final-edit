@@ -178,6 +178,7 @@ const App = () => (
                   <Route path="application" element={<Application />} />
                   <Route path="layout" element={<LayoutPage />} />
                   <Route path="system-updates" element={<SystemUpdates />} />
+                  <Route path="profile" element={<Profile />} />
                 </Route>
                 
                 <Route path="*" element={<NotFound />} />
