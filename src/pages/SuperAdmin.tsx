@@ -151,20 +151,7 @@ const SuperAdmin = () => {
     return variants[status];
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent>
-            You do not have permission to access the Super Admin panel.
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // access control handled below before render to keep hooks order stable
 
   const getMetricStatusColor = (status: SystemMetric['status']) => {
     const colors = {
@@ -346,6 +333,21 @@ const SuperAdmin = () => {
       toast.error('Failed to delete promo');
     }
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>
+            You do not have permission to access the Super Admin panel.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
