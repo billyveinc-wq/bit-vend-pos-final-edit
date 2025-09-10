@@ -16,15 +16,35 @@ const InvoiceSettings: React.FC = () => {
   const [next, setNext] = useState('1001');
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('pos-invoice-settings') || '{}');
-      if (saved.prefix) setPrefix(saved.prefix);
-      if (saved.next) setNext(String(saved.next));
-    } catch {}
+    const load = async () => {
+      try {
+        const mod = await import('@/integrations/supabase/client');
+        const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        if (comp?.id) {
+          const { data } = await mod.supabase.from('app_settings').select('value').eq('company_id', comp.id).eq('key', 'invoice_settings').maybeSingle();
+          const v = (data?.value || {}) as any;
+          if (v.prefix) setPrefix(v.prefix);
+          if (v.next) setNext(String(v.next));
+        }
+      } catch {}
+      try {
+        const saved = JSON.parse(localStorage.getItem('pos-invoice-settings') || '{}');
+        if (saved.prefix) setPrefix(saved.prefix);
+        if (saved.next) setNext(String(saved.next));
+      } catch {}
+    };
+    load();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem('pos-invoice-settings', JSON.stringify({ prefix, next: Number(next) || 1 }));
+    try {
+      const mod = await import('@/integrations/supabase/client');
+      const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+      if (comp?.id) {
+        await mod.supabase.from('app_settings').upsert({ company_id: comp.id, key: 'invoice_settings', value: { prefix, next: Number(next) || 1 } }, { onConflict: 'company_id,key' });
+      }
+    } catch {}
     toast({ title: 'Saved', description: 'Invoice settings updated.' });
     navigate('/dashboard/settings');
   };
