@@ -47,36 +47,97 @@ const Brands = () => {
 
   const [brands, setBrands] = useState<Brand[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('brands')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          const mapped: Brand[] = data.map((row: any) => ({
+            id: String(row.id),
+            name: row.name,
+            description: row.description || '',
+            logoUrl: row.logo_url || undefined,
+            website: row.website || '',
+            contactEmail: row.contact_email || '',
+            isActive: !!row.is_active,
+            productCount: Number(row.product_count) || 0,
+            createdAt: row.created_at,
+          }));
+          setBrands(mapped);
+        }
+      } catch (e) {
+        console.warn('Failed to load brands');
+      }
+    };
+    load();
+  }, []);
+
   const filteredBrands = brands.filter(brand =>
     brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (brand.description && brand.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name) {
       toast.error('Please enter a brand name');
       return;
     }
-    
-    if (editingBrand) {
-      setBrands(prev => prev.map(brand =>
-        brand.id === editingBrand.id
-          ? { ...brand, ...formData }
-          : brand
-      ));
-      toast.success('Brand updated successfully!');
-    } else {
-      const newBrand: Brand = {
-        id: Date.now().toString(),
-        ...formData,
-        logoUrl: logoPreview || undefined,
-        productCount: 0,
-        createdAt: new Date().toISOString()
-      };
-      setBrands(prev => [...prev, newBrand]);
-      toast.success('Brand created successfully!');
+
+    try {
+      if (editingBrand) {
+        const { error } = await supabase
+          .from('brands')
+          .update({
+            name: formData.name,
+            description: formData.description || null,
+            logo_url: logoPreview || null,
+            website: formData.website || null,
+            contact_email: formData.contactEmail || null,
+            is_active: formData.isActive,
+          })
+          .eq('id', Number(editingBrand.id));
+        if (error) { toast.error(error.message); return; }
+        setBrands(prev => prev.map(brand =>
+          brand.id === editingBrand.id
+            ? { ...brand, ...formData, logoUrl: logoPreview || undefined }
+            : brand
+        ));
+        toast.success('Brand updated successfully!');
+      } else {
+        const { data, error } = await supabase
+          .from('brands')
+          .insert({
+            name: formData.name,
+            description: formData.description || null,
+            logo_url: logoPreview || null,
+            website: formData.website || null,
+            contact_email: formData.contactEmail || null,
+            is_active: formData.isActive,
+          })
+          .select('*')
+          .single();
+        if (error) { toast.error(error.message); return; }
+        const newBrand: Brand = {
+          id: String(data.id),
+          name: data.name,
+          description: data.description || '',
+          logoUrl: data.logo_url || undefined,
+          website: data.website || '',
+          contactEmail: data.contact_email || '',
+          isActive: !!data.is_active,
+          productCount: Number(data.product_count) || 0,
+          createdAt: data.created_at,
+        };
+        setBrands(prev => [newBrand, ...prev]);
+        toast.success('Brand created successfully!');
+      }
+    } catch (err) {
+      toast.error('Failed to save brand');
     }
 
     setIsDialogOpen(false);
@@ -95,10 +156,16 @@ const Brands = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this brand?')) {
-      setBrands(prev => prev.filter(brand => brand.id !== id));
-      toast.success('Brand deleted successfully!');
+      try {
+        const { error } = await supabase.from('brands').delete().eq('id', Number(id));
+        if (error) { toast.error(error.message); return; }
+        setBrands(prev => prev.filter(brand => brand.id !== id));
+        toast.success('Brand deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete brand');
+      }
     }
   };
 
