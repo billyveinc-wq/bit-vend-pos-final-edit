@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,6 +96,24 @@ const Topbar: React.FC<TopbarProps> = ({
   const { isAdmin, logout: adminLogout } = useAdminAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const { businesses, currentBusiness, setCurrentBusiness } = useBusiness();
+  const [supportEmail, setSupportEmail] = useState<string | null>(null);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [showSupportDialog, setShowSupportDialog] = useState(false);
+  const [compose, setCompose] = useState({ to: '', subject: '', body: '' });
+
+  useEffect(() => {
+    const loadSupportEmail = async () => {
+      try {
+        const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        const companyId = (comp as any)?.id;
+        if (!companyId) return;
+        const { data } = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', 'support_email').maybeSingle();
+        const val = (data as any)?.value;
+        if (typeof val === 'string') setSupportEmail(val);
+      } catch {}
+    };
+    loadSupportEmail();
+  }, []);
   
   const {
     query,
@@ -289,39 +309,35 @@ const Topbar: React.FC<TopbarProps> = ({
           
           <Tooltip open={mailTooltip.isOpen} onOpenChange={mailTooltip.handleOpenChange}>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="p-2 relative transition-all duration-200 hover:scale-90 active:scale-75"
-                onClick={() => window.open('mailto:', '_blank')}
+                onClick={() => {
+                  if (isAdmin) setShowSupportDialog(true); else { setCompose({ to: supportEmail || '', subject: '', body: '' }); setShowEmailDialog(true); }
+                }}
               >
                 <Mail size={18} />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                  3
-                </span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
               Mail
             </TooltipContent>
           </Tooltip>
-          
+
           <Tooltip open={notificationTooltip.isOpen} onOpenChange={notificationTooltip.handleOpenChange}>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="p-2 relative transition-all duration-200 hover:scale-90 active:scale-75"
-                onClick={() => console.log('Open notifications')}
+                onClick={() => navigate('/dashboard/system-updates')}
               >
                 <Bell size={18} />
-                <span className={cn("absolute -top-1 -right-1 bg-primary text-xs rounded-full w-4 h-4 flex items-center justify-center", darkMode ? "text-black" : "text-white")}>
-                  5
-                </span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>  
-              Notifications
+            <TooltipContent>
+              System Updates
             </TooltipContent>
           </Tooltip>
           
@@ -419,6 +435,76 @@ const Topbar: React.FC<TopbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* User email compose dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="mail-to">To</Label>
+              <Input id="mail-to" value={compose.to} onChange={(e) => setCompose(prev => ({ ...prev, to: e.target.value }))} placeholder="support@company.com" />
+            </div>
+            <div>
+              <Label htmlFor="mail-sub">Subject</Label>
+              <Input id="mail-sub" value={compose.subject} onChange={(e) => setCompose(prev => ({ ...prev, subject: e.target.value }))} placeholder="" />
+            </div>
+            <div>
+              <Label htmlFor="mail-body">Message</Label>
+              <Input id="mail-body" value={compose.body} onChange={(e) => setCompose(prev => ({ ...prev, body: e.target.value }))} placeholder="" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
+              <Button onClick={() => {
+                const mailto = `mailto:${encodeURIComponent(compose.to)}?subject=${encodeURIComponent(compose.subject)}&body=${encodeURIComponent(compose.body)}`;
+                window.location.href = mailto;
+                setShowEmailDialog(false);
+              }}>Open Mail</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin support email manage dialog */}
+      <Dialog open={showSupportDialog} onOpenChange={setShowSupportDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Customer Support Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="support-email">Support Email</Label>
+              <Input id="support-email" type="email" value={supportEmail || ''} onChange={(e) => setSupportEmail(e.target.value)} placeholder="support@company.com" />
+            </div>
+            <div className="flex justify-between">
+              <Button variant="destructive" onClick={async () => {
+                try {
+                  const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+                  const companyId = (comp as any)?.id;
+                  if (!companyId) return;
+                  await supabase.from('app_settings').delete().eq('company_id', companyId).eq('key', 'support_email');
+                  setSupportEmail(null);
+                  setShowSupportDialog(false);
+                } catch {}
+              }}>Delete</Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowSupportDialog(false)}>Cancel</Button>
+                <Button onClick={async () => {
+                  try {
+                    const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+                    const companyId = (comp as any)?.id;
+                    if (!companyId) return;
+                    await supabase.from('app_settings').upsert({ company_id: companyId, key: 'support_email', value: supportEmail }, { onConflict: 'company_id,key' });
+                    setShowSupportDialog(false);
+                  } catch {}
+                }}>Save</Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 };
