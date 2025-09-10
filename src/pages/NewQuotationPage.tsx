@@ -20,11 +20,25 @@ const NewQuotationPage = () => {
     notes: '',
     template: 'standard'
   });
+  const [notesTouched, setNotesTouched] = useState(false);
 
   useEffect(() => {
     const t = (location.state as any)?.template;
     if (t) setFormData((prev) => ({ ...prev, template: t }));
   }, [location.state]);
+
+  useEffect(() => {
+    if (notesTouched) return;
+    const defaults: Record<string, string> = {
+      standard: 'Thank you for considering our offer. Prices valid for 7 days.',
+      detailed: 'Detailed quotation including terms and conditions. Payment due within 14 days of acceptance.',
+      service: 'Service quotation. Scope of work as discussed. Timesheets will be provided on completion.',
+      product: 'Product quotation. Delivery within 3-5 business days from payment confirmation.',
+      wholesale: 'Wholesale quotation. MOQ applies. Bulk discount included as specified.'
+    };
+    const next = defaults[formData.template as keyof typeof defaults] || '';
+    setFormData(prev => ({ ...prev, notes: next }));
+  }, [formData.template, notesTouched]);
 
   const handleSave = async () => {
     if (!formData.customer || !formData.email) {
