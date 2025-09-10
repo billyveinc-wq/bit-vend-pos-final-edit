@@ -311,6 +311,14 @@ const AuthPage = () => {
                 roleId = createdRole?.id;
               }
               if (roleId) {
+                // Grant all permissions to admin role
+                const { data: allPerms } = await supabase.from('permissions').select('id');
+                if ((allPerms || []).length) {
+                  await supabase.from('role_permissions').delete().eq('role_id', roleId);
+                  const rows = (allPerms || []).map((p: any) => ({ role_id: roleId as number, permission_id: p.id }));
+                  await supabase.from('role_permissions').insert(rows);
+                }
+                // Assign admin role to first user
                 const { data: existingUR } = await supabase.from('user_roles').select('user_id, role_id').eq('user_id', newUserId).eq('role_id', roleId).maybeSingle();
                 if (!existingUR) await supabase.from('user_roles').insert({ user_id: newUserId, role_id: roleId });
               }
