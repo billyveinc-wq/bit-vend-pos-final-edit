@@ -1083,6 +1083,40 @@ const Settings = () => {
                   <Switch checked={terminalBehavior.promptForReceipt} onCheckedChange={(c)=>setTerminalBehavior(p=>({...p, promptForReceipt:c}))} />
                   <Label>Prompt for receipt option</Label>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Quick Cash Denominations (comma-separated)</Label>
+                    <Input value={terminalBehavior.quickCashDenoms} onChange={(e)=>setTerminalBehavior(p=>({...p, quickCashDenoms:e.target.value}))} placeholder="50,100,200,500,1000" />
+                  </div>
+                  <div>
+                    <Label>Manager Override Threshold (%)</Label>
+                    <Input type="number" value={terminalBehavior.requireManagerOverrideThreshold} onChange={(e)=>setTerminalBehavior(p=>({...p, requireManagerOverrideThreshold:Number(e.target.value||0)}))} />
+                  </div>
+                  <div>
+                    <Label>Round To Nearest</Label>
+                    <Select value={String(terminalBehavior.roundToNearest)} onValueChange={(v)=>setTerminalBehavior(p=>({...p, roundToNearest:Number(v)}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0.01">0.01</SelectItem>
+                        <SelectItem value="0.05">0.05</SelectItem>
+                        <SelectItem value="0.1">0.1</SelectItem>
+                        <SelectItem value="1">1</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={terminalBehavior.allowPriceEdit} onCheckedChange={(c)=>setTerminalBehavior(p=>({...p, allowPriceEdit:c}))} />
+                    <Label>Allow Price Edit</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={terminalBehavior.allowNegativeStock} onCheckedChange={(c)=>setTerminalBehavior(p=>({...p, allowNegativeStock:c}))} />
+                    <Label>Allow Negative Stock</Label>
+                  </div>
+                </div>
                 <Button onClick={()=>{ saveLocal('pos-terminal-behavior', terminalBehavior); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
