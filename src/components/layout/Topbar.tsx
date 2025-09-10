@@ -625,7 +625,7 @@ const Topbar: React.FC<TopbarProps> = ({
                   const companyId = (comp as any)?.id;
                   if (!companyId) { toast.error('No company configured. Please save settings first.'); return; }
                   const { error } = await supabase.from('app_settings').delete().eq('company_id', companyId).eq('key', 'support_email');
-                  if (error) { alert(error.message); return; }
+                  if (error) { toast.error(error.message); return; }
                   setSupportEmail(null);
                   setShowSupportDialog(false);
                   alert('Support email deleted');
