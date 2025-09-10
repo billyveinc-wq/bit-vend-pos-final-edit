@@ -578,7 +578,12 @@ const Settings = () => {
   const [terminalBehavior, setTerminalBehavior] = useState({
     autoPrint: false,
     playSoundOnAdd: true,
-    promptForReceipt: true
+    promptForReceipt: true,
+    quickCashDenoms: '50,100,200,500,1000',
+    requireManagerOverrideThreshold: 20,
+    allowPriceEdit: true,
+    allowNegativeStock: false,
+    roundToNearest: 1
   });
   const [displaySettings, setDisplaySettings] = useState({
     fontScale: 100,
