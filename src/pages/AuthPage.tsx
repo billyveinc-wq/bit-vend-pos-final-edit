@@ -278,21 +278,32 @@ const AuthPage = () => {
         console.warn('Failed to upsert new user into system_users', err);
       }
 
-      // Create starter plan trial (14 days) if no plan chosen
+      // Handle selected plan: free trial for starter, pending for paid plans
       try {
+        const selectedPlan = (new URLSearchParams(window.location.search)).get('plan') || 'starter';
         if (signUpData?.user) {
           const now = new Date();
-          const expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-          await supabase.from('user_subscriptions').insert({
-            user_id: signUpData.user.id,
-            plan_id: 'starter',
-            status: 'active',
-            started_at: now.toISOString(),
-            expires_at: expires.toISOString()
-          });
+          if (selectedPlan === 'starter') {
+            const expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+            await supabase.from('user_subscriptions').insert({
+              user_id: signUpData.user.id,
+              plan_id: 'starter',
+              status: 'active',
+              started_at: now.toISOString(),
+              expires_at: expires.toISOString()
+            });
+          } else {
+            await supabase.from('user_subscriptions').insert({
+              user_id: signUpData.user.id,
+              plan_id: selectedPlan,
+              status: 'pending',
+              started_at: now.toISOString(),
+              expires_at: null
+            });
+          }
         }
       } catch (err) {
-        console.warn('Failed to create trial subscription', err);
+        console.warn('Failed to set up subscription on signup', err);
       }
 
       // Link user to company (create if missing). Make first user admin by default.
