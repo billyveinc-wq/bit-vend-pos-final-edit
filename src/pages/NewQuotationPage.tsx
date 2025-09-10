@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const NewQuotationPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     customer: '',
     email: '',
@@ -19,6 +20,11 @@ const NewQuotationPage = () => {
     notes: '',
     template: 'standard'
   });
+
+  useEffect(() => {
+    const t = (location.state as any)?.template;
+    if (t) setFormData((prev) => ({ ...prev, template: t }));
+  }, [location.state]);
 
   const handleSave = async () => {
     if (!formData.customer || !formData.email) {
