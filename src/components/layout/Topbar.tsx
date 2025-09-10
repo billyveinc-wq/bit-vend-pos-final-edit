@@ -204,7 +204,7 @@ const Topbar: React.FC<TopbarProps> = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2 max-w-48">
-              <span className="truncate">{currentBusiness?.businessName || 'Select Business'}</span>
+              <span className="truncate">{currentBusiness?.businessName || ''}</span>
               <ChevronDown size={16} />
             </Button>
           </DropdownMenuTrigger>
