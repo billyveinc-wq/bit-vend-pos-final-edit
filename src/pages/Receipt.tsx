@@ -106,7 +106,7 @@ const Receipt = () => {
         <Card className="w-96">
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground">No receipt data found</p>
-            <Button onClick={() => navigate('/checkout')} className="mt-4">
+            <Button onClick={() => navigate('/dashboard/checkout')} className="mt-4">
               Back to Checkout
             </Button>
           </CardContent>
@@ -140,7 +140,7 @@ const Receipt = () => {
       <div className="flex items-center gap-4 mb-6 print:hidden">
         <Button
           variant="outline"
-          onClick={() => navigate('/checkout')}
+          onClick={() => navigate('/dashboard/checkout')}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
