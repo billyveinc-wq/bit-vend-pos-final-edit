@@ -1138,6 +1138,32 @@ const Settings = () => {
                     <Label>Compact Mode</Label>
                   </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={displaySettings.kioskMode} onCheckedChange={(c)=>setDisplaySettings(p=>({...p, kioskMode:c}))} />
+                    <Label>Kiosk Mode</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={displaySettings.showCustomerDisplay} onCheckedChange={(c)=>setDisplaySettings(p=>({...p, showCustomerDisplay:c}))} />
+                    <Label>Customer Display</Label>
+                  </div>
+                  <div>
+                    <Label>Number Pad Position</Label>
+                    <Select value={displaySettings.numberPadPosition} onValueChange={(v)=>setDisplaySettings(p=>({...p, numberPadPosition:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Left</SelectItem>
+                        <SelectItem value="right">Right</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={displaySettings.highContrast} onCheckedChange={(c)=>setDisplaySettings(p=>({...p, highContrast:c}))} />
+                  <Label>High Contrast</Label>
+                </div>
                 <Button onClick={()=>{ saveLocal('pos-display-settings', displaySettings); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
