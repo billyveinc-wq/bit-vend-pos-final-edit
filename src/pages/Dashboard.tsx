@@ -81,7 +81,7 @@ const Dashboard: React.FC = () => {
     {
       title: 'Add New Product',
       description: 'Add a new product to inventory',
-      action: () => navigate('/products/add'),
+      action: () => navigate('/dashboard/products/add'),
       color: 'bg-orange-500 hover:bg-orange-600',
       feature: 'basic_inventory' as const,
     },
@@ -252,7 +252,7 @@ const Dashboard: React.FC = () => {
                   <Button
                     variant="outline"
                     className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-                    onClick={() => navigate('/products')}
+                    onClick={() => navigate('/dashboard/products')}
                   >
                     View Products
                   </Button>
@@ -272,7 +272,7 @@ const Dashboard: React.FC = () => {
                 <Button
                   variant="outline"
                   className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-                  onClick={() => navigate('/products')}
+                  onClick={() => navigate('/dashboard/products')}
                 >
                   Manage Products
                 </Button>
