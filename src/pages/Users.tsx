@@ -364,6 +364,65 @@ const Users = () => {
                 </Select>
               </div>
 
+              <div className="col-span-2 border rounded-md p-4 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="restrictAccess" checked={restrictAccess} onCheckedChange={(v) => setRestrictAccess(Boolean(v))} />
+                  <Label htmlFor="restrictAccess">Restrict access to specific pages and actions</Label>
+                </div>
+
+                {restrictAccess && (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>Allowed Pages</Label>
+                        <div className="space-x-2 text-sm">
+                          <button type="button" className="underline" onClick={() => setSelectedPages(AVAILABLE_PAGES.map(p => p.path))}>Select all</button>
+                          <button type="button" className="underline" onClick={() => setSelectedPages([])}>Clear</button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-auto pr-1">
+                        {AVAILABLE_PAGES.map((p) => (
+                          <label key={p.path} className="flex items-center space-x-2 text-sm">
+                            <Checkbox
+                              checked={selectedPages.includes(p.path)}
+                              onCheckedChange={(v) => {
+                                const checked = Boolean(v);
+                                setSelectedPages((prev) => checked ? Array.from(new Set([...prev, p.path])) : prev.filter(x => x !== p.path));
+                              }}
+                            />
+                            <span>{p.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>Allowed Actions</Label>
+                        <div className="space-x-2 text-sm">
+                          <button type="button" className="underline" onClick={() => setSelectedActions(AVAILABLE_ACTIONS)}>Select all</button>
+                          <button type="button" className="underline" onClick={() => setSelectedActions([])}>Clear</button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {AVAILABLE_ACTIONS.map((a) => (
+                          <label key={a} className="flex items-center space-x-2 text-sm capitalize">
+                            <Checkbox
+                              checked={selectedActions.includes(a)}
+                              onCheckedChange={(v) => {
+                                const checked = Boolean(v);
+                                setSelectedActions((prev) => checked ? Array.from(new Set([...prev, a])) : prev.filter(x => x !== a));
+                              }}
+                            />
+                            <span>{a.replace('_', ' ')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {!editingUser && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
