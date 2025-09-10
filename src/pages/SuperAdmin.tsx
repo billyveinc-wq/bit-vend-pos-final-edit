@@ -734,14 +734,12 @@ const SuperAdmin = () => {
               <div className="flex items-center justify-between">
                 <CardTitle>Billing & Payments</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Button onClick={() => (window.location.href = '/dashboard/subscription')}>Open Subscription Manager</Button>
-                  <Button variant="outline" onClick={() => (window.location.href = '/dashboard/payment-settings')}>Configure Payment Providers</Button>
                   <Button variant="secondary" onClick={() => (window.location.href = '/dashboard/bank-accounts')}>Manage Bank Accounts</Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">Manage global billing, review tenant subscriptions, and link the receiving accounts users will pay to via Payment Settings.</p>
+              <p className="text-muted-foreground mb-4">Link the receiving bank accounts for settlements. Subscription management and provider configuration are handled within each tenant’s app.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader>
