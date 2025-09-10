@@ -27,8 +27,8 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data: auth } = await supabase.auth.getUser();
-        const user = auth.user;
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user || null;
         if (!user) { setLoading(false); return; }
 
         const { data: row } = await supabase.from('system_users').select('*').eq('id', user.id).maybeSingle();
@@ -66,8 +66,8 @@ const Profile: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth.user;
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user || null;
       if (!user) { toast.error('Not signed in'); return; }
 
       const user_metadata = {
