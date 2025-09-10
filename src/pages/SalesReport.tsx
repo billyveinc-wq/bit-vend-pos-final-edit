@@ -88,7 +88,7 @@ const SalesReport: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('sales')
-          .select('id, invoice_number, subtotal, tax_amount, discount_amount, total_amount, payment_method, payment_status, created_at, sale_items ( product_id, quantity, unit_price, total_amount )')
+          .select('id, invoice_number, subtotal, tax_amount, discount_amount, total_amount, payment_method, payment_status, created_at, sale_items ( product_id, product_name, quantity, unit_price, total_amount )')
           .order('created_at', { ascending: false });
         if (error) throw error;
         const mapped: Sale[] = (data || []).map((row: any) => ({
