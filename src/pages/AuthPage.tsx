@@ -56,7 +56,7 @@ const AuthPage = () => {
           const qp = new URLSearchParams(window.location.search);
           const redirect = qp.get('redirect');
           const stored = localStorage.getItem('last-route');
-          const target = (redirect && redirect.startsWith('/')) ? redirect : (stored && stored.startsWith('/') ? stored : '/dashboard');
+          const target = (redirect && redirect.startsWith('/dashboard')) ? redirect : (stored && stored.startsWith('/dashboard') ? stored : '/dashboard');
           navigate(target, { replace: true });
         }
       } catch (err) {
