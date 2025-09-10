@@ -35,6 +35,11 @@ const Purchases = () => {
 
   const navigate = useNavigate();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const totalOrders = React.useMemo(() => purchases.length, [purchases]);
+  const pendingCount = React.useMemo(() => purchases.filter(p => p.status === 'pending').length, [purchases]);
+  const inTransitCount = React.useMemo(() => purchases.filter(p => p.status === 'shipped').length, [purchases]);
+  const totalValue = React.useMemo(() => purchases.reduce((sum, p) => sum + (p.total || 0), 0), [purchases]);
+  const supplierOptions = React.useMemo(() => Array.from(new Set(purchases.map(p => p.supplier).filter(Boolean))), [purchases]);
 
   useEffect(() => {
     const load = async () => {
@@ -127,14 +132,14 @@ const Purchases = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards (DB-driven) */}
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Package className="w-8 h-8 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">127</p>
+                <p className="text-2xl font-bold">{totalOrders}</p>
                 <p className="text-sm text-muted-foreground">Total Orders</p>
               </div>
             </div>
@@ -145,7 +150,7 @@ const Purchases = () => {
             <div className="flex items-center gap-2">
               <Clock className="w-8 h-8 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">23</p>
+                <p className="text-2xl font-bold">{pendingCount}</p>
                 <p className="text-sm text-muted-foreground">Pending</p>
               </div>
             </div>
@@ -156,7 +161,7 @@ const Purchases = () => {
             <div className="flex items-center gap-2">
               <Truck className="w-8 h-8 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">15</p>
+                <p className="text-2xl font-bold">{inTransitCount}</p>
                 <p className="text-sm text-muted-foreground">In Transit</p>
               </div>
             </div>
@@ -167,7 +172,7 @@ const Purchases = () => {
             <div className="flex items-center gap-2">
               <DollarSign className="w-8 h-8 text-purple-500" />
               <div>
-                <p className="text-2xl font-bold">$1.2M</p>
+                <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Value</p>
               </div>
             </div>
@@ -204,14 +209,14 @@ const Purchases = () => {
               </SelectContent>
             </Select>
             <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Supplier" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Suppliers</SelectItem>
-                <SelectItem value="Apple Inc.">Apple Inc.</SelectItem>
-                <SelectItem value="Samsung Electronics">Samsung</SelectItem>
-                <SelectItem value="Dell Technologies">Dell</SelectItem>
+                {supplierOptions.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
