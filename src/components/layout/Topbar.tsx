@@ -481,9 +481,33 @@ const Topbar: React.FC<TopbarProps> = ({
                 <Input id="mail-sub" value={compose.subject} onChange={(e) => setCompose(prev => ({ ...prev, subject: e.target.value }))} placeholder="" />
               </div>
             </div>
-            <div>
-              <Label htmlFor="mail-body">Message</Label>
-              <Textarea id="mail-body" rows={8} value={compose.body} onChange={(e) => setCompose(prev => ({ ...prev, body: e.target.value }))} placeholder="Write your message..." />
+            {/* Formatting toolbar (Gmail-like) */}
+            <div className="border rounded-md">
+              <div className="flex items-center gap-1 px-2 py-1 border-b bg-muted/50">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('undo')}><Undo2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('redo')}><Redo2 className="h-4 w-4" /></Button>
+                <div className="mx-2 h-5 w-px bg-border" />
+                <div className="text-sm px-2 py-1 rounded border bg-background">Sans Serif</div>
+                <div className="mx-2 h-5 w-px bg-border" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('bold', false)}><BoldIcon className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('italic', false)}><ItalicIcon className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('underline', false)}><UnderlineIcon className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('strikeThrough', false)}><Strikethrough className="h-4 w-4" /></Button>
+                <div className="mx-2 h-5 w-px bg-border" />
+                <input type="color" aria-label="Text color" className="h-8 w-8 rounded cursor-pointer border" onChange={(e) => document.execCommand('foreColor', false, e.target.value)} />
+                <div className="mx-2 h-5 w-px bg-border" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('insertUnorderedList')}><ListIcon className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('formatBlock', false, 'blockquote')}><Quote className="h-4 w-4" /></Button>
+                <div className="mx-2 h-5 w-px bg-border" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('justifyLeft')}><AlignLeft className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('justifyCenter')}><AlignCenter className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => document.execCommand('justifyRight')}><AlignRight className="h-4 w-4" /></Button>
+                <div className="mx-2 h-5 w-px bg-border" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const url = window.prompt('Enter URL'); if (url) document.execCommand('createLink', false, url); }}><LinkIcon className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { const url = window.prompt('Image URL'); if (url) document.execCommand('insertImage', false, url); }}><ImageIcon className="h-4 w-4" /></Button>
+              </div>
+              <div className="min-h-[180px] p-3 outline-none" contentEditable ref={editorRef} data-placeholder="Write your message..." onInput={(e) => setCompose(prev => ({ ...prev, body: (e.target as HTMLDivElement).innerText }))}></div>
             </div>
             <div className="space-y-2">
               <Label>Attachments</Label>
