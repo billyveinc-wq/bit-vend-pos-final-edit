@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { isAllowedAdminEmail } from '@/lib/admin';
 
 export const useAdminAuth = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -28,37 +29,13 @@ export const useAdminAuth = () => {
       return false;
     };
 
-    const checkDbAdmin = async () => {
+    const checkStrictAdmin = async () => {
       if (mounted) setIsChecking(true);
       let admin = false;
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (user) {
-          // Company-level owner/admin implies admin access
-          const { data: compRole } = await supabase
-            .from('company_users')
-            .select('role')
-            .eq('user_id', user.id)
-            .in('role', ['owner', 'admin'])
-            .maybeSingle();
-          if (compRole?.role === 'owner' || compRole?.role === 'admin') {
-            admin = true;
-          } else {
-            // Role-based admin via roles/user_roles
-            const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
-            const adminRoleId = adminRole?.id as number | undefined;
-            if (adminRoleId) {
-              const { data: hasRole } = await supabase
-                .from('user_roles')
-                .select('user_id, role_id')
-                .eq('user_id', user.id)
-                .eq('role_id', adminRoleId)
-                .maybeSingle();
-              admin = !!hasRole;
-            }
-          }
-        }
+        const email = session?.user?.email || null;
+        admin = isAllowedAdminEmail(email);
       } catch {
         admin = false;
       } finally {
@@ -71,20 +48,20 @@ export const useAdminAuth = () => {
 
     const init = async () => {
       const isLocalAdmin = checkLocalAdmin();
-      if (!isLocalAdmin) await checkDbAdmin();
+      if (!isLocalAdmin) await checkStrictAdmin();
     };
 
     init();
 
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
       const isLocalAdmin = checkLocalAdmin();
-      if (!isLocalAdmin) checkDbAdmin();
+      if (!isLocalAdmin) checkStrictAdmin();
     });
 
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'admin-session') {
         const isLocalAdmin = checkLocalAdmin();
-        if (!isLocalAdmin) checkDbAdmin();
+        if (!isLocalAdmin) checkStrictAdmin();
       }
     };
 
