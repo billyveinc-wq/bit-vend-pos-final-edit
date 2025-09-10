@@ -37,9 +37,9 @@ const LandingPage = () => {
 
   // Typewriter for provider integrations
   const providerPhrases = useMemo(() => ([
-    { name: 'M-Pesa', color: 'text-green-600 dark:text-green-400', glow: 'from-green-500/20', dot: 'bg-green-500' },
-    { name: 'PayPal', color: 'text-blue-600 dark:text-blue-400', glow: 'from-blue-500/20', dot: 'bg-blue-500' },
-    { name: 'Flutterwave', color: 'text-orange-600 dark:text-orange-400', glow: 'from-orange-500/20', dot: 'bg-orange-500' }
+    { name: 'M-Pesa', color: 'text-green-700 dark:text-green-300', glow: 'from-green-500/30', dot: 'bg-green-500' },
+    { name: 'PayPal', color: 'text-blue-700 dark:text-blue-300', glow: 'from-blue-500/30', dot: 'bg-blue-500' },
+    { name: 'Flutterwave', color: 'text-orange-700 dark:text-orange-300', glow: 'from-orange-500/30', dot: 'bg-orange-500' }
   ]), []);
   const [pIndex, setPIndex] = useState(0);
   const [typed, setTyped] = useState('');
@@ -210,9 +210,9 @@ const LandingPage = () => {
               {/* Typewriter: Integrated with ... */}
               <div className="relative inline-flex items-center mt-4">
                 <div className={`absolute -inset-1 rounded-lg blur-lg bg-gradient-to-r ${providerPhrases[pIndex].glow} to-transparent transition-all duration-700`} aria-hidden="true" />
-                <div className="relative z-10 text-sm font-medium">
+                <div className="relative z-10 text-base md:text-lg font-semibold drop-shadow-sm">
                   <span className="text-muted-foreground">Integrated with </span>
-                  <span className={providerPhrases[pIndex].color}>{typed}</span>
+                  <span className={`${providerPhrases[pIndex].color}`}>{typed}</span>
                   <span className="inline-block w-[2px] h-4 ml-0.5 align-middle bg-foreground animate-pulse" />
                 </div>
               </div>
