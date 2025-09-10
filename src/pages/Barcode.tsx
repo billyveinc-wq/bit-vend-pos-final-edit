@@ -14,6 +14,51 @@ import {
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
 
+// Minimal Code39 renderer (same as Product Add)
+const CODE39_MAP: Record<string, string> = {
+  '0':'nnnwwnwnw','1':'wnnwnnnnw','2':'nnwwnnnnw','3':'wnwwnnnnn','4':'nnnwwnnnw','5':'wnnwwnnnn','6':'nnwwwnnnn','7':'nnnwnnwnw','8':'wnnwnnwnn','9':'nnwwnnwnn',
+  'A':'wnnnnwnnw','B':'nnwnnwnnw','C':'wnwnnwnnn','D':'nnnnwwnnw','E':'wnnnwwnnn','F':'nnwnwwnnn','G':'nnnnnwwnw','H':'wnnnnwwnn','I':'nnwnnwwnn','J':'nnnnwwwnn',
+  'K':'wnnnnnnww','L':'nnwnnnnww','M':'wnwnnnnwn','N':'nnnnwnnww','O':'wnnnwnnwn','P':'nnwnwnnwn','Q':'nnnnnnwww','R':'wnnnnnwwn','S':'nnwnnnwwn','T':'nnnnwnwwn',
+  'U':'wwnnnnnnw','V':'nwwnnnnnw','W':'wwwnnnnnn','X':'nwnnwnnnw','Y':'wwnnwnnnn','Z':'nwwnwnnnn','-':'nwnnnnwnw','.':'wwnnnnwnn',' ':'nwwnnnwnn',
+  '$':'nwnwnwnnn','/':'nwnwnnnwn','+':'nwnnnwnwn','%':'nnnwnwnwn','*':'nwnnwnwnn'
+};
+
+const Code39Barcode: React.FC<{ value: string; height?: number; unit?: number; className?: string }> = ({ value, height = 64, unit = 2, className }) => {
+  const text = `*${(value || '').toUpperCase().replace(/[^0-9A-Z\-\. \$/\+%]/g, '-') }*`;
+  let totalUnits = 0;
+  const seq: { isBar: boolean; w: number }[] = [];
+  for (let ci = 0; ci < text.length; ci++) {
+    const ch = text[ci];
+    const pat = CODE39_MAP[ch];
+    if (!pat) continue;
+    for (let i = 0; i < pat.length; i++) {
+      const isBar = i % 2 === 0;
+      const w = pat[i] === 'w' ? 3 : 1;
+      seq.push({ isBar, w });
+      totalUnits += w;
+    }
+    seq.push({ isBar: false, w: 1 });
+    totalUnits += 1;
+  }
+  const width = totalUnits * unit;
+  let x = 0;
+  return (
+    <div className={className}>
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`Barcode ${value}`}>
+        {seq.map((seg, idx) => {
+          const segWidth = seg.w * unit;
+          const rect = seg.isBar ? (
+            <rect key={idx} x={x} y={0} width={segWidth} height={height} fill="currentColor" />
+          ) : null;
+          x += segWidth;
+          return rect;
+        })}
+      </svg>
+      <div className="text-center text-xs font-mono mt-2 text-muted-foreground">{value}</div>
+    </div>
+  );
+};
+
 const Barcode = () => {
   const { products } = useProducts();
   const [selectedProduct, setSelectedProduct] = useState('');
