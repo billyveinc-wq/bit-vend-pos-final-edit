@@ -32,7 +32,16 @@ export const useAdminAuth = () => {
         const user = session?.user;
         if (!user) { if (mounted) setIsAdmin(false); return; }
 
-        // Ensure 'admin' role exists; only check membership, do not create here
+        // Company-level owner/admin implies admin access
+        const { data: compRole } = await supabase
+          .from('company_users')
+          .select('role')
+          .eq('user_id', user.id)
+          .in('role', ['owner', 'admin'])
+          .maybeSingle();
+        if (compRole?.role === 'owner' || compRole?.role === 'admin') { if (mounted) setIsAdmin(true); return; }
+
+        // Role-based admin via roles/user_roles
         const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
         const adminRoleId = adminRole?.id as number | undefined;
         if (!adminRoleId) { if (mounted) setIsAdmin(false); return; }
