@@ -51,6 +51,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 // Custom hook for auto-hide tooltips
 const useAutoHideTooltip = (delay = 2000) => {
