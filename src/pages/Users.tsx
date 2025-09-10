@@ -137,7 +137,12 @@ const Users = () => {
           }
         }
 
-        const { data, error } = await supabase.from('system_users').select('*').order('created_at', { ascending: false }).eq('company_id', cId);
+        const filter = cId ? `company_id.eq.${cId},id.eq.${uid}` : `id.eq.${uid}`;
+        const { data, error } = await supabase
+          .from('system_users')
+          .select('*')
+          .or(filter)
+          .order('created_at', { ascending: false });
         if (error) throw error;
         const filtered = (data || []).filter((row: any) => Boolean(row.user_metadata?.created_by_admin) || row.id === uid);
         const mapped: User[] = filtered.map((row: any) => {
