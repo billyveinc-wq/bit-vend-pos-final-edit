@@ -643,7 +643,9 @@ const Settings = () => {
   });
   const [notifications, setNotifications] = useState({
     salesSummaryEmail: true,
-    lowStockPush: true
+    lowStockPush: true,
+    smsAlerts: false,
+    inAppAlerts: true
   });
   const [appTheme, setAppTheme] = useState({
     theme: localStorage.getItem('pos-theme') === 'dark' ? 'dark' : 'light'
