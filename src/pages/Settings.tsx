@@ -860,10 +860,10 @@ const Settings = () => {
                         <Label>Company</Label>
                         <Select value={loc.companyId || ''} onValueChange={(v)=>{ const next=[...locations]; next[index]={...loc, companyId:v}; setLocations(next); }}>
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select a company" />
                           </SelectTrigger>
                           <SelectContent>
-                            {(companies.length ? companies : [{ id: '', name: 'Unassigned' }]).map((c)=> (
+                            {(companies.length ? companies : [{ id: 'unassigned', name: 'Unassigned' }]).map((c)=> (
                               <SelectItem key={c.id} value={c.id}>{c.name || 'Unassigned'}</SelectItem>
                             ))}
                           </SelectContent>
