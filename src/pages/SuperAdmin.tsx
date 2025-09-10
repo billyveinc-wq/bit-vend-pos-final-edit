@@ -89,6 +89,18 @@ const SuperAdmin = () => {
 
   const [systemUsersList, setSystemUsersList] = useState<any[]>([]);
   const [loadingSystemUsers, setLoadingSystemUsers] = useState(false);
+  const [billingWizardOpen, setBillingWizardOpen] = useState(false);
+
+  const copyWebhook = async (provider: 'mpesa'|'paypal'|'flutterwave') => {
+    try {
+      const base = typeof window !== 'undefined' ? window.location.origin : '';
+      const path = provider === 'mpesa' ? '/api/payments/mpesa/callback' : provider === 'paypal' ? '/api/payments/paypal/webhook' : '/api/payments/flutterwave/webhook';
+      await navigator.clipboard.writeText(base + path);
+      toast.success(`${provider.toUpperCase()} webhook copied`);
+    } catch {
+      toast.error('Failed to copy webhook');
+    }
+  };
 
   const loadSystemUsers = async () => {
     setLoadingSystemUsers(true);
