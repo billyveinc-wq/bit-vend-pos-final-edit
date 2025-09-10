@@ -86,14 +86,26 @@ const Settings = () => {
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
     const loadCompanies = async () => {
+      let loaded: { id: string; name: string }[] = [];
       try {
-        const { data } = await supabase.from('companies').select('id, name').order('id');
-        setCompanies((data || []).map((c: any) => ({ id: String(c.id), name: c.name })));
-      } catch {}
-      const local = localStorage.getItem('pos-companies');
-      if (local && !companies.length) {
-        try { setCompanies(JSON.parse(local)); } catch {}
+        const mod = await import('@/integrations/supabase/client');
+        const { data, error } = await mod.supabase.from('companies').select('id, name').order('id');
+        if (!error && data) {
+          loaded = (data as any[]).map((c) => ({ id: String(c.id), name: c.name }));
+        }
+      } catch {
+        // ignore network/auth errors; fall back to local
       }
+      if (!loaded.length) {
+        const local = localStorage.getItem('pos-companies');
+        if (local) {
+          try { loaded = JSON.parse(local); } catch {}
+        }
+      }
+      if (!loaded.length) {
+        loaded = [{ id: 'unassigned', name: 'Unassigned' }];
+      }
+      setCompanies(loaded);
     };
     loadCompanies();
   }, []);
