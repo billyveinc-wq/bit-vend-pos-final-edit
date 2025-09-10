@@ -106,6 +106,19 @@ const StockIn = () => {
     };
     
     setStockInRecords(prev => [...prev, newRecord]);
+
+    try {
+      if (product.sku) {
+        const { data: prodRow } = await supabase.from('products').select('stock').eq('sku', product.sku).maybeSingle();
+        const current = (prodRow?.stock as number) ?? 0;
+        const next = current + quantity;
+        await supabase.from('products').update({ stock: next }).eq('sku', product.sku);
+        await supabase.from('inventory_movements').insert({ product_sku: product.sku, change: quantity, reason: 'stock_in' });
+      }
+    } catch (err) {
+      console.warn('Supabase stock update failed', err);
+    }
+
     toast.success('Stock in record created successfully!');
     setIsDialogOpen(false);
     resetForm();
