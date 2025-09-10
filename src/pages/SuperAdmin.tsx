@@ -579,12 +579,13 @@ const SuperAdmin = () => {
         </Card>
       </div>
 
-      {/* Main Tabs: Promo / Registrations */}
+      {/* Main Tabs: Promo / Registrations / System Users / Alerts */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-3 mb-4">
+        <TabsList className="grid w-full grid-cols-4 mb-4">
           <TabsTrigger value="promo">Promo Codes</TabsTrigger>
           <TabsTrigger value="registrations">Registrations</TabsTrigger>
           <TabsTrigger value="system">System Users</TabsTrigger>
+          <TabsTrigger value="alerts">System Alerts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="promo">
