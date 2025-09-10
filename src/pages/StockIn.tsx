@@ -41,7 +41,7 @@ interface StockInRecord {
 }
 
 const StockIn = () => {
-  const { products } = useProducts();
+  const { products, updateProduct } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
