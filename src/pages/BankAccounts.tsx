@@ -18,6 +18,7 @@ import {
   Eye
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface BankAccount {
   id: string;
@@ -47,13 +48,37 @@ const BankAccounts = () => {
 
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase.from('bank_accounts').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: BankAccount[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          accountName: row.account_name,
+          accountNumber: row.account_number,
+          bankName: row.bank_name,
+          accountType: row.account_type,
+          balance: Number(row.balance) || 0,
+          currency: row.currency || 'USD',
+          isActive: !!row.is_active,
+          createdAt: row.created_at,
+        }));
+        setBankAccounts(mapped);
+      } catch (e) {
+        console.warn('bank_accounts not available yet');
+      }
+    };
+    load();
+  }, []);
+
   const filteredAccounts = bankAccounts.filter(account =>
     account.accountName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     account.bankName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     account.accountNumber.includes(searchTerm)
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.accountName || !formData.accountNumber || !formData.bankName) {
@@ -62,6 +87,16 @@ const BankAccounts = () => {
     }
     
     if (editingAccount) {
+      const { error } = await supabase.from('bank_accounts').update({
+        account_name: formData.accountName,
+        account_number: formData.accountNumber,
+        bank_name: formData.bankName,
+        account_type: formData.accountType,
+        balance: parseFloat(formData.balance) || 0,
+        currency: formData.currency,
+        is_active: formData.isActive,
+      }).eq('id', Number(editingAccount.id));
+      if (error) { toast.error(error.message); return; }
       setBankAccounts(prev => prev.map(account =>
         account.id === editingAccount.id
           ? { ...account, ...formData, balance: parseFloat(formData.balance) || 0 }
@@ -69,13 +104,28 @@ const BankAccounts = () => {
       ));
       toast.success('Bank account updated successfully!');
     } else {
-      const newAccount: BankAccount = {
-        id: Date.now().toString(),
-        ...formData,
+      const { data, error } = await supabase.from('bank_accounts').insert({
+        account_name: formData.accountName,
+        account_number: formData.accountNumber,
+        bank_name: formData.bankName,
+        account_type: formData.accountType,
         balance: parseFloat(formData.balance) || 0,
-        createdAt: new Date().toISOString()
+        currency: formData.currency,
+        is_active: formData.isActive,
+      }).select('*').single();
+      if (error) { toast.error(error.message); return; }
+      const newAccount: BankAccount = {
+        id: String(data.id),
+        accountName: data.account_name,
+        accountNumber: data.account_number,
+        bankName: data.bank_name,
+        accountType: data.account_type,
+        balance: Number(data.balance) || 0,
+        currency: data.currency || 'USD',
+        isActive: !!data.is_active,
+        createdAt: data.created_at,
       };
-      setBankAccounts(prev => [...prev, newAccount]);
+      setBankAccounts(prev => [newAccount, ...prev]);
       toast.success('Bank account added successfully!');
     }
 
@@ -97,8 +147,10 @@ const BankAccounts = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this bank account?')) {
+      const { error } = await supabase.from('bank_accounts').delete().eq('id', Number(id));
+      if (error) { toast.error(error.message); return; }
       setBankAccounts(prev => prev.filter(account => account.id !== id));
       toast.success('Bank account deleted successfully!');
     }
