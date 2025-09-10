@@ -724,6 +724,41 @@ const Settings = () => {
 
   // Persist helpers
   const saveLocal = (key: string, value: any) => localStorage.setItem(key, JSON.stringify(value));
+  const saveAppSetting = async (key: string, value: any) => {
+    try {
+      const mod = await import('@/integrations/supabase/client');
+      const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+      if (comp?.id) {
+        await mod.supabase.from('app_settings').upsert({ company_id: comp.id, key, value }, { onConflict: 'company_id,key' });
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    const loadAllSettings = async () => {
+      try {
+        const mod = await import('@/integrations/supabase/client');
+        const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        const companyId = comp?.id;
+        if (!companyId) return;
+        const keys = ['receipt_settings','terminal_behavior','display_settings','system_general','printer_settings','barcode_settings','cash_drawer','invoice_templates','notifications','app_theme','security'];
+        const { data } = await mod.supabase.from('app_settings').select('key, value').eq('company_id', companyId).in('key', keys);
+        const map = new Map((data || []).map((r: any) => [r.key, r.value]));
+        if (map.has('receipt_settings')) setReceiptSettings((p)=>({ ...p, ...(map.get('receipt_settings')||{}) }));
+        if (map.has('terminal_behavior')) setTerminalBehavior((p)=>({ ...p, ...(map.get('terminal_behavior')||{}) }));
+        if (map.has('display_settings')) setDisplaySettings((p)=>({ ...p, ...(map.get('display_settings')||{}) }));
+        if (map.has('system_general')) setSystemGeneral((p)=>({ ...p, ...(map.get('system_general')||{}) }));
+        if (map.has('printer_settings')) setPrinterSettings((p)=>({ ...p, ...(map.get('printer_settings')||{}) }));
+        if (map.has('barcode_settings')) setBarcodeSettings((p)=>({ ...p, ...(map.get('barcode_settings')||{}) }));
+        if (map.has('cash_drawer')) setCashDrawerSettings((p)=>({ ...p, ...(map.get('cash_drawer')||{}) }));
+        if (map.has('invoice_templates')) setInvoiceTemplates((p)=>({ ...p, ...(map.get('invoice_templates')||{}) }));
+        if (map.has('notifications')) setNotifications((p)=>({ ...p, ...(map.get('notifications')||{}) }));
+        if (map.has('app_theme')) setAppTheme((p)=>({ ...p, ...(map.get('app_theme')||{}) } as any));
+        if (map.has('security')) setSecurityGeneral((p)=>({ ...p, ...(map.get('security')||{}) }));
+      } catch {}
+    };
+    loadAllSettings();
+  }, []);
 
   const renderContent = () => {
     if (section === 'business') {
@@ -1114,7 +1149,7 @@ const Settings = () => {
                   <Textarea value={receiptSettings.businessFooter} onChange={(e)=>setReceiptSettings(p=>({...p, businessFooter:e.target.value}))} placeholder="Thank you for shopping!" />
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={()=>{ saveLocal('pos-receipt-settings', receiptSettings); showSaveToast(); }}>Save</Button>
+                  <Button onClick={async ()=>{ await saveAppSetting('receipt_settings', receiptSettings); saveLocal('pos-receipt-settings', receiptSettings); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=>window.print()}>Test Print</Button>
                 </div>
               </CardContent>
@@ -1173,7 +1208,7 @@ const Settings = () => {
                     <Label>Allow Negative Stock</Label>
                   </div>
                 </div>
-                <Button onClick={()=>{ saveLocal('pos-terminal-behavior', terminalBehavior); showSaveToast(); }}>Save</Button>
+                <Button onClick={async ()=>{ await saveAppSetting('terminal_behavior', terminalBehavior); saveLocal('pos-terminal-behavior', terminalBehavior); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
           );
@@ -1220,7 +1255,7 @@ const Settings = () => {
                   <Switch checked={displaySettings.highContrast} onCheckedChange={(c)=>setDisplaySettings(p=>({...p, highContrast:c}))} />
                   <Label>High Contrast</Label>
                 </div>
-                <Button onClick={()=>{ saveLocal('pos-display-settings', displaySettings); showSaveToast(); }}>Save</Button>
+                <Button onClick={async ()=>{ await saveAppSetting('display_settings', displaySettings); saveLocal('pos-display-settings', displaySettings); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
           );
@@ -1319,7 +1354,7 @@ const Settings = () => {
                     </Select>
                   </div>
                 </div>
-                <Button onClick={()=>{ saveLocal('pos-system-general', systemGeneral); showSaveToast(); }}>Save</Button>
+                <Button onClick={async ()=>{ await saveAppSetting('system_general', systemGeneral); saveLocal('pos-system-general', systemGeneral); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
           );
@@ -1355,7 +1390,7 @@ const Settings = () => {
                   </div>
                 ))}
                 <div className="flex gap-2">
-                  <Button onClick={()=>{ saveLocal('pos-email-templates', emailTemplates); showSaveToast(); }}>Save Templates</Button>
+                  <Button onClick={async ()=>{ await saveAppSetting('email_templates', emailTemplates); saveLocal('pos-email-templates', emailTemplates); showSaveToast(); }}>Save Templates</Button>
                   <Button variant="outline" onClick={()=>setEmailTemplates(prev=>[...prev, { id: `tpl-${Date.now()}`, name: 'New Template', subject: '', body: '' }])}>Add Template</Button>
                 </div>
               </CardContent>
@@ -1438,7 +1473,7 @@ const Settings = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={()=>{ saveLocal('pos-printer-settings', printerSettings); showSaveToast(); }}>Save</Button>
+                  <Button onClick={async ()=>{ await saveAppSetting('printer_settings', printerSettings); saveLocal('pos-printer-settings', printerSettings); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=>window.print()}>Test Print</Button>
                 </div>
               </CardContent>
@@ -1483,7 +1518,7 @@ const Settings = () => {
                   <Label>Auto Submit After Scan</Label>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={()=>{ saveLocal('pos-barcode-settings', barcodeSettings); showSaveToast(); }}>Save</Button>
+                  <Button onClick={async ()=>{ await saveAppSetting('barcode_settings', barcodeSettings); saveLocal('pos-barcode-settings', barcodeSettings); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=> toast.success(`Scanned: ${barcodeSettings.testInput || '—'}`)}>Test Scan</Button>
                 </div>
               </CardContent>
@@ -1523,7 +1558,7 @@ const Settings = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={()=>{ saveLocal('pos-cash-drawer', cashDrawerSettings); showSaveToast(); }}>Save</Button>
+                  <Button onClick={async ()=>{ await saveAppSetting('cash_drawer', cashDrawerSettings); saveLocal('pos-cash-drawer', cashDrawerSettings); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=> toast.success('Cash drawer signal sent (simulated)')}>Test Open</Button>
                 </div>
               </CardContent>
@@ -1567,7 +1602,7 @@ const Settings = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={()=>{ saveLocal('pos-invoice-template', invoiceTemplates); showSaveToast(); }}>Save</Button>
+                  <Button onClick={async ()=>{ await saveAppSetting('invoice_templates', invoiceTemplates); saveLocal('pos-invoice-template', invoiceTemplates); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=> navigate('/dashboard/invoice-settings')}>Open Invoice Settings</Button>
                 </div>
               </CardContent>
@@ -1596,7 +1631,7 @@ const Settings = () => {
                   <Switch checked={notifications.inAppAlerts} onCheckedChange={(c)=>setNotifications(p=>({...p, inAppAlerts:c}))} />
                   <Label>In-app Alerts</Label>
                 </div>
-                <Button onClick={()=>{ saveLocal('pos-notifications', notifications); showSaveToast(); }}>Save</Button>
+                <Button onClick={async ()=>{ await saveAppSetting('notifications', notifications); saveLocal('pos-notifications', notifications); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
           );
@@ -1676,7 +1711,7 @@ const Settings = () => {
                   <Switch checked={securityGeneral.requireDevicePIN} onCheckedChange={(c)=>setSecurityGeneral(p=>({...p, requireDevicePIN:c}))} />
                   <Label>Require Device PIN</Label>
                 </div>
-                <Button onClick={()=>{ saveLocal('pos-security', securityGeneral); showSaveToast(); }}>Save</Button>
+                <Button onClick={async ()=>{ await saveAppSetting('security', securityGeneral); saveLocal('pos-security', securityGeneral); showSaveToast(); }}>Save</Button>
               </CardContent>
             </Card>
           );
