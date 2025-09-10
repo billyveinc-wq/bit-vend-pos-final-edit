@@ -219,21 +219,21 @@ const Sales = () => {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      {sale.items.length} item{sale.items.length > 1 ? 's' : ''}
+                      {(Array.isArray(sale.items) ? sale.items.length : 0)} item{(Array.isArray(sale.items) ? sale.items.length : 0) > 1 ? 's' : ''}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {sale.items[0]?.productName || 'No items'}{sale.items.length > 1 && ', ...'}
+                      {(Array.isArray(sale.items) && sale.items[0]?.productName) || 'No items'}{(Array.isArray(sale.items) ? sale.items.length : 0) > 1 && ', ...'}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">${sale.total.toFixed(2)}</div>
+                    <div className="font-medium">${Number(sale.total || 0).toFixed(2)}</div>
                     <div className="text-xs text-muted-foreground">
-                      Tax: ${sale.tax.toFixed(2)}
+                      Tax: ${Number(sale.tax || 0).toFixed(2)}
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="bg-muted text-foreground border border-border">
-                      {sale.paymentMethod.replace('_', ' ').toUpperCase()}
+                      {String(sale.paymentMethod || 'cash').replace('_', ' ').toUpperCase()}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -241,10 +241,10 @@ const Sales = () => {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      {new Date(sale.date).toLocaleDateString()}
+                      {sale.date ? new Date(sale.date).toLocaleDateString() : '-'}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(sale.date + 'T' + sale.time).toLocaleTimeString()}
+                      {sale.date && sale.time ? new Date(`${sale.date}T${sale.time}`).toLocaleTimeString() : '-'}
                     </div>
                   </TableCell>
                   <TableCell>
