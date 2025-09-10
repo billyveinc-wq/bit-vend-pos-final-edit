@@ -202,7 +202,7 @@ const Suppliers = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this supplier?')) {
       try {
-        const { error } = await supabase.from('suppliers').delete().eq('id', Number(id));
+        const { error } = await supabase.from('suppliers').delete().eq('id', id);
         if (error) { toast.error(error.message); return; }
         setSuppliers(prev => prev.filter(supplier => supplier.id !== id));
         toast.success('Supplier deleted successfully!');
