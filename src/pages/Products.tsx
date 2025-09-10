@@ -27,6 +27,7 @@ import {
 import { Search, Package, Plus, Edit, Trash2, Filter, Eye, FileDown, Upload as LucideUpload, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
+import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
