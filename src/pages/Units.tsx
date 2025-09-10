@@ -56,9 +56,9 @@ const Units = () => {
             id: String(row.id),
             name: row.name,
             shortName: row.short_name,
-            type: (row.type || 'quantity') as Unit['type'],
-            baseUnit: row.base_unit || '',
-            conversionFactor: row.conversion_factor ? Number(row.conversion_factor) : 1,
+            type: 'quantity' as Unit['type'],
+            baseUnit: '',
+            conversionFactor: 1,
             isActive: !!row.is_active,
             createdAt: row.created_at,
           }));
