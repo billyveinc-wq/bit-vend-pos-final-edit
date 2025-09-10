@@ -90,6 +90,16 @@ const Application = () => {
           if ((data as any)?.value) {
             setAppSettings((prev) => ({ ...prev, ...(data as any).value }));
           }
+          // Also load standalone support_email for Topbar compatibility
+          const { data: se } = await mod.supabase
+            .from('app_settings')
+            .select('value')
+            .eq('company_id', comp.id)
+            .eq('key', 'support_email')
+            .maybeSingle();
+          if (se && typeof (se as any).value === 'string') {
+            setAppSettings((prev) => ({ ...prev, supportEmail: (se as any).value }));
+          }
         }
       } catch {}
       // Fallback to local
