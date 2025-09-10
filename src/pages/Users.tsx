@@ -317,7 +317,7 @@ const Users = () => {
                         value={formData.password}
                         onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                         placeholder="Enter password"
-                        required={!editingUser}
+                        required={false}
                       />
                       <button
                         type="button"
