@@ -161,6 +161,7 @@ const App = () => (
                   <Route path="superadmin" element={<SuperAdmin />} />
                   <Route path="application" element={<Application />} />
                   <Route path="layout" element={<LayoutPage />} />
+                  <Route path="system-updates" element={<SystemUpdates />} />
                 </Route>
                 
                 <Route path="*" element={<NotFound />} />
