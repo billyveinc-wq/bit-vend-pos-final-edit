@@ -358,6 +358,102 @@ const SalesReport: React.FC = () => {
     }
   };
 
+  const getQuoteStatusBadge = (status: Quote['status']) => {
+    switch (status) {
+      case 'draft':
+        return <Badge variant="secondary">Draft</Badge>;
+      case 'sent':
+        return <Badge className="bg-blue-500 hover:bg-blue-600">Sent</Badge>;
+      case 'accepted':
+        return <Badge className="bg-success text-success-foreground">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      case 'expired':
+        return <Badge variant="outline">Expired</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const handleDownloadQuotePDF = async (id: string) => {
+    const q = quotations.find(x => x.id === id);
+    if (!q) return;
+    try {
+      let logoDataUrl: string | null = null;
+      try {
+        const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        const companyId = (comp as any)?.id;
+        if (companyId) {
+          const { data } = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', `quote_logo_${q.quoteNo || q.id}`).maybeSingle();
+          const val = (data as any)?.value;
+          if (val && typeof val === 'string') logoDataUrl = val; else if (val && typeof val.dataUrl === 'string') logoDataUrl = val.dataUrl;
+        }
+      } catch {}
+
+      const doc = new jsPDF();
+      let y = 14;
+      if (logoDataUrl) {
+        try { doc.addImage(logoDataUrl, 'PNG', 15, 10, 30, 15); y = 30; } catch {}
+      }
+      doc.setFontSize(16);
+      doc.text(`Quotation ${q.quoteNo || q.id}`, 15, y);
+      doc.setFontSize(11);
+      doc.text(`Customer: ${q.customer}`, 15, y + 8);
+      doc.text(`Email: ${q.customerEmail}`, 15, y + 14);
+      doc.text(`Date: ${q.date}`, 15, y + 20);
+      if (q.validUntil) doc.text(`Valid Until: ${q.validUntil}`, 15, y + 26);
+
+      const rows = q.items.map(it => [it.name, String(it.quantity), it.price.toFixed(2), it.total.toFixed(2)]);
+      autoTable(doc, { startY: y + 32, head: [["Item", "Qty", "Price", "Total"]], body: rows });
+      const finalY = (doc as any).lastAutoTable?.finalY || y + 32;
+      doc.text(`Subtotal: $${q.subtotal.toFixed(2)}`, 150, finalY + 10);
+      doc.text(`Tax: $${q.tax.toFixed(2)}`, 150, finalY + 16);
+      doc.text(`Total: $${q.total.toFixed(2)}`, 150, finalY + 22);
+      if (q.notes) {
+        const split = doc.splitTextToSize(`Notes: ${q.notes}`, 180);
+        doc.text(split, 15, finalY + 32);
+      }
+      doc.save(`quotation_${q.quoteNo || q.id}.pdf`);
+      toast({ title: 'Download', description: 'Quotation PDF downloaded.' });
+    } catch { toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' }); }
+  };
+
+  const handleDownloadQuoteXLS = async (id: string) => {
+    const q = quotations.find(x => x.id === id);
+    if (!q) return;
+    try {
+      const wb = XLSX.utils.book_new();
+      const details = [
+        ["Quote No", q.quoteNo],
+        ["Customer", q.customer],
+        ["Email", q.customerEmail],
+        ["Date", q.date],
+        ["Valid Until", q.validUntil || ''],
+        ["Subtotal", q.subtotal],
+        ["Tax", q.tax],
+        ["Total", q.total],
+      ];
+      const ws1 = XLSX.utils.aoa_to_sheet(details);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Details');
+      const items = [["Item", "Qty", "Price", "Total"], ...q.items.map(it => [it.name, it.quantity, it.price, it.total])];
+      const ws2 = XLSX.utils.aoa_to_sheet(items);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Items');
+      XLSX.writeFile(wb, `quotation_${q.quoteNo || q.id}.xlsx`);
+      toast({ title: 'Download', description: 'Quotation XLS downloaded.' });
+    } catch { toast({ title: 'Error', description: 'Failed to generate XLS', variant: 'destructive' }); }
+  };
+
+  const handleDeleteQuote = async (id: string) => {
+    try {
+      const { error } = await supabase.from('quotations').delete().eq('id', Number(id));
+      if (error) throw error;
+      setQuotations(prev => prev.filter(q => q.id !== id));
+      toast({ title: 'Deleted', description: 'Quotation deleted.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to delete quotation.', variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
       {/* Header */}
