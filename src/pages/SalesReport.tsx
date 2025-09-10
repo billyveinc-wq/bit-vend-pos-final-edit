@@ -62,6 +62,9 @@ interface Sale {
   cashier: string;
 }
 
+interface QuoteItem { name: string; quantity: number; price: number; total: number; }
+interface Quote { id: string; quoteNo: string; customer: string; customerEmail: string; phone?: string; date: string; validUntil?: string; notes?: string; template?: string; status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'; subtotal: number; tax: number; total: number; items: QuoteItem[]; }
+
 const SalesReport: React.FC = () => {
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState({
