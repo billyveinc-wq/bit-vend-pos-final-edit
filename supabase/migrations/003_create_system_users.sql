@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.system_users (
 
 -- Populate system_users from auth.users (safe insert, skip existing ids)
 INSERT INTO public.system_users (id, email, user_metadata, created_at, last_sign_in_at)
-SELECT u.id, u.email, u.user_metadata, u.created_at, u.last_sign_in_at
+SELECT u.id, u.email, COALESCE(u.user_metadata, u.raw_user_meta_data) AS user_metadata, u.created_at, u.last_sign_in_at
 FROM auth.users u
 WHERE NOT EXISTS (SELECT 1 FROM public.system_users s WHERE s.id = u.id);
 
