@@ -74,7 +74,7 @@ const Dashboard: React.FC = () => {
     {
       title: 'Start POS Session',
       description: 'Begin a new point of sale session',
-      action: () => navigate('/checkout'),
+      action: () => navigate('/dashboard/checkout'),
       color: 'bg-primary hover:bg-primary/90',
       feature: 'basic_sales_tracking' as const,
     },
@@ -95,7 +95,7 @@ const Dashboard: React.FC = () => {
     {
       title: 'Manage Staff',
       description: 'Add and manage staff accounts',
-      action: () => navigate('/employees'),
+      action: () => navigate('/dashboard/employees'),
       color: 'bg-blue-500 hover:bg-blue-600',
       feature: 'multi_user_accounts' as const,
     }
@@ -248,7 +248,7 @@ const Dashboard: React.FC = () => {
                   <Button
                     variant="outline"
                     className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-                    onClick={() => navigate('/checkout')}
+                    onClick={() => navigate('/dashboard/checkout')}
                   >
                     Start Your First Sale
                   </Button>
