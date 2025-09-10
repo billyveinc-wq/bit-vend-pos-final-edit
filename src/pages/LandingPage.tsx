@@ -138,6 +138,27 @@ const LandingPage = () => {
     { name: 'Mobile', icon: Phone }
   ];
 
+  // Smooth scroll-reveal for sections
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll('[data-animate]')) as HTMLElement[];
+    els.forEach((el) => {
+      el.classList.add('opacity-0', 'translate-y-6');
+    });
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          el.classList.add('opacity-100', 'translate-y-0');
+          el.classList.remove('opacity-0', 'translate-y-6');
+          el.classList.add('transition-all', 'duration-700', 'ease-out');
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background marketing-page" data-page="landing">
       {/* Header Navigation */}
