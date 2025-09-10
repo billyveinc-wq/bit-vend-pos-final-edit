@@ -643,12 +643,12 @@ const Topbar: React.FC<TopbarProps> = ({
                       if (cErr) { toast.error('Failed to create company'); return; }
                       companyId = created?.id;
                     }
-                    if (!supportEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(supportEmail)) { alert('Enter a valid email'); return; }
+                    if (!supportEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(supportEmail)) { toast.error('Enter a valid email'); return; }
                     const { error } = await supabase.from('app_settings').upsert({ company_id: companyId, key: 'support_email', value: supportEmail }, { onConflict: 'company_id,key' });
-                    if (error) { alert(error.message); return; }
+                    if (error) { toast.error(error.message); return; }
                     setShowSupportDialog(false);
-                    alert('Support email saved');
-                  } catch { alert('Failed to save'); }
+                    toast.success('Support email saved');
+                  } catch { toast.error('Failed to save'); }
                 }}>Save</Button>
               </div>
             </div>
