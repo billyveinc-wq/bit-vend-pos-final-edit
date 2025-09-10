@@ -137,12 +137,18 @@ const Roles = () => {
           arr.push(key);
           permsByRole.set(row.role_id, arr);
         });
+        // Load user counts per role
+        const { data: ur } = await supabase.from('user_roles').select('role_id, user_id');
+        const countByRole = new Map<number, number>();
+        (ur || []).forEach((row: any) => {
+          countByRole.set(row.role_id, (countByRole.get(row.role_id) || 0) + 1);
+        });
         const mapped: Role[] = (rolesData || []).map((r: any) => ({
           id: String(r.id),
           name: r.name,
           description: r.description || '',
           permissions: permsByRole.get(r.id) || [],
-          userCount: 0,
+          userCount: countByRole.get(r.id) || 0,
           isActive: !!r.is_active,
           createdAt: r.created_at,
         }));
