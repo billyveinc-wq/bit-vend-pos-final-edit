@@ -623,7 +623,7 @@ const Topbar: React.FC<TopbarProps> = ({
                 try {
                   const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
                   const companyId = (comp as any)?.id;
-                  if (!companyId) { alert('No company configured. Please save settings first.'); return; }
+                  if (!companyId) { toast.error('No company configured. Please save settings first.'); return; }
                   const { error } = await supabase.from('app_settings').delete().eq('company_id', companyId).eq('key', 'support_email');
                   if (error) { alert(error.message); return; }
                   setSupportEmail(null);
