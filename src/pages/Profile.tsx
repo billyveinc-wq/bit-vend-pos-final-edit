@@ -66,8 +66,7 @@ const Profile: React.FC = () => {
       const { error } = await supabase.from('system_users').upsert({
         id: user.id,
         email: form.email,
-        user_metadata,
-        updated_at: new Date().toISOString()
+        user_metadata
       }, { onConflict: 'id' });
       if (error) throw error;
 
