@@ -34,12 +34,15 @@ export const useAdminAuth = () => {
         const { data: { session } } = await supabase.auth.getSession();
         const supaEmail = session?.user?.email || null;
         let admin = false;
-        if (supaEmail) {
-          admin = isAllowedAdminEmail(supaEmail);
-        } else if (local) {
-          admin = isAllowedAdminEmail(local.email);
-        } else {
-          admin = false;
+        const emailToCheck = supaEmail || local?.email || null;
+        if (emailToCheck) {
+          // Reserved email OR whitelisted in DB
+          if (isAllowedAdminEmail(emailToCheck)) {
+            admin = true;
+          } else {
+            const { data: row } = await supabase.from('app_admins').select('email').eq('email', emailToCheck).maybeSingle();
+            admin = !!row;
+          }
         }
         if (mounted) setIsAdmin(admin);
       } catch {
