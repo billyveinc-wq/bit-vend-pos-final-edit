@@ -115,15 +115,35 @@ const ProductAdd = () => {
     setFormData(prev => ({ ...prev, barcode: randomBarcode }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Basic validation
     if (!formData.name || !formData.category || !formData.sku) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
-    // Create product using context
     try {
+      // Persist to Supabase
+      const { error: insertErr } = await supabase.from('products').insert({
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.sellingPrice) || 0,
+        category: formData.category,
+        sku: formData.sku,
+        barcode: formData.barcode,
+        stock: parseInt(formData.stockQuantity) || 0,
+        min_stock: parseInt(formData.minStockAlert) || 0,
+        brand: formData.brand,
+        supplier: formData.supplier,
+        status: (formData.status || 'Active').toString().toLowerCase(),
+        image: imagePreview || null
+      });
+      if (insertErr) {
+        toast.error(insertErr.message.includes('duplicate') ? 'SKU already exists. Use a unique SKU.' : insertErr.message);
+        return;
+      }
+
+      // Update local context too (for immediate UI)
       const productId = addProduct({
         name: formData.name,
         description: formData.description,
@@ -135,9 +155,9 @@ const ProductAdd = () => {
         minStock: parseInt(formData.minStockAlert) || 0,
         brand: formData.brand,
         supplier: formData.supplier,
-        status: formData.status as 'active' | 'inactive' | 'draft'
+        status: (formData.status || 'Active').toString().toLowerCase() as 'active' | 'inactive' | 'draft'
       });
-      
+
       toast.success("Product added successfully!");
       navigate('/dashboard/products');
     } catch (error) {
