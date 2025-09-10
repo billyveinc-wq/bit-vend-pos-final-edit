@@ -446,7 +446,7 @@ const SuperAdmin = () => {
                 if (newPassword !== confirmPassword) { toast.error('New passwords do not match'); return; }
                 if (newPassword.length < 8) { toast.error('Password must be at least 8 characters'); return; }
                 try {
-                  const { data: { session } } = await supabase.auth.getSession();
+                  const { data: { session } } = await (await import('@/integrations/supabase/safeAuth')).safeGetSession();
                   const user = session?.user || null;
                   if (user && isAllowedAdminEmail(user.email)) {
                     const { error } = await supabase.auth.updateUser({ password: newPassword });
