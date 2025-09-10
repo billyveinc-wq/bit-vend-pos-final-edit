@@ -49,7 +49,7 @@ const Code39Barcode: React.FC<{ value: string; height?: number; unit?: number; c
   let x = 0;
   return (
     <div className={className}>
-      <svg width={width} height={height} role="img" aria-label={`Barcode ${value}`}>
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`Barcode ${value}`}>
         {seq.map((seg, idx) => {
           const segWidth = seg.w * unit;
           const rect = seg.isBar ? (
@@ -493,7 +493,7 @@ const ProductAdd = () => {
                 </div>
                 <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '1.6s' }}>
                   <Label>Barcode Preview</Label>
-                  <div className="bg-gray-100 dark:bg-settings-form rounded border flex items-center justify-center p-3">
+                  <div className="bg-gray-100 dark:bg-settings-form rounded border flex items-center justify-center p-3 h-20 w-full overflow-hidden">
                     {formData.barcode ? (
                       <Code39Barcode value={formData.barcode} />
                     ) : (
@@ -820,10 +820,10 @@ const ProductAdd = () => {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 border-t dark:border-gray-600 animate-fadeInUp">
             <div className="flex gap-2 order-2 sm:order-1">
-              <Button type="button" variant="outline" onClick={handleReset} className="gap-2 dark:bg-settings-form dark:text-white">
+              <Button type="button" variant="outline" onClick={handleReset} className="gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border-gray-300 text-foreground">
                 <RotateCcw className="h-4 w-4" /> Reset
               </Button>
-              <Button type="button" variant="outline" onClick={handleCancel} className="gap-2 border-cancel text-cancel hover:bg-cancel/10 dark:border-cancel dark:text-cancel dark:hover:bg-cancel/10">
+              <Button type="button" variant="outline" onClick={handleCancel} className="gap-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950">
                 <X className="h-4 w-4" /> Cancel
               </Button>
             </div>
