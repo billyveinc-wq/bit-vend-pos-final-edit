@@ -78,6 +78,10 @@ const SalesReport: React.FC = () => {
 
   // Load sales from Supabase
   const [sales, setSales] = useState<Sale[]>([]);
+  // Load quotations
+  const [quotations, setQuotations] = useState<Quote[]>([]);
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
 
   useEffect(() => {
     const load = async () => {
