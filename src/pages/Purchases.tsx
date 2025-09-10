@@ -21,13 +21,54 @@ import {
   Eye,
   Edit
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+interface PurchaseItem { name: string; quantity: number; unitCost: number; total: number; }
+interface Purchase { id: string; supplier: string; orderDate: string; expectedDelivery?: string; subtotal: number; shipping: number; total: number; status: string; paymentStatus: string; items: PurchaseItem[]; notes?: string; }
 
 const Purchases = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [supplierFilter, setSupplierFilter] = useState('all');
 
-  const [purchases] = useState([]);
+  const navigate = useNavigate();
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('purchases')
+          .select('id, supplier, order_date, expected_delivery, subtotal, shipping, total, status, payment_status, notes, purchase_items(id, name, quantity, unit_cost, total)')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Purchase[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          supplier: row.supplier || '-',
+          orderDate: row.order_date,
+          expectedDelivery: row.expected_delivery || undefined,
+          subtotal: Number(row.subtotal) || 0,
+          shipping: Number(row.shipping) || 0,
+          total: Number(row.total) || 0,
+          status: row.status || 'pending',
+          paymentStatus: row.payment_status || 'pending',
+          notes: row.notes || undefined,
+          items: (row.purchase_items || []).map((it: any) => ({
+            name: it.name,
+            quantity: it.quantity,
+            unitCost: Number(it.unit_cost) || 0,
+            total: Number(it.total) || 0,
+          })),
+        }));
+        setPurchases(mapped);
+      } catch (e) {
+        console.warn('Purchases not available in DB yet');
+      }
+    };
+    load();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
