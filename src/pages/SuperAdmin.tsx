@@ -396,23 +396,6 @@ const SuperAdmin = () => {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={showAdminKeyDialog} onOpenChange={setShowAdminKeyDialog}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Admin API Key</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="adminKey">Admin API Key (stored in localStorage)</Label>
-                  <Input id="adminKey" value={adminKeyInput} onChange={(e) => setAdminKeyInput(e.target.value)} placeholder="paste your ADMIN_API_KEY here" />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => { setAdminKeyInput(''); saveAdminKey(''); }}>Clear</Button>
-                  <Button onClick={() => saveAdminKey()}>Save</Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           <Dialog open={managePassOpen} onOpenChange={setManagePassOpen}>
             <DialogContent className="max-w-2xl">
