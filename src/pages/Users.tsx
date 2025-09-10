@@ -225,8 +225,9 @@ const Users = () => {
           await supabase.from('system_users').upsert({
             id: userId,
             email: formData.email,
-            user_metadata: { username: formData.username, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, role: formData.role, restrictions: restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false } },
-            created_at: new Date().toISOString()
+            user_metadata: { username: formData.username, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, role: formData.role, restrictions: restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false }, created_by_admin: true },
+            created_at: new Date().toISOString(),
+            company_id: companyId || null
           });
         }
 
