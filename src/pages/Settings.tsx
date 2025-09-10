@@ -1444,6 +1444,28 @@ const Settings = () => {
                   <Label>Open Code (ESC/POS)</Label>
                   <Input value={cashDrawerSettings.openCode} onChange={(e)=>setCashDrawerSettings({ openCode: e.target.value })} />
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Open On</Label>
+                    <Select value={cashDrawerSettings.openOn} onValueChange={(v)=>setCashDrawerSettings(p=>({...p, openOn:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash_only">Cash Only</SelectItem>
+                        <SelectItem value="all_payments">All Payments</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Port (optional)</Label>
+                    <Input value={cashDrawerSettings.port} onChange={(e)=>setCashDrawerSettings(p=>({...p, port:e.target.value}))} placeholder="COM3 / /dev/ttyUSB0" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-6 md:mt-0">
+                    <Switch checked={cashDrawerSettings.pulseOnOpen} onCheckedChange={(c)=>setCashDrawerSettings(p=>({...p, pulseOnOpen:c}))} />
+                    <Label>Pulse On Open</Label>
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={()=>{ saveLocal('pos-cash-drawer', cashDrawerSettings); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=> toast.success('Cash drawer signal sent (simulated)')}>Test Open</Button>
