@@ -1399,6 +1399,33 @@ const Settings = () => {
                   <Label>Test Input</Label>
                   <Input value={barcodeSettings.testInput} onChange={(e)=>setBarcodeSettings({ testInput: e.target.value })} placeholder="Focus here and scan..." />
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Scanner Type</Label>
+                    <Select value={barcodeSettings.scannerType} onValueChange={(v)=>setBarcodeSettings(p=>({...p, scannerType:v}))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="keyboard_wedge">Keyboard Wedge</SelectItem>
+                        <SelectItem value="usb_hid">USB HID</SelectItem>
+                        <SelectItem value="serial">Serial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Prefix</Label>
+                    <Input value={barcodeSettings.prefix} onChange={(e)=>setBarcodeSettings(p=>({...p, prefix:e.target.value}))} placeholder="e.g., ^" />
+                  </div>
+                  <div>
+                    <Label>Suffix</Label>
+                    <Input value={barcodeSettings.suffix} onChange={(e)=>setBarcodeSettings(p=>({...p, suffix:e.target.value}))} placeholder="e.g., $" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={barcodeSettings.autoSubmit} onCheckedChange={(c)=>setBarcodeSettings(p=>({...p, autoSubmit:c}))} />
+                  <Label>Auto Submit After Scan</Label>
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={()=>{ saveLocal('pos-barcode-settings', barcodeSettings); showSaveToast(); }}>Save</Button>
                   <Button variant="outline" onClick={()=> toast.success(`Scanned: ${barcodeSettings.testInput || '—'}`)}>Test Scan</Button>
