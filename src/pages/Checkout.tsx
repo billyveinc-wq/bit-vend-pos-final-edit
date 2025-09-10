@@ -210,7 +210,7 @@ const Checkout = () => {
 
       toast.success(`Payment of $${finalTotal.toFixed(2)} processed successfully!`);
 
-      navigate('/receipt', {
+      navigate('/dashboard/receipt', {
         state: {
           saleId,
           cart,
