@@ -106,6 +106,60 @@ const SalesReturn = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const exportCSV = () => {
+    const rows = filteredReturns.map(r => ({ id: r.id, return_number: r.originalInvoice, status: r.status, total_amount: r.totalAmount, return_date: r.returnDate, refund_method: r.refundMethod, reason: r.reason, items: r.items.length }));
+    const header = Object.keys(rows[0] || { id: '', return_number: '', status: '', total_amount: '', return_date: '', refund_method: '', reason: '', items: '' });
+    const csv = [header.join(','), ...rows.map(r => header.map(h => JSON.stringify((r as any)[h] ?? '')).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'sales_returns.csv'; a.click(); URL.revokeObjectURL(url);
+    toast.success('Exported sales returns to CSV');
+  };
+
+  const approveReturn = async (id: string) => {
+    try { await supabase.from('sales_returns').update({ status: 'completed' }).eq('id', Number(id)); } catch {}
+    setSalesReturns(prev => prev.map(r => r.id === id ? { ...r, status: 'completed' } : r));
+    toast.success('Return approved');
+  };
+
+  const rejectReturn = async (id: string) => {
+    try { await supabase.from('sales_returns').update({ status: 'cancelled' }).eq('id', Number(id)); } catch {}
+    setSalesReturns(prev => prev.map(r => r.id === id ? { ...r, status: 'cancelled' } : r));
+    toast.success('Return rejected');
+  };
+
+  const handleProcessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const today = new Date();
+      const dateStr = (processForm.date || today.toISOString().split('T')[0]).replace(/-/g, '');
+      const { data: countData } = await supabase.from('sales_returns').select('id', { count: 'exact', head: true }).like('return_number', `R-${dateStr}-%`);
+      const seq = ((countData as any)?.count || 0) + 1;
+      const returnNo = `R-${dateStr}-${String(seq).padStart(4, '0')}`;
+      const { error } = await supabase.from('sales_returns').insert({
+        return_number: returnNo,
+        total_amount: Number(processForm.amount || 0),
+        return_date: processForm.date || today.toISOString().split('T')[0],
+        refund_method: processForm.refundMethod,
+        status: 'pending',
+        reason: processForm.reason || null
+      });
+      if (error) { toast.error(error.message); return; }
+      setProcessOpen(false);
+      setProcessForm({ customer: '', originalInvoice: '', refundMethod: 'cash', reason: '', amount: '', date: '' });
+      toast.success('Return created');
+      const { data } = await supabase
+        .from('sales_returns')
+        .select('id, return_number, total_amount, return_date, refund_method, status, reason, return_items:sales_return_items ( name, quantity, unit_price, total_amount )')
+        .order('created_at', { ascending: false });
+      const mapped: SalesReturn[] = (data || []).map((row: any) => ({ id: String(row.id), customer: '', originalInvoice: row.return_number || '-', status: row.status || 'pending', totalAmount: Number(row.total_amount) || 0, returnDate: row.return_date, refundMethod: row.refund_method || 'cash', reason: row.reason || '', items: (row.return_items || []).map((it: any) => ({ name: it.name || '', quantity: it.quantity || 0, reason: row.reason || '', returnPrice: Number(it.unit_price) || 0 })) }));
+      setSalesReturns(mapped);
+    } catch {
+      toast.error('Failed to create return');
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
       <div className="flex items-center justify-between">
