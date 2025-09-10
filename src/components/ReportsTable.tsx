@@ -412,7 +412,7 @@ const ReportsTable: React.FC = () => {
                 <TableHead className="text-white font-semibold">Type</TableHead>
                 <TableHead className="text-white font-semibold">Description</TableHead>
                 <TableHead className="text-white font-semibold">Status</TableHead>
-                <TableHead className="text-white font-semibold">Actions</TableHead>
+                <TableHead className="text-white font-semibold w-[160px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -452,35 +452,32 @@ const ReportsTable: React.FC = () => {
                   <TableCell>
                     {getStatusBadge(report.status)}
                   </TableCell>
-                   <TableCell>
-                     <div className="flex items-center space-x-2">
-                       <div className="group relative">
-                         <Eye 
-                           className="h-4 w-4 text-blue-500 cursor-pointer hover:text-blue-600 transition-colors" 
-                           onClick={() => handleViewReport(report.id)}
-                         />
-                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md border z-50">
-                           View Report
-                         </div>
-                       </div>
-                       <div className="group relative">
-                         <FileDown 
-                           className="h-4 w-4 text-red-500 cursor-pointer hover:text-red-600 transition-colors" 
-                           onClick={() => handleExportPDF(report.id)}
-                         />
-                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md border z-50">
-                           Export PDF
-                         </div>
-                       </div>
-                       <div className="group relative">
-                         <FileSpreadsheet 
-                           className="h-4 w-4 text-green-500 cursor-pointer hover:text-green-600 transition-colors" 
-                           onClick={() => handleExportExcel(report.id)}
-                         />
-                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md border z-50">
-                           Export Excel
-                         </div>
-                       </div>
+                   <TableCell className="w-[160px]">
+                     <div className="flex items-center justify-end gap-2">
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button variant="outline" size="icon" onClick={() => handleViewReport(report.id)} aria-label="View Report">
+                             <Eye className="h-4 w-4 text-blue-600" />
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent>View Report</TooltipContent>
+                       </Tooltip>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button variant="outline" size="icon" onClick={() => handleExportPDF(report.id)} aria-label="Export PDF">
+                             <FileDown className="h-4 w-4 text-red-600" />
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent>Export PDF</TooltipContent>
+                       </Tooltip>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button variant="outline" size="icon" onClick={() => handleExportExcel(report.id)} aria-label="Export Excel">
+                             <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent>Export Excel</TooltipContent>
+                       </Tooltip>
                      </div>
                    </TableCell>
                 </TableRow>
