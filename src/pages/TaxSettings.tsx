@@ -10,6 +10,17 @@ const TaxSettings: React.FC = () => {
   const { toast } = useToast();
   useSEO('Tax Settings | Bit Vend POS', 'Define tax rates and behavior.', '/tax-settings');
 
+  const [tax, setTax] = useState('15');
+  useEffect(() => {
+    const saved = localStorage.getItem('pos-default-tax');
+    if (saved) setTax(saved);
+  }, []);
+
+  const save = () => {
+    localStorage.setItem('pos-default-tax', tax);
+    toast({ title: 'Saved', description: 'Tax settings updated.' });
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
       <header>
