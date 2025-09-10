@@ -45,27 +45,11 @@ const defaultOperatingHours = {
   sunday: { open: '09:00', close: '17:00', closed: true },
 };
 
-const defaultBusiness: Business = {
-  id: '1',
-  businessName: 'Freshmart',
-  businessType: 'grocery',
-  taxId: '',
-  businessLicense: '',
-  phone: '',
-  email: '',
-  logoUrl: '',
-  address: '',
-  city: '',
-  state: '',
-  postalCode: '',
-  country: 'US',
-  operatingHours: defaultOperatingHours,
-  createdAt: new Date().toISOString(),
-};
+const defaultBusiness: Business | null = null;
 
 export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [businesses, setBusinesses] = useState<Business[]>([defaultBusiness]);
-  const [currentBusiness, setCurrentBusinessState] = useState<Business | null>(defaultBusiness);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [currentBusiness, setCurrentBusinessState] = useState<Business | null>(null);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -76,12 +60,11 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const parsed = JSON.parse(savedBusinesses);
         setBusinesses(parsed);
-        
         if (savedCurrentId) {
           const current = parsed.find((b: Business) => b.id === savedCurrentId);
-          setCurrentBusinessState(current || parsed[0]);
+          setCurrentBusinessState(current || null);
         } else {
-          setCurrentBusinessState(parsed[0]);
+          setCurrentBusinessState(null);
         }
       } catch (error) {
         console.error('Error loading businesses from localStorage:', error);
@@ -134,16 +117,10 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const deleteBusiness = (id: string) => {
-    if (businesses.length <= 1) {
-      throw new Error('Cannot delete the last business');
-    }
-    
     setBusinesses(prev => prev.filter(b => b.id !== id));
-    
-    // If deleting current business, switch to first remaining business
     if (currentBusiness?.id === id) {
       const remaining = businesses.filter(b => b.id !== id);
-      setCurrentBusinessState(remaining[0]);
+      setCurrentBusinessState(remaining[0] || null);
     }
   };
 
