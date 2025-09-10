@@ -514,7 +514,7 @@ const SalesReport: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label>Quick Period</Label>
               <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
                 <SelectTrigger>
@@ -531,27 +531,27 @@ const SalesReport: React.FC = () => {
               </Select>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label>Start Date</Label>
               <Input
                 type="date"
                 value={dateRange.startDate}
                 onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
-                className="transition-all duration-200 focus:scale-105"
+                className="w-full"
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label>End Date</Label>
               <Input
                 type="date"
                 value={dateRange.endDate}
                 onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
-                className="transition-all duration-200 focus:scale-105"
+                className="w-full"
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-3">
               <Label>Payment Method</Label>
               <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
                 <SelectTrigger>
@@ -566,7 +566,7 @@ const SalesReport: React.FC = () => {
               </Select>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label>Status</Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger>
@@ -581,7 +581,7 @@ const SalesReport: React.FC = () => {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 w-full">
+            <div className="md:col-span-3 grid grid-cols-2 gap-2 w-full">
               <Button
                 variant="outline"
                 className="w-full"
