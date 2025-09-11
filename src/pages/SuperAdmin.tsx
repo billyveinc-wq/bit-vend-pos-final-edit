@@ -781,6 +781,7 @@ const SuperAdmin = () => {
                   <Button onClick={() => setBillingWizardOpen(true)}>Open Billing Setup Wizard</Button>
                   <Button variant="secondary" onClick={() => (window.location.href = '/dashboard/bank-accounts')}>Manage Bank Accounts</Button>
                   <Button variant="outline" onClick={runSentryDiagnostics}>Run Sentry Test</Button>
+                  <Button variant="outline" onClick={async () => { await runUptimeCheckNow(); toast.success('Uptime check sent to Sentry'); }}>Run Uptime Check</Button>
                 </div>
               </div>
             </CardHeader>
