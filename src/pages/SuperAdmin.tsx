@@ -325,6 +325,12 @@ const SuperAdmin = () => {
           userCountByCompany.set(key, (userCountByCompany.get(key) || 0) + 1);
         });
 
+        const userCompanyByUserId = new Map<string, string>();
+        (cu || []).forEach((row: any) => {
+          const uid = String(row.user_id);
+          if (!userCompanyByUserId.has(uid)) userCompanyByUserId.set(uid, String(row.company_id));
+        });
+
         const userIds = users.map(u => u.id);
         const [{ data: subs }, { data: plans }, { data: ups }] = await Promise.all([
           supabase.from('user_subscriptions').select('*').in('user_id', userIds.length ? userIds : ['none']),
