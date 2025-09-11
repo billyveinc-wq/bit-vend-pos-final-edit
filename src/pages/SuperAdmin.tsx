@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Sentry } from '@/integrations/sentry';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { isAllowedAdminEmail } from '@/lib/admin';
 
@@ -90,6 +91,12 @@ const SuperAdmin = () => {
   const [systemUsersList, setSystemUsersList] = useState<any[]>([]);
   const [loadingSystemUsers, setLoadingSystemUsers] = useState(false);
   const [billingWizardOpen, setBillingWizardOpen] = useState(false);
+
+  const runSentryDiagnostics = () => {
+    try { Sentry.captureMessage('Sentry diagnostics: test message', 'info'); } catch {}
+    try { throw new Error('Sentry diagnostics: test error'); } catch (e) { try { Sentry.captureException(e); } catch {} }
+    toast.success('Diagnostics sent to Sentry (if configured)');
+  };
 
   const copyWebhook = async (provider: 'mpesa'|'paypal'|'flutterwave') => {
     try {
@@ -772,6 +779,7 @@ const SuperAdmin = () => {
                 <div className="flex items-center gap-2">
                   <Button onClick={() => setBillingWizardOpen(true)}>Open Billing Setup Wizard</Button>
                   <Button variant="secondary" onClick={() => (window.location.href = '/dashboard/bank-accounts')}>Manage Bank Accounts</Button>
+                  <Button variant="outline" onClick={runSentryDiagnostics}>Run Sentry Test</Button>
                 </div>
               </div>
             </CardHeader>
