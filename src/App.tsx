@@ -184,10 +184,10 @@ const App = () => (
                   <Route path="subscription" element={<Subscription />} />
                   <Route path="subscription/manage" element={<SubscriptionManage />} />
                   <Route path="settings" element={<Settings />} />
-                  <Route path="admin-settings" element={<AdminSettings />} />
-                  <Route path="superadmin" element={<SuperAdmin />} />
-                  <Route path="application" element={<Application />} />
-                  <Route path="layout" element={<LayoutPage />} />
+                  <Route path="admin-settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+                  <Route path="superadmin" element={<AdminRoute><SuperAdmin /></AdminRoute>} />
+                  <Route path="application" element={<AdminRoute><Application /></AdminRoute>} />
+                  <Route path="layout" element={<AdminRoute><LayoutPage /></AdminRoute>} />
                   <Route path="system-updates" element={<SystemUpdates />} />
                   <Route path="profile" element={<Profile />} />
                 </Route>
