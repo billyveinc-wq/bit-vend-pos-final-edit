@@ -994,7 +994,10 @@ const SuperAdmin = () => {
                                         await supabase.from('system_users').delete().eq('id', r.id);
                                       }
                                       toast.success('User deleted');
-                                      setRegistrations(prev => prev.filter(x => x.id !== r.id));
+                                      setRegistrations(prev => {
+                                        const filtered = prev.filter(x => x.id !== r.id);
+                                        return filtered.map(x => x.companyId === r.companyId ? { ...x, userCount: typeof x.userCount === 'number' ? Math.max(0, (x.userCount as number) - 1) : x.userCount } : x);
+                                      });
                                     } catch (err) {
                                       console.error('Delete registration error', err);
                                       toast.error('Failed to remove user data');
