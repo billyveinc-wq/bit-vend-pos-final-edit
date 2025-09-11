@@ -753,7 +753,7 @@ const SuperAdmin = () => {
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-4 gap-4">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSettingsDialogOpen(true)}>
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
