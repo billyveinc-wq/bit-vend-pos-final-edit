@@ -25,6 +25,9 @@ const NewQuotationPage = () => {
   const [notesTouched, setNotesTouched] = useState(false);
   const [validTouched, setValidTouched] = useState(false);
   const [extraFields, setExtraFields] = useState<Record<string, string>>({});
+  const LOCAL_KEY = 'pos-quotations';
+  const readLocal = (): any[] => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch { return []; } };
+  const writeLocal = (q: any[]) => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(q)); } catch {} };
 
   const applyTemplateDefaults = (tpl: string) => {
     const noteDefaults: Record<string, string> = {
@@ -93,27 +96,59 @@ const NewQuotationPage = () => {
     try {
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-      const { count } = await supabase.from('quotations').select('id', { count: 'exact', head: true }).like('quote_no', `Q-${dateStr}-%`);
-      const seq = (count || 0) + 1;
-      const quoteNo = `Q-${dateStr}-${String(seq).padStart(4, '0')}`;
+      let seq = 0;
+      try {
+        const { count } = await supabase.from('quotations').select('id', { count: 'exact', head: true }).like('quote_no', `Q-${dateStr}-%`);
+        seq = (count || 0);
+      } catch {
+        seq = readLocal().filter(x => (x.quoteNo || '').startsWith(`Q-${dateStr}-`)).length;
+      }
+      const quoteNo = `Q-${dateStr}-${String(seq + 1).padStart(4, '0')}`;
       const detailsLines = Object.keys(extraFields).length
         ? ['\n--- Template Details ---', ...Object.entries(extraFields).map(([k,v]) => `${k}: ${v || '-'}`)].join('\n')
         : '';
-      const { error } = await supabase.from('quotations').insert({
-        quote_no: quoteNo,
-        customer: formData.customer,
-        email: formData.email,
-        phone: formData.phone || null,
-        date: today.toISOString().split('T')[0],
-        valid_until: formData.validUntil || null,
-        notes: ((formData.notes || '') + detailsLines) || null,
-        template: formData.template,
-        status: 'draft',
-        subtotal: 0,
-        tax: 0,
-        total: 0,
-      });
-      if (error) { toast.error(error.message); return; }
+
+      let created = false;
+      try {
+        const { error } = await supabase.from('quotations').insert({
+          quote_no: quoteNo,
+          customer: formData.customer,
+          email: formData.email,
+          phone: formData.phone || null,
+          date: today.toISOString().split('T')[0],
+          valid_until: formData.validUntil || null,
+          notes: ((formData.notes || '') + detailsLines) || null,
+          template: formData.template,
+          status: 'draft',
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+        });
+        if (!error) created = true;
+      } catch {}
+
+      if (!created) {
+        const local = readLocal();
+        local.unshift({
+          id: `local-${Date.now()}`,
+          quoteNo,
+          customer: formData.customer,
+          customerEmail: formData.email,
+          phone: formData.phone || undefined,
+          date: today.toISOString().split('T')[0],
+          validUntil: formData.validUntil || undefined,
+          notes: ((formData.notes || '') + detailsLines) || undefined,
+          template: formData.template,
+          status: 'draft',
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+          items: []
+        });
+        writeLocal(local);
+        try { toast.message('Saved locally (DB unavailable).'); } catch {}
+      }
+
       // Persist logo (if selected) into app_settings keyed by quote number
       try {
         const logo = (window as any)._quoteLogoDataUrl as string | undefined;
@@ -129,7 +164,14 @@ const NewQuotationPage = () => {
       toast.success('Quotation created successfully!');
       navigate('/dashboard/quotation');
     } catch (e) {
-      toast.error('Failed to create quotation');
+      const local = readLocal();
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+      const quoteNo = `Q-${dateStr}-${String(local.length + 1).padStart(4, '0')}`;
+      local.unshift({ id: `local-${Date.now()}`, quoteNo, customer: formData.customer, customerEmail: formData.email, date: today.toISOString().split('T')[0], status: 'draft', subtotal: 0, tax: 0, total: 0, items: [] });
+      writeLocal(local);
+      toast.success('Quotation saved locally');
+      navigate('/dashboard/quotation');
     }
   };
 
