@@ -315,7 +315,7 @@ const SuperAdmin = () => {
         const [{ data: systemUsers }, { data: comps }, { data: cu } ] = await Promise.all([
           supabase.from('system_users').select('*').order('created_at', { ascending: false }),
           supabase.from('companies').select('id, name'),
-          supabase.from('company_users').select('company_id, user_id')
+          supabase.from('company_users').select('company_id, user_id, role, created_at')
         ]);
         const users = ((systemUsers || []) as any[]).filter(u => !u?.user_metadata?.created_by_admin);
         const companyById = new Map((comps || []).map((c: any) => [String(c.id), c.name]));
@@ -862,7 +862,7 @@ const SuperAdmin = () => {
                       const [{ data: systemUsers }, { data: comps }, { data: cu }] = await Promise.all([
                         supabase.from('system_users').select('*').order('created_at', { ascending: false }),
                         supabase.from('companies').select('id, name'),
-                        supabase.from('company_users').select('company_id, user_id')
+                        supabase.from('company_users').select('company_id, user_id, role, created_at')
                       ]);
                       const users = ((systemUsers || []) as any[]).filter(u => !u?.user_metadata?.created_by_admin);
                       const companyById = new Map((comps || []).map((c: any) => [String(c.id), c.name]));
