@@ -880,10 +880,19 @@ const SuperAdmin = () => {
                         userCountByCompany.set(key, (userCountByCompany.get(key) || 0) + 1);
                       });
                       const userCompanyByUserId = new Map<string, string>();
-                      (cu || []).forEach((row: any) => {
-                        const uid = String(row.user_id);
-                        if (!userCompanyByUserId.has(uid)) userCompanyByUserId.set(uid, String(row.company_id));
-                      });
+        const grouped = new Map<string, any[]>();
+        (cu || []).forEach((row: any) => {
+          const uid = String(row.user_id);
+          const arr = grouped.get(uid) || [];
+          arr.push(row);
+          grouped.set(uid, arr);
+        });
+        const roleRank = (r: string) => (r === 'owner' ? 3 : r === 'admin' ? 2 : 1);
+        for (const [uid, rows] of grouped) {
+          rows.sort((a, b) => (roleRank(b.role) - roleRank(a.role)) || (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+          const preferred = rows.find(r => (companyById.get(String(r.company_id)) || '').toLowerCase() !== 'default company') || rows[0];
+          userCompanyByUserId.set(uid, String(preferred.company_id));
+        }
                       const userIds = users.map(u => u.id);
                       const [{ data: subs }, { data: plans }, { data: ups }] = await Promise.all([
                         supabase.from('user_subscriptions').select('*').in('user_id', userIds.length ? userIds : ['none']),
@@ -947,10 +956,10 @@ const SuperAdmin = () => {
                         <TableCell className="text-foreground">{r.companyName}</TableCell>
                         <TableCell className="text-foreground">{r.userCount === '' ? '' : r.userCount}</TableCell>
                         <TableCell className="text-foreground">{r.planName}</TableCell>
-                        <TableCell className="text-foreground">{r.planExpires ? new Date(r.planExpires).toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-foreground">{r.planExpires ? new Date(r.planExpires).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' }) : '-'}</TableCell>
                         <TableCell className="text-foreground">{r.promoCode || '-'}</TableCell>
                         <TableCell className="text-foreground">{r.influencerName || '-'}</TableCell>
-                        <TableCell className="text-foreground">{r.lastLogin || '-'}</TableCell>
+                        <TableCell className="text-foreground">{r.lastLogin && r.lastLogin !== '-' ? new Date(r.lastLogin).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' }) : '-'}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <AlertDialog>
@@ -966,12 +975,22 @@ const SuperAdmin = () => {
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction onClick={async () => {
                                     try {
-                                      // Delete related public records only (cannot delete auth.users without service role)
-                                      await supabase.from('user_subscriptions').delete().eq('user_id', r.id);
-                                      await supabase.from('user_promotions').delete().eq('user_id', r.id);
-                                      await supabase.from('company_users').delete().eq('user_id', r.id);
-                                      await supabase.from('system_users').delete().eq('id', r.id);
-                                      toast.success('User related data removed (auth user may still exist)');
+                                      const adminUrl = (import.meta as any).env?.VITE_ADMIN_API_URL as string | undefined;
+                                      const adminKey = (import.meta as any).env?.VITE_ADMIN_API_KEY as string | undefined;
+                                      if (adminUrl && adminKey) {
+                                        const resp = await fetch(`${adminUrl}/admin/delete-user`, {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                                          body: JSON.stringify({ userId: r.id })
+                                        });
+                                        if (!resp.ok) throw new Error('Admin delete failed');
+                                      } else {
+                                        await supabase.from('user_subscriptions').delete().eq('user_id', r.id);
+                                        await supabase.from('user_promotions').delete().eq('user_id', r.id);
+                                        await supabase.from('company_users').delete().eq('user_id', r.id);
+                                        await supabase.from('system_users').delete().eq('id', r.id);
+                                      }
+                                      toast.success('User deleted');
                                       setRegistrations(prev => prev.filter(x => x.id !== r.id));
                                     } catch (err) {
                                       console.error('Delete registration error', err);
