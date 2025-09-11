@@ -979,7 +979,7 @@ const SuperAdmin = () => {
               <div className="flex items-center justify-between">
                 <CardTitle>System Users</CardTitle>
                 <div>
-                  <Button onClick={async () => { await loadSystemUsers(); }}>Refresh</Button>
+                  <Button onClick={async () => { const tx = (Sentry as any).startTransaction ? (Sentry as any).startTransaction({ name: 'loadSystemUsers' }) : null; try { await loadSystemUsers(); } finally { try { tx && tx.finish && tx.finish(); } catch {} } }}>Refresh</Button>
                 </div>
               </div>
             </CardHeader>
