@@ -271,12 +271,12 @@ const SuperAdmin = () => {
 
 
   const systemMetrics: SystemMetric[] = [
-    { name: 'CPU Usage', value: '23%', status: 'healthy', icon: Cpu },
-    { name: 'Memory Usage', value: '67%', status: 'warning', icon: MemoryStick },
-    { name: 'Disk Space', value: '45%', status: 'healthy', icon: HardDrive },
-    { name: 'Server Load', value: '1.2', status: 'healthy', icon: Server },
-    { name: 'Active Users', value: '1,234', status: 'healthy', icon: Users },
-    { name: 'Database Size', value: '2.4 GB', status: 'healthy', icon: Database }
+    { name: 'CPU Usage', value: cpuLagMs != null ? `${cpuLagMs}ms lag` : 'N/A', status: (cpuLagMs||0) < 100 ? 'healthy' : (cpuLagMs||0) < 300 ? 'warning' : 'critical', icon: Cpu },
+    { name: 'Memory Usage', value: mem.usedMB != null && mem.totalMB != null ? `${mem.usedMB} / ${mem.totalMB} MB` : 'N/A', status: mem.usedMB != null && mem.totalMB != null && mem.totalMB>0 ? (mem.usedMB/mem.totalMB) < 0.6 ? 'healthy' : (mem.usedMB/mem.totalMB) < 0.85 ? 'warning' : 'critical' : 'healthy', icon: MemoryStick },
+    { name: 'Disk Space', value: storageInfo.usageMB != null && storageInfo.quotaMB != null ? `${storageInfo.usageMB} / ${storageInfo.quotaMB} MB` : 'N/A', status: storageInfo.usageMB != null && storageInfo.quotaMB != null && storageInfo.quotaMB>0 ? (storageInfo.usageMB/storageInfo.quotaMB) < 0.6 ? 'healthy' : (storageInfo.usageMB/storageInfo.quotaMB) < 0.85 ? 'warning' : 'critical' : 'healthy', icon: HardDrive },
+    { name: 'Server Load', value: frontPingMs != null ? `${frontPingMs}ms` : 'N/A', status: (frontPingMs||0) < 500 ? 'healthy' : (frontPingMs||0) < 1200 ? 'warning' : 'critical', icon: Server },
+    { name: 'Active Users', value: activeUsersCount != null ? String(activeUsersCount) : 'Tap to load', status: 'healthy', icon: Users },
+    { name: 'Database', value: Object.keys(dbCounts).length ? `${(dbCounts.companies||0)} companies / ${(dbCounts.system_users||0)} users` : 'Tap to load', status: 'healthy', icon: Database }
   ];
 
   const filteredUsers = useMemo(() => {
