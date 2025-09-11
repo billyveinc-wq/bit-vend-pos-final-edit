@@ -45,6 +45,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
