@@ -1331,4 +1331,82 @@ const SuperAdmin = () => {
   );
 };
 
+const SystemSettingsPanel: React.FC = () => {
+  const [companyName, setCompanyName] = useState('');
+  const [supportEmail, setSupportEmail] = useState('');
+  const [defaultTax, setDefaultTax] = useState<string>('');
+  useEffect(() => { (async () => {
+    try { const { data } = await supabase.from('companies').select('name').order('id').limit(1).maybeSingle(); setCompanyName((data as any)?.name || ''); } catch {}
+    try { const { data } = await supabase.from('app_settings').select('value').eq('key','support_email').order('company_id').limit(1).maybeSingle(); setSupportEmail(((data as any)?.value) || ''); } catch {}
+    try { const { data } = await supabase.from('app_settings').select('value').eq('key','default_tax').order('company_id').limit(1).maybeSingle(); const v = (data as any)?.value?.percent; if (v!=null) setDefaultTax(String(v)); } catch {}
+  })(); }, []);
+  return (
+    <div className="space-y-3 text-sm">
+      <div>Company Name: {companyName || '-'}</div>
+      <div>Support Email: {supportEmail || '-'}</div>
+      <div>Default Tax: {defaultTax || '-'}</div>
+      <Button variant="outline" onClick={()=> window.location.href='/dashboard/settings?section=general'}>Open General Settings</Button>
+    </div>
+  );
+};
+
+const SecurityCenterPanel: React.FC = () => {
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [roles, setRoles] = useState<any[]>([]);
+  useEffect(()=>{ (async () => {
+    try { const { data } = await supabase.from('app_admins').select('email').order('email'); setAdmins(data||[]); } catch {}
+    try { const { data } = await supabase.from('roles').select('id, name').order('id'); setRoles(data||[]); } catch {}
+  })(); }, []);
+  return (
+    <div className="space-y-3 text-sm">
+      <div className="font-medium">Admin Emails</div>
+      <ul className="list-disc pl-5">{admins.map((a:any)=>(<li key={a.email}>{a.email}</li>))}</ul>
+      <div className="font-medium mt-3">Roles</div>
+      <ul className="list-disc pl-5">{roles.map((r:any)=>(<li key={r.id}>{r.name}</li>))}</ul>
+      <Button variant="outline" onClick={()=> window.location.href='/dashboard/superadmin?tab=system'}>Manage Users</Button>
+    </div>
+  );
+};
+
+const ActivityLogsPanel: React.FC = () => {
+  const [items, setItems] = useState<any[]>([]);
+  useEffect(()=>{ (async()=>{
+    const logs: any[] = [];
+    try { const { data } = await supabase.from('payment_transactions').select('id, provider_key, status, created_at').order('created_at', { ascending: false }).limit(20); (data||[]).forEach((d:any)=> logs.push({ type:'payment', ...d })); } catch {}
+    try { const { data } = await supabase.from('promo_codes').select('id, code, discount, created_at').order('created_at', { ascending: false }).limit(20); (data||[]).forEach((d:any)=> logs.push({ type:'promo', ...d })); } catch {}
+    logs.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setItems(logs.slice(0,30));
+  })(); }, []);
+  return (
+    <div className="space-y-2 text-sm max-h-[60vh] overflow-auto">
+      {items.map((it)=> (
+        <div key={`${it.type}-${it.id}`} className="flex items-center justify-between border-b py-2">
+          <div>
+            <div className="font-medium capitalize">{it.type}</div>
+            <div className="text-muted-foreground text-xs">{new Date(it.created_at).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })}</div>
+          </div>
+          <div className="text-xs">{it.type==='payment' ? `${it.provider_key} - ${it.status}` : `promo ${it.code} - ${it.discount}%`}</div>
+        </div>
+      ))}
+      {!items.length && <div className="text-muted-foreground">No recent activity</div>}
+    </div>
+  );
+};
+
+const NetworkMonitorPanel: React.FC<{ onPing: ()=>Promise<void>; frontPingMs: number | null }> = ({ onPing, frontPingMs }) => {
+  const [conn, setConn] = useState<any>(null);
+  useEffect(()=>{
+    const n:any = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    setConn(n || null);
+  }, []);
+  return (
+    <div className="space-y-3 text-sm">
+      <div>Latency (frontend): {frontPingMs != null ? `${frontPingMs} ms` : '-'}</div>
+      <div>Connection: {conn ? `${conn.effectiveType || '-'} ${conn.downlink ? `(${conn.downlink} Mbps)` : ''}` : 'N/A'}</div>
+      <div>RTT: {conn?.rtt ?? '-'}</div>
+      <Button variant="outline" onClick={onPing}>Ping Again</Button>
+    </div>
+  );
+};
+
 export default SuperAdmin;
