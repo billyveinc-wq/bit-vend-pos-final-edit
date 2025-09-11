@@ -31,6 +31,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Sentry } from '@/integrations/sentry';
+import { runUptimeCheckNow } from '@/monitoring/uptime';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { isAllowedAdminEmail } from '@/lib/admin';
 
