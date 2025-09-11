@@ -810,6 +810,86 @@ const SuperAdmin = () => {
         </Card>
       </div>
 
+      {/* Metric Detail Dialog */}
+      <Dialog open={!!metricDialog} onOpenChange={(o)=>!o && setMetricDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{metricDialog?.name || ''}</DialogTitle>
+          </DialogHeader>
+          {metricDialog?.name === 'CPU Usage' && (
+            <div className="space-y-2 text-sm">
+              <div>Event loop lag: {cpuLagMs != null ? `${cpuLagMs} ms` : 'N/A'}</div>
+              <div>User agent: {navigator.userAgent}</div>
+            </div>
+          )}
+          {metricDialog?.name === 'Memory Usage' && (
+            <div className="space-y-2 text-sm">
+              <div>Used: {mem.usedMB != null ? `${mem.usedMB} MB` : 'N/A'}</div>
+              <div>Total: {mem.totalMB != null ? `${mem.totalMB} MB` : 'N/A'}</div>
+            </div>
+          )}
+          {metricDialog?.name === 'Disk Space' && (
+            <div className="space-y-2 text-sm">
+              <div>Usage: {storageInfo.usageMB != null ? `${storageInfo.usageMB} MB` : 'N/A'}</div>
+              <div>Quota: {storageInfo.quotaMB != null ? `${storageInfo.quotaMB} MB` : 'N/A'}</div>
+            </div>
+          )}
+          {metricDialog?.name === 'Server Load' && (
+            <div className="space-y-2 text-sm">
+              <div>Last ping: {frontPingMs != null ? `${frontPingMs} ms` : 'N/A'}</div>
+              <Button variant="outline" onClick={async ()=>{ const res = await runUptimeCheckNow(); setFrontPingMs(res.front.ms); toast.success('Ping updated'); }}>Ping again</Button>
+            </div>
+          )}
+          {metricDialog?.name === 'Active Users' && (
+            <div className="space-y-2 text-sm">
+              <div>Signed in last 24h: {activeUsersCount != null ? activeUsersCount : '...'}</div>
+              <Button variant="outline" onClick={loadActiveUsers}>Refresh</Button>
+            </div>
+          )}
+          {metricDialog?.name === 'Database' && (
+            <div className="space-y-2 text-sm">
+              <div>Companies: {dbCounts.companies ?? '-'}</div>
+              <div>Company Users: {dbCounts.company_users ?? '-'}</div>
+              <div>System Users: {dbCounts.system_users ?? '-'}</div>
+              <div>Payment Transactions: {dbCounts.payment_transactions ?? '-'}</div>
+              <Button variant="outline" onClick={loadDbCounts}>Refresh</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* System Settings Dialog */}
+      <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>System Settings</DialogTitle></DialogHeader>
+          <SystemSettingsPanel />
+        </DialogContent>
+      </Dialog>
+
+      {/* Security Center Dialog */}
+      <Dialog open={securityDialogOpen} onOpenChange={setSecurityDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Security Center</DialogTitle></DialogHeader>
+          <SecurityCenterPanel />
+        </DialogContent>
+      </Dialog>
+
+      {/* Activity Logs Dialog */}
+      <Dialog open={activityDialogOpen} onOpenChange={setActivityDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Activity Logs</DialogTitle></DialogHeader>
+          <ActivityLogsPanel />
+        </DialogContent>
+      </Dialog>
+
+      {/* Network Monitor Dialog */}
+      <Dialog open={networkDialogOpen} onOpenChange={setNetworkDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Network Monitor</DialogTitle></DialogHeader>
+          <NetworkMonitorPanel onPing={async ()=>{ const res = await runUptimeCheckNow(); setFrontPingMs(res.front.ms); }} frontPingMs={frontPingMs} />
+        </DialogContent>
+      </Dialog>
+
       {/* Main Tabs: Promo / Registrations / System Users / Billing / Alerts */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <TabsList className="grid w-full grid-cols-5 mb-4">
