@@ -326,10 +326,18 @@ const SuperAdmin = () => {
         });
 
         const userCompanyByUserId = new Map<string, string>();
+        const grouped = new Map<string, any[]>();
         (cu || []).forEach((row: any) => {
           const uid = String(row.user_id);
-          if (!userCompanyByUserId.has(uid)) userCompanyByUserId.set(uid, String(row.company_id));
+          const arr = grouped.get(uid) || [];
+          arr.push(row);
+          grouped.set(uid, arr);
         });
+        const roleRank = (r: string) => (r === 'owner' ? 3 : r === 'admin' ? 2 : 1);
+        for (const [uid, rows] of grouped) {
+          rows.sort((a, b) => (roleRank(b.role) - roleRank(a.role)) || (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+          userCompanyByUserId.set(uid, String(rows[0].company_id));
+        }
 
         const userIds = users.map(u => u.id);
         const [{ data: subs }, { data: plans }, { data: ups }] = await Promise.all([
