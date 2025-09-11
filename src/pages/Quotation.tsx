@@ -43,6 +43,11 @@ const Quotation = () => {
   interface Quote { id: string; quoteNo: string; customer: string; customerEmail: string; phone?: string; date: string; validUntil?: string; notes?: string; template?: string; status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'; subtotal: number; tax: number; total: number; items: QuoteItem[]; }
 
   const [quotations, setQuotations] = useState<Quote[]>([]);
+  const LOCAL_KEY = 'pos-quotations';
+  const readLocal = (): Quote[] => {
+    try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch { return []; }
+  };
+  const writeLocal = (q: Quote[]) => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(q)); } catch {} };
 
   useEffect(() => {
     const load = async () => {
@@ -75,8 +80,12 @@ const Quotation = () => {
         }));
         setQuotations(mapped);
       } catch (e: any) {
-        console.warn('quotations not available');
-        toast.error('Quotations table is missing or inaccessible. Please ensure the "quotations" table exists with proper RLS.');
+        console.warn('quotations not available, using local storage');
+        const localQuotes = readLocal();
+        setQuotations(localQuotes);
+        if (!localQuotes.length) {
+          try { toast.message('Quotations database unavailable. Showing local drafts.'); } catch {}
+        }
       }
     };
     load();
@@ -85,7 +94,11 @@ const Quotation = () => {
   // Add missing handlers for quotation actions
   const handleSendQuotation = async (id: string) => {
     try { await supabase.from('quotations').update({ status: 'sent' }).eq('id', Number(id)); } catch {}
-    setQuotations(prev => prev.map(q => q.id === id ? { ...q, status: 'sent' } : q));
+    setQuotations(prev => {
+      const next = prev.map(q => q.id === id ? { ...q, status: 'sent' } : q);
+      writeLocal(next);
+      return next;
+    });
     toast.success('Quotation sent to customer successfully!');
   };
   
@@ -95,26 +108,34 @@ const Quotation = () => {
     try {
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-      const { data: countData } = await supabase.from('quotations').select('id', { count: 'exact', head: true }).like('quote_no', `Q-${dateStr}-%`);
-      const seq = ((countData as any)?.count || 0) + 1;
-      const quoteNo = `Q-${dateStr}-${String(seq).padStart(4, '0')}`;
-      const { data, error } = await supabase.from('quotations').insert({
-        quote_no: quoteNo,
-        customer: q.customer,
-        email: q.customerEmail,
-        phone: q.phone || null,
-        date: today.toISOString().split('T')[0],
-        valid_until: q.validUntil || null,
-        notes: q.notes || null,
-        template: q.template || null,
-        status: 'draft',
-        subtotal: q.subtotal,
-        tax: q.tax,
-        total: q.total,
-      }).select('id').single();
-      if (!error && data?.id) {
-        setQuotations(prev => [{ ...q, id: String(data.id), quoteNo, status: 'draft' }, ...prev]);
+      let seq = 0;
+      try {
+        const { data: countData } = await supabase.from('quotations').select('id', { count: 'exact', head: true }).like('quote_no', `Q-${dateStr}-%`);
+        seq = ((countData as any)?.count || 0);
+      } catch {
+        seq = readLocal().filter(x => (x.quoteNo || '').startsWith(`Q-${dateStr}-`)).length;
       }
+      const quoteNo = `Q-${dateStr}-${String(seq + 1).padStart(4, '0')}`;
+      let newId = '';
+      try {
+        const { data, error } = await supabase.from('quotations').insert({
+          quote_no: quoteNo,
+          customer: q.customer,
+          email: q.customerEmail,
+          phone: q.phone || null,
+          date: today.toISOString().split('T')[0],
+          valid_until: q.validUntil || null,
+          notes: q.notes || null,
+          template: q.template || null,
+          status: 'draft',
+          subtotal: q.subtotal,
+          tax: q.tax,
+          total: q.total,
+        }).select('id').single();
+        if (!error && data?.id) newId = String(data.id);
+      } catch {}
+      const dup: Quote = { ...q, id: newId || `local-${Date.now()}`, quoteNo, status: 'draft' };
+      setQuotations(prev => { const next = [dup, ...prev]; writeLocal(next); return next; });
     } catch {}
     toast.success('Quotation duplicated successfully!');
   };
