@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 
 const NewQuotationPage = () => {
   const navigate = useNavigate();
