@@ -93,6 +93,85 @@ const SuperAdmin = () => {
   const [loadingSystemUsers, setLoadingSystemUsers] = useState(false);
   const [billingWizardOpen, setBillingWizardOpen] = useState(false);
 
+  // Metrics state
+  const [cpuLagMs, setCpuLagMs] = useState<number | null>(null);
+  const [mem, setMem] = useState<{ usedMB: number | null; totalMB: number | null }>({ usedMB: null, totalMB: null });
+  const [storageInfo, setStorageInfo] = useState<{ usageMB: number | null; quotaMB: number | null }>({ usageMB: null, quotaMB: null });
+  const [frontPingMs, setFrontPingMs] = useState<number | null>(null);
+  const [activeUsersCount, setActiveUsersCount] = useState<number | null>(null);
+  const [dbCounts, setDbCounts] = useState<Record<string, number>>({});
+
+  // Dialogs
+  const [metricDialog, setMetricDialog] = useState<null | { name: string }>(null);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [securityDialogOpen, setSecurityDialogOpen] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [networkDialogOpen, setNetworkDialogOpen] = useState(false);
+
+  useEffect(() => {
+    // Event loop lag approximation
+    let last = performance.now();
+    const int = setInterval(() => {
+      const now = performance.now();
+      const lag = now - last - 1000;
+      setCpuLagMs(Math.max(0, Math.round(lag)));
+      last = now;
+    }, 1000);
+
+    // Memory
+    const updateMem = () => {
+      const anyPerf: any = performance as any;
+      if (anyPerf && anyPerf.memory) {
+        setMem({
+          usedMB: Math.round(anyPerf.memory.usedJSHeapSize / (1024 * 1024)),
+          totalMB: Math.round(anyPerf.memory.totalJSHeapSize / (1024 * 1024)),
+        });
+      }
+    };
+    updateMem();
+    const memInt = setInterval(updateMem, 5000);
+
+    // Storage
+    (async () => {
+      try {
+        if ((navigator as any).storage && (navigator as any).storage.estimate) {
+          const est = await (navigator as any).storage.estimate();
+          const usage = est.usage || 0;
+          const quota = est.quota || 0;
+          setStorageInfo({ usageMB: Math.round(usage / (1024 * 1024)), quotaMB: Math.round(quota / (1024 * 1024)) });
+        }
+      } catch {}
+    })();
+
+    // Front ping
+    (async () => {
+      const res = await runUptimeCheckNow();
+      setFrontPingMs(res.front.ms);
+    })();
+
+    return () => {
+      clearInterval(int);
+      clearInterval(memInt);
+    };
+  }, []);
+
+  const loadActiveUsers = async () => {
+    try {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase.from('system_users').select('id', { count: 'exact', head: true }).gte('last_sign_in_at', since);
+      setActiveUsersCount(count || 0);
+    } catch { setActiveUsersCount(0); }
+  };
+
+  const loadDbCounts = async () => {
+    const tables = ['companies','company_users','system_users','payment_transactions'];
+    const result: Record<string, number> = {};
+    for (const t of tables) {
+      try { const { count } = await supabase.from(t as any).select('id', { count: 'exact', head: true }); result[t] = count || 0; } catch { result[t] = 0; }
+    }
+    setDbCounts(result);
+  };
+
   const runSentryDiagnostics = () => {
     try { Sentry.captureMessage('Sentry diagnostics: test message', 'info'); } catch {}
     try { throw new Error('Sentry diagnostics: test error'); } catch (e) { try { Sentry.captureException(e); } catch {} }
