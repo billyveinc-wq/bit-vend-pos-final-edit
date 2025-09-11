@@ -31,6 +31,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 
 
 const Quotation = () => {
@@ -52,6 +53,12 @@ const Quotation = () => {
   useEffect(() => {
     const load = async () => {
       try {
+        const { data: sess } = await safeGetSession();
+        const session = (sess as any)?.session;
+        if (!session?.user) {
+          setQuotations(readLocal());
+          return;
+        }
         const { data, error } = await supabase
           .from('quotations')
           .select('id, quote_no, customer, email, phone, date, valid_until, notes, template, status, subtotal, tax, total, quotation_items(id, name, quantity, price, total)')
@@ -83,9 +90,6 @@ const Quotation = () => {
         console.warn('quotations not available, using local storage');
         const localQuotes = readLocal();
         setQuotations(localQuotes);
-        if (!localQuotes.length) {
-          try { toast.message('Quotations database unavailable. Showing local drafts.'); } catch {}
-        }
       }
     };
     load();
