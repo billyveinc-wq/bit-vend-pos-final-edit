@@ -726,7 +726,11 @@ const SuperAdmin = () => {
         {systemMetrics.map((metric, index) => {
           const Icon = metric.icon;
           return (
-            <Card key={index}>
+            <Card key={index} className="cursor-pointer" onClick={async () => {
+              setMetricDialog({ name: metric.name });
+              if (metric.name === 'Active Users') await loadActiveUsers();
+              if (metric.name === 'Database') await loadDbCounts();
+            }}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-full ${
