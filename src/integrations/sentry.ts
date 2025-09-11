@@ -18,6 +18,21 @@ if (dsn) {
       return [...base, ...extra];
     },
   });
+
+  // One-time automatic diagnostics to verify connectivity
+  try {
+    const KEY = 'sentry_diag_sent';
+    const sent = typeof window !== 'undefined' ? window.localStorage.getItem(KEY) : '1';
+    if (!sent) {
+      Sentry.captureMessage('Sentry diagnostics: auto test message', 'info');
+      try {
+        throw new Error('Sentry diagnostics: auto test error');
+      } catch (e) {
+        Sentry.captureException(e);
+      }
+      if (typeof window !== 'undefined') window.localStorage.setItem(KEY, new Date().toISOString());
+    }
+  } catch {}
 }
 
 export { Sentry };
