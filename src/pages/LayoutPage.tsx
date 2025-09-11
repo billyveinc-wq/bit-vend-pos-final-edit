@@ -41,18 +41,7 @@ const saveAppSetting = async (key: string, value: any) => {
 const LayoutPage = () => {
   const { theme, setTheme } = useTheme();
   const { isAdmin } = useAdminAuth();
-  if (!isAdmin) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent>You do not have permission to access Layout settings.</CardContent>
-        </Card>
-      </div>
-    );
-  }
+
   const [layoutSettings, setLayoutSettings] = useState({
     sidebarCollapsed: false,
     sidebarPosition: 'left',
@@ -175,6 +164,19 @@ const LayoutPage = () => {
       default: return Monitor;
     }
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>You do not have permission to access Layout settings.</CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
