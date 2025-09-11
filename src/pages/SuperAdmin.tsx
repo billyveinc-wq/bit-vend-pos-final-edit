@@ -336,7 +336,8 @@ const SuperAdmin = () => {
         const roleRank = (r: string) => (r === 'owner' ? 3 : r === 'admin' ? 2 : 1);
         for (const [uid, rows] of grouped) {
           rows.sort((a, b) => (roleRank(b.role) - roleRank(a.role)) || (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-          userCompanyByUserId.set(uid, String(rows[0].company_id));
+          const preferred = rows.find(r => (companyById.get(String(r.company_id)) || '').toLowerCase() !== 'default company') || rows[0];
+          userCompanyByUserId.set(uid, String(preferred.company_id));
         }
 
         const userIds = users.map(u => u.id);
