@@ -767,7 +767,7 @@ const SuperAdmin = () => {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSecurityDialogOpen(true)}>
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
