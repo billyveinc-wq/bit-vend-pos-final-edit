@@ -124,6 +124,19 @@ const Application = () => {
     loadSettingsAndStats();
   }, []);
 
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>You do not have permission to access Application settings.</CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const handleSaveSettings = async () => {
     await saveAppSetting('application_settings', appSettings);
     try {
