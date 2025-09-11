@@ -51,6 +51,7 @@ const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { businesses, currentBusiness, addBusiness, updateBusiness, deleteBusiness } = useBusiness();
+  const { subscription, canUseFeature } = useSubscription();
   const { isAdmin } = useAdminAuth();
   
   const section = searchParams.get('section') || 'business';
