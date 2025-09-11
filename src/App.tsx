@@ -100,6 +100,12 @@ const RouteTracker = () => {
   return null;
 };
 
+const AdminRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const { isAdmin, isChecking } = useAdminAuth();
+  if (isChecking) return null;
+  return isAdmin ? children : <Navigate to="/dashboard" replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
