@@ -341,7 +341,7 @@ const SuperAdmin = () => {
         const regs = users.map((u: any) => {
           const sub = (subs || []).find((s: any) => s.user_id === u.id);
           const plan = (plans || []).find((p: any) => p.id === sub?.plan_id);
-          const companyId = u.company_id ? String(u.company_id) : '';
+          const companyId = u.company_id ? String(u.company_id) : (userCompanyByUserId.get(String(u.id)) || '');
           const companyName = companyId ? (companyById.get(companyId) || '') : '';
           const up = (ups || []).find((p: any) => p.user_id === u.id);
           const userCount = companyId ? (userCountByCompany.get(companyId) || 0) : '';
@@ -885,8 +885,8 @@ const SuperAdmin = () => {
                       const regs = users.map((u: any) => {
                         const sub = (subs || []).find((s: any) => s.user_id === u.id);
                         const plan = (plans || []).find((p: any) => p.id === sub?.plan_id);
-                        const companyId = u.company_id ? String(u.company_id) : '';
-                        const companyName = companyId ? (companyById.get(companyId) || '') : '';
+                        const companyId = u.company_id ? String(u.company_id) : (userCompanyByUserId.get(String(u.id)) || '');
+          const companyName = companyId ? (companyById.get(companyId) || '') : '';
                         const up = (ups || []).find((p: any) => p.user_id === u.id);
                         const userCount = companyId ? (userCountByCompany.get(companyId) || 0) : '';
                         return {
