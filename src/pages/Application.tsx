@@ -39,18 +39,8 @@ const saveAppSetting = async (key: string, value: any) => {
 
 const Application = () => {
   const { isAdmin } = useAdminAuth();
-  if (!isAdmin) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent>You do not have permission to access Application settings.</CardContent>
-        </Card>
-      </div>
-    );
-  }
+
+  // Hooks must be called unconditionally in the same order every render
   const [appSettings, setAppSettings] = useState({
     appName: 'POS System',
     appVersion: '2.1.0',
