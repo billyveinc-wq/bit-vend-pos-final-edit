@@ -34,6 +34,13 @@ import { useTheme } from 'next-themes';
 
 const LandingPage = () => {
   const { theme, setTheme } = useTheme();
+  const [selectedPlan, setSelectedPlan] = useState<string>(() => {
+    try { return localStorage.getItem('selected-plan') || 'starter'; } catch { return 'starter'; }
+  });
+  const choosePlan = (plan: string) => {
+    setSelectedPlan(plan);
+    try { localStorage.setItem('selected-plan', plan); } catch {}
+  };
 
   // Typewriter for provider integrations
   const providerPhrases = useMemo(() => ([
@@ -203,7 +210,7 @@ const LandingPage = () => {
                 </Link>
               </Button>
               <Button asChild size="sm" className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white">
-                <Link to="/auth?mode=signup">
+                <Link to={`/auth?mode=signup&plan=${selectedPlan}`}>
                   Sign Up
                 </Link>
               </Button>
@@ -502,7 +509,9 @@ const LandingPage = () => {
                     >
                       <Link to={`/auth?mode=signup&plan=${
                         plan.name === 'Starter Plan' ? 'starter' : plan.name === 'Standard Plan' ? 'standard' : plan.name === 'Pro Plan' ? 'pro' : 'enterprise'
-                      }`}>
+                      }`} onClick={() => choosePlan(
+                        plan.name === 'Starter Plan' ? 'starter' : plan.name === 'Standard Plan' ? 'standard' : plan.name === 'Pro Plan' ? 'pro' : 'enterprise'
+                      )}>
                         {plan.name === 'Starter Plan' ? 'Start Free Trial' : `Choose ${plan.name}`}
                       </Link>
                     </Button>
@@ -676,7 +685,7 @@ const LandingPage = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button asChild size="lg" className="bg-white text-orange-600 hover:bg-orange-50 px-10 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                <Link to="/auth">
+                <Link to={`/auth?mode=signup&plan=${selectedPlan}`} onClick={() => choosePlan(selectedPlan)}>
                   Start Free Trial Today
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
