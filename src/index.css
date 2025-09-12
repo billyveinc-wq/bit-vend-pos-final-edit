@@ -506,6 +506,13 @@ All colors MUST be HSL.
     stroke: #FFB84D !important;
   }
 
+  /* Force BitVend orange color */
+  .bitvend-orange {
+    color: #f97316 !important;
+    text-shadow: 0 0 12px rgba(249, 115, 22, 0.4) !important;
+    font-weight: bold !important;
+  }
+
   /* remove previous hover pulse */
   .logo-pulse { animation: none !important; }
 
