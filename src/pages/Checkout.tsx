@@ -162,7 +162,7 @@ const Checkout = () => {
             company_id: companyId,
             phone: normalized,
             amount: Number(finalTotal.toFixed(2)),
-            currency: 'KES',
+            currency: (JSON.parse(localStorage.getItem('pos-app-settings')||'{}')?.currency)||'USD',
             reference: invoiceProbe,
           })
         });
