@@ -257,9 +257,42 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         {!collapsed && (
           <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
             <span className="text-xl font-bold flex items-center">
-              <span className="inline-block logo-gradient logo-glow bg-clip-text text-transparent">Bit Vend</span>
-              <span className="inline-block logo-gradient logo-glow bg-clip-text text-transparent ml-1">POS</span>
-              <ShoppingCart size={20} color="#FFB84D" className="ml-2" style={{ filter: 'drop-shadow(0 0 10px rgba(255,184,77,0.45))' }} />
+              <span
+                className="inline-block logo-gradient logo-glow"
+                style={{
+                  background: 'linear-gradient(90deg, #FF6B35, #FFB84D, #FF6B35)',
+                  backgroundSize: '300% 300%',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  color: 'transparent',
+                  WebkitTextFillColor: 'transparent',
+                  animation: 'gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite'
+                }}
+              >
+                Bit Vend
+              </span>
+              <span
+                className="inline-block logo-gradient logo-glow ml-1"
+                style={{
+                  background: 'linear-gradient(90deg, #FF6B35, #FFB84D, #FF6B35)',
+                  backgroundSize: '300% 300%',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  color: 'transparent',
+                  WebkitTextFillColor: 'transparent',
+                  animation: 'gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite'
+                }}
+              >
+                POS
+              </span>
+              <ShoppingCart
+                size={20}
+                className="ml-2"
+                style={{
+                  color: '#FFB84D',
+                  filter: 'drop-shadow(0 0 10px rgba(255,184,77,0.45))'
+                }}
+              />
             </span>
           </Link>
         )}
