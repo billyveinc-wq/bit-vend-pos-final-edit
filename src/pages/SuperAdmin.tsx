@@ -1168,6 +1168,11 @@ const SuperAdmin = () => {
                                         // Soft-delete: cancel subscription and mark user as deleted
                                         try { await supabase.from('user_subscriptions').update({ status: 'canceled' }).eq('user_id', r.id); } catch {}
                                         try {
+                                          // Prefer dedicated columns when available
+                                          await supabase.from('system_users').update({ status: 'deleted', deleted_at: new Date().toISOString() }).eq('id', r.id);
+                                        } catch {}
+                                        try {
+                                          // Also mirror in user_metadata for backward compatibility
                                           const { data: su } = await supabase.from('system_users').select('user_metadata').eq('id', r.id).maybeSingle();
                                           const meta = (su as any)?.user_metadata || {};
                                           const next = { ...meta, status: 'deleted', deletedAt: new Date().toISOString() };
