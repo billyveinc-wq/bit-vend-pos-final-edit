@@ -122,6 +122,9 @@ const Settings = () => {
   }, []);
   useEffect(() => {
     if (companies.length) localStorage.setItem('pos-companies', JSON.stringify(companies));
+    if (companies.length && companies[0].id !== 'unassigned') {
+      setLocations(prev => prev.map(l => (l.companyId === 'unassigned' ? { ...l, companyId: companies[0].id } : l)));
+    }
   }, [companies]);
 
   useEffect(() => {
