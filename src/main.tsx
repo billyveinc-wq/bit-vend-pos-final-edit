@@ -7,6 +7,25 @@ import './index.css'
 
 startUptimeMonitor();
 
+// Suppress noisy ResizeObserver loop warnings caused by third-party UI libs
+try {
+  const resizeObserverErrs = new Set([
+    'ResizeObserver loop completed with undelivered notifications.',
+    'ResizeObserver loop limit exceeded'
+  ]);
+  window.addEventListener('error', (e) => {
+    if (e.message && resizeObserverErrs.has(e.message)) {
+      e.stopImmediatePropagation();
+    }
+  });
+  window.addEventListener('unhandledrejection', (e: any) => {
+    const msg = e?.reason?.message || e?.message;
+    if (msg && resizeObserverErrs.has(msg)) {
+      e.preventDefault();
+    }
+  });
+} catch {}
+
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
