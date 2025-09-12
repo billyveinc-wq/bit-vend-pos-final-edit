@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -59,6 +59,36 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const { isAdmin } = useAdminAuth();
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
   const [canManagePayments, setCanManagePayments] = useState<boolean>(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const SCROLL_KEY = 'sidebar-scroll-top';
+
+  // Restore saved scroll on mount
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved) el.scrollTop = parseInt(saved, 10) || 0;
+  }, []);
+
+  // Save scroll position
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Reapply after route change to avoid jumps
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      const saved = sessionStorage.getItem(SCROLL_KEY);
+      if (saved) el.scrollTop = parseInt(saved, 10) || 0;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [location.pathname]);
 
   useEffect(() => {
     let isMounted = true;
@@ -237,7 +267,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
 
       {/* Navigation */}
       <nav className="flex-1 bg-black h-full overflow-hidden">
-        <div className="h-full overflow-y-auto py-4 px-0 bg-black">
+        <div ref={scrollRef} className="h-full overflow-y-auto py-4 px-0 bg-black">
           {menuItems.map((section) => (
             <div key={section.title} className="mb-6">
               {!collapsed && (
@@ -264,6 +294,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                       <li key={item.href}>
                         <Link
                           to={item.href}
+                          onClick={() => { const el = scrollRef.current; if (el) sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop)); }}
                           className={cn(
                             "w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
                             isActive
