@@ -100,7 +100,22 @@ const AuthPage = () => {
         try {
           const { error: supErr } = await supabase.auth.signInWithPassword({ email, password });
           if (!supErr) {
-            // successful Supabase auth -> create local admin session and redirect
+            // successful Supabase auth -> ensure enterprise subscription
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              const uid = session?.user?.id;
+              if (uid) {
+                const now = new Date().toISOString();
+                await supabase.from('user_subscriptions').upsert({
+                  user_id: uid,
+                  plan_id: 'enterprise',
+                  status: 'active',
+                  started_at: now,
+                  expires_at: null
+                }, { onConflict: 'user_id' });
+              }
+            } catch {}
+            // create local admin session and redirect
             localStorage.setItem('admin-session', JSON.stringify({
               email: email,
               loginTime: new Date().toISOString(),
