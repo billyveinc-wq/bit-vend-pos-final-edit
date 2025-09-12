@@ -34,6 +34,7 @@ import {
   Trash
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { formatCurrency } from '@/lib/currency';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
@@ -406,9 +407,9 @@ const SalesReport: React.FC = () => {
       const rows = q.items.map(it => [it.name, String(it.quantity), it.price.toFixed(2), it.total.toFixed(2)]);
       autoTable(doc, { startY: y + 32, head: [["Item", "Qty", "Price", "Total"]], body: rows });
       const finalY = (doc as any).lastAutoTable?.finalY || y + 32;
-      doc.text(`Subtotal: $${q.subtotal.toFixed(2)}`, 150, finalY + 10);
-      doc.text(`Tax: $${q.tax.toFixed(2)}`, 150, finalY + 16);
-      doc.text(`Total: $${q.total.toFixed(2)}`, 150, finalY + 22);
+      doc.text(`Subtotal: ${formatCurrency(q.subtotal)}`, 150, finalY + 10);
+      doc.text(`Tax: ${formatCurrency(q.tax)}`, 150, finalY + 16);
+      doc.text(`Total: ${formatCurrency(q.total)}`, 150, finalY + 22);
       if (q.notes) {
         const split = doc.splitTextToSize(`Notes: ${q.notes}`, 180);
         doc.text(split, 15, finalY + 32);
@@ -646,7 +647,7 @@ const SalesReport: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold">${sale.total.toFixed(2)}</div>
+                      <div className="text-xl font-bold">{formatCurrency(sale.total)}</div>
                       {getStatusBadge(sale.status)}
                     </div>
                   </div>
@@ -658,7 +659,7 @@ const SalesReport: React.FC = () => {
                       {sale.items.map((item, itemIndex) => (
                         <div key={itemIndex} className="flex justify-between text-sm">
                           <span>{item.productName} × {item.quantity}</span>
-                          <span>${item.total.toFixed(2)}</span>
+                          <span>{formatCurrency(item.total)}</span>
                         </div>
                       ))}
                     </div>
@@ -668,15 +669,15 @@ const SalesReport: React.FC = () => {
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Subtotal: </span>
-                      <span>${sale.subtotal.toFixed(2)}</span>
+                      <span>{formatCurrency(sale.subtotal)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Tax: </span>
-                      <span>${sale.tax.toFixed(2)}</span>
+                      <span>{formatCurrency(sale.tax)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Discount: </span>
-                      <span>${sale.discount.toFixed(2)}</span>
+                      <span>{formatCurrency(sale.discount)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Payment: </span>
@@ -684,7 +685,7 @@ const SalesReport: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Total: </span>
-                      <span className="font-medium">${sale.total.toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(sale.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -718,7 +719,7 @@ const SalesReport: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold">${quote.total.toFixed(2)}</div>
+                      <div className="text-xl font-bold">{formatCurrency(quote.total)}</div>
                       {getQuoteStatusBadge(quote.status)}
                     </div>
                   </div>
@@ -730,11 +731,11 @@ const SalesReport: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Subtotal: </span>
-                      <span>${quote.subtotal.toFixed(2)}</span>
+                      <span>{formatCurrency(quote.subtotal)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Tax: </span>
-                      <span>${quote.tax.toFixed(2)}</span>
+                      <span>{formatCurrency(quote.tax)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Valid Until: </span>
@@ -780,7 +781,7 @@ const SalesReport: React.FC = () => {
                         <p className="text-sm text-muted-foreground">{selectedQuote.customer} • {selectedQuote.customerEmail}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-bold">${selectedQuote.total.toFixed(2)}</p>
+                        <p className="text-xl font-bold">{formatCurrency(selectedQuote.total)}</p>
                         {getQuoteStatusBadge(selectedQuote.status)}
                       </div>
                     </div>
@@ -800,7 +801,7 @@ const SalesReport: React.FC = () => {
                         {selectedQuote.items.map((it, idx) => (
                           <div key={idx} className="flex justify-between">
                             <span>{it.name} × {it.quantity}</span>
-                            <span>${it.total.toFixed(2)}</span>
+                            <span>{formatCurrency(it.total)}</span>
                           </div>
                         ))}
                       </div>
@@ -852,11 +853,11 @@ const SalesReport: React.FC = () => {
                       <p className="text-xs text-blue-600 dark:text-blue-400">Units Sold</p>
                     </div>
                     <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">${product.revenue.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(product.revenue)}</p>
                       <p className="text-xs text-green-600 dark:text-green-400">Revenue</p>
                     </div>
                     <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">${(product.revenue / product.quantity).toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(product.revenue / product.quantity)}</p>
                       <p className="text-xs text-purple-600 dark:text-purple-400">Avg Price</p>
                     </div>
                   </div>
