@@ -463,6 +463,13 @@ All colors MUST be HSL.
   }
   .icon-gold:hover { transform: scale(1.05); }
 
+  /* Explicit class to enforce golden cart color in sidebar */
+  .pos-sidebar .cart-gold {
+    color: #FFB84D !important;
+    stroke: #FFB84D !important;
+    filter: drop-shadow(0 0 10px rgba(255,184,77,0.45));
+  }
+
   @keyframes logoGlow {
     0% {
       text-shadow: 0 0 6px hsl(var(--accent-orange) / 0.10);
