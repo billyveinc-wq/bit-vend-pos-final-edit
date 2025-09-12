@@ -1078,6 +1078,7 @@ const SuperAdmin = () => {
                           companyId,
             companyName,
                           userCount,
+                          planId: sub?.plan_id || null,
                           planName: plan?.name || (sub?.plan_id || 'starter'),
                           planExpires: sub?.expires_at || null,
                           subscriptionStatus: sub?.status || 'free',
@@ -1123,15 +1124,11 @@ const SuperAdmin = () => {
                         <TableCell className="text-foreground">{r.userCount === '' ? '' : r.userCount}</TableCell>
                         <TableCell className="text-foreground">{
                           (() => {
-                            const name = String(r.planName || '').toLowerCase();
-                            const isTrial = name === 'trial' || name.includes('starter');
-                            if (isTrial) {
-                              const end = r.planExpires ? new Date(r.planExpires).getTime() : null;
-                              if (end) {
-                                const daysLeft = Math.max(0, Math.ceil((end - Date.now()) / (1000 * 60 * 60 * 24)));
-                                return daysLeft > 0 ? `${daysLeft} days` : 'Expired';
-                              }
-                              return 'Expired';
+                            const planId = String(r.planId || '').toLowerCase();
+                            if (planId === 'trial' && r.planExpires) {
+                              const endTs = new Date(r.planExpires).getTime();
+                              const daysLeft = Math.ceil((endTs - Date.now()) / (1000 * 60 * 60 * 24));
+                              return daysLeft > 0 ? `${daysLeft} days` : 'Expired';
                             }
                             return r.planName;
                           })()
