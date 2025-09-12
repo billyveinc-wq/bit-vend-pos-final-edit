@@ -1121,7 +1121,21 @@ const SuperAdmin = () => {
                         <TableCell className="text-foreground">{r.email}</TableCell>
                         <TableCell className="text-foreground">{r.companyName}</TableCell>
                         <TableCell className="text-foreground">{r.userCount === '' ? '' : r.userCount}</TableCell>
-                        <TableCell className="text-foreground">{r.planName}</TableCell>
+                        <TableCell className="text-foreground">{
+                          (() => {
+                            const name = String(r.planName || '').toLowerCase();
+                            const isTrial = name === 'trial' || name.includes('starter');
+                            if (isTrial) {
+                              const end = r.planExpires ? new Date(r.planExpires).getTime() : null;
+                              if (end) {
+                                const daysLeft = Math.max(0, Math.ceil((end - Date.now()) / (1000 * 60 * 60 * 24)));
+                                return daysLeft > 0 ? `${daysLeft} days` : 'Expired';
+                              }
+                              return 'Expired';
+                            }
+                            return r.planName;
+                          })()
+                        }</TableCell>
                         <TableCell className="text-foreground">{r.planExpires ? new Date(r.planExpires).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' }) : '-'}</TableCell>
                         <TableCell className="text-foreground">{r.promoCode || '-'}</TableCell>
                         <TableCell className="text-foreground">{r.influencerName || '-'}</TableCell>
@@ -1151,10 +1165,14 @@ const SuperAdmin = () => {
                                         });
                                         if (!resp.ok) throw new Error('Admin delete failed');
                                       } else {
-                                        await supabase.from('user_subscriptions').delete().eq('user_id', r.id);
-                                        await supabase.from('user_promotions').delete().eq('user_id', r.id);
-                                        await supabase.from('company_users').delete().eq('user_id', r.id);
-                                        await supabase.from('system_users').delete().eq('id', r.id);
+                                        // Soft-delete: cancel subscription and mark user as deleted
+                                        try { await supabase.from('user_subscriptions').update({ status: 'canceled' }).eq('user_id', r.id); } catch {}
+                                        try {
+                                          const { data: su } = await supabase.from('system_users').select('user_metadata').eq('id', r.id).maybeSingle();
+                                          const meta = (su as any)?.user_metadata || {};
+                                          const next = { ...meta, status: 'deleted', deletedAt: new Date().toISOString() };
+                                          await supabase.from('system_users').update({ user_metadata: next }).eq('id', r.id);
+                                        } catch {}
                                       }
                                       toast.success('User deleted');
                                       setRegistrations(prev => {
