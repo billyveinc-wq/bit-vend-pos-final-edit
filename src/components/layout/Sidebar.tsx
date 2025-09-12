@@ -289,7 +289,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                 size={20}
                 className="ml-2"
                 style={{
-                  color: '#FFB84D',
+                  color: '#FFB84D !important',
+                  fill: '#FFB84D !important',
+                  stroke: '#FFB84D !important',
                   filter: 'drop-shadow(0 0 10px rgba(255,184,77,0.45))'
                 }}
               />
