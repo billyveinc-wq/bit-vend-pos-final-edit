@@ -463,6 +463,15 @@ All colors MUST be HSL.
   }
   .icon-gold:hover { transform: scale(1.05); }
 
+  @keyframes textPulse {
+    0% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(0,0,0,0)); }
+    50% { transform: translateY(-1px) scale(1.03); filter: drop-shadow(0 6px 18px hsl(var(--accent-orange) / 0.28)); }
+    100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(0,0,0,0)); }
+  }
+  .logo-pulse:hover, .logo-pulse.active {
+    animation: textPulse 1.2s ease-in-out infinite;
+  }
+
   /* Focus States */
   .pos-input:focus {
     @apply outline-none ring-2;
