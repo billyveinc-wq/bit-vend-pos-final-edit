@@ -122,7 +122,20 @@ const Subscription = () => {
       try {
         const { data } = await supabase.from('subscription_plans').select('id, name, price, features');
         if (Array.isArray(data) && data.length) {
-          const mapped = data.map((p: any) => ({ id: p.id, name: p.name, price: Number(p.price) || 0, period: 'month', description: 'Plan', icon: Crown, popular: p.id === 'standard', features: Array.isArray(p.features) ? p.features : [] }));
+          const mapped = data.map((p: any) => {
+            const raw = Number(p.price);
+            const normalized = isFinite(raw) ? (raw >= 100 ? Math.round(raw) / 100 : raw) : 0;
+            return {
+              id: p.id,
+              name: String(p.name || ''),
+              price: normalized,
+              period: 'month',
+              description: 'Plan',
+              icon: Crown,
+              popular: p.id === 'standard',
+              features: Array.isArray(p.features) ? p.features : []
+            };
+          });
           setPlans(mapped as any);
         }
       } catch {}
