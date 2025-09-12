@@ -280,10 +280,13 @@ const AuthPage = () => {
 
       // Handle selected plan: free trial for starter, pending for paid plans
       try {
-        const selectedPlan = (new URLSearchParams(window.location.search)).get('plan') || 'starter';
+        const urlPlan = (new URLSearchParams(window.location.search)).get('plan');
+        let storedPlan = '';
+        try { storedPlan = localStorage.getItem('selected-plan') || ''; } catch {}
+        const selectedPlan = (urlPlan && urlPlan.trim()) || (storedPlan && storedPlan.trim()) || '';
         if (signUpData?.user) {
           const now = new Date();
-          if (selectedPlan === 'starter') {
+          if (!selectedPlan || selectedPlan === 'starter') {
             const expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
             await supabase.from('user_subscriptions').insert({
               user_id: signUpData.user.id,
