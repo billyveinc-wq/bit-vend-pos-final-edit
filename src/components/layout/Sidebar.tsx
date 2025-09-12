@@ -259,7 +259,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
             <span className="text-xl font-bold flex items-center">
               <span className="inline-block logo-gradient animate-gradient-fast bg-clip-text text-transparent">Bit Vend</span>
               <span className="inline-block logo-gradient bg-clip-text text-transparent ml-1">POS</span>
-              <ShoppingCart size={20} className="ml-2 icon-gold" />
+              <ShoppingCart size={20} className="ml-2" style={{ color: '#FFC107', filter: 'drop-shadow(0 0 6px rgba(255,193,7,0.45))' }} />
             </span>
           </Link>
         )}
