@@ -5,6 +5,8 @@ import { useSearch } from '@/hooks/useSearch';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { SearchDropdown } from '@/components/ui/search-dropdown';
 import { useBusiness } from '@/contexts/BusinessContext';
+import { useCompany } from '@/hooks/useCompany';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Search,
@@ -113,8 +115,11 @@ const Topbar: React.FC<TopbarProps> = ({
 }) => {
   const navigate = useNavigate();
   const { isAdmin, logout: adminLogout } = useAdminAuth();
+  const { companyId } = useCompany();
   const [isScrolled, setIsScrolled] = useState(false);
   const { businesses, currentBusiness, setCurrentBusiness } = useBusiness();
+  const [companyName, setCompanyName] = useState<string>('');
+  const [userCompanies, setUserCompanies] = useState<{ id: number; name: string }[]>([]);
   const [supportEmail, setSupportEmail] = useState<string | null>(null);
   const [emailWebhookUrl, setEmailWebhookUrl] = useState<string | null>(null);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -149,6 +154,41 @@ const Topbar: React.FC<TopbarProps> = ({
     loadSupportEmail();
   }, []);
   
+  // Load current company name and list the user's companies
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        let cid = companyId;
+        if (!cid) {
+          const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+          cid = (comp as any)?.id || null;
+        }
+        if (cid && active) {
+          const { data } = await supabase.from('companies').select('name').eq('id', cid).maybeSingle();
+          if (data?.name) setCompanyName(data.name);
+        }
+        const { data: s } = await safeGetSession();
+        const uid = s?.session?.user?.id;
+        if (uid) {
+          const { data: links } = await supabase.from('company_users').select('company_id').eq('user_id', uid);
+          const ids = (links || []).map((r: any) => r.company_id).filter(Boolean);
+          if (ids.length > 0) {
+            const { data: comps } = await supabase.from('companies').select('id, name').in('id', ids);
+            if (active && Array.isArray(comps)) setUserCompanies(comps as any);
+          } else if (cid) {
+            const { data: comp2 } = await supabase.from('companies').select('id, name').eq('id', cid).maybeSingle();
+            if (active && comp2) setUserCompanies([comp2 as any]);
+          }
+        } else if (cid) {
+          const { data: comp2 } = await supabase.from('companies').select('id, name').eq('id', cid).maybeSingle();
+          if (active && comp2) setUserCompanies([comp2 as any]);
+        }
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, [companyId]);
+
   const {
     query,
     results,
@@ -262,23 +302,33 @@ const Topbar: React.FC<TopbarProps> = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2 max-w-48">
-              <span className="truncate">{currentBusiness?.businessName || ''}</span>
+              <span className="truncate">{companyName || currentBusiness?.businessName || ''}</span>
               <ChevronDown size={16} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64">
-            {businesses.map((business) => (
-              <div key={business.id} className="flex items-center justify-between">
-                <DropdownMenuItem 
-                  onClick={() => setCurrentBusiness(business.id)}
+            {userCompanies.map((c) => (
+              <div key={c.id} className="flex items-center justify-between">
+                <DropdownMenuItem
+                  onClick={async () => {
+                    try {
+                      const { data: s } = await safeGetSession();
+                      const uid = s?.session?.user?.id;
+                      if (uid) {
+                        await supabase.from('system_users').update({ company_id: c.id }).eq('id', uid);
+                      }
+                      setCompanyName(c.name);
+                      localStorage.setItem('pos-company-name', c.name);
+                    } catch {}
+                  }}
                   className={cn(
                     "flex-1 cursor-pointer",
-                    currentBusiness?.id === business.id && "bg-accent"
+                    companyName === c.name && "bg-accent"
                   )}
                 >
                   <div className="flex flex-col">
-                    <span className="font-medium">{business.businessName}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{business.businessType}</span>
+                    <span className="font-medium">{c.name}</span>
+                    <span className="text-xs text-muted-foreground">Company</span>
                   </div>
                 </DropdownMenuItem>
                 <Button
@@ -286,7 +336,7 @@ const Topbar: React.FC<TopbarProps> = ({
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate('/settings?section=business&subsection=business-info&edit=' + business.id);
+                    navigate('/dashboard/settings?section=business&subsection=business-info&edit=' + c.id);
                   }}
                   className="h-8 w-8 p-0"
                 >
