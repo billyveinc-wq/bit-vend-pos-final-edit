@@ -256,29 +256,14 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-black">
         {!collapsed && (
           <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
-            <span className="text-xl font-bold flex items-center">
-              <span className="inline-block bitvend-orange">
+            <span className="text-xl flex items-center">
+              <span className="inline-block logo-gradient animate-gradient-fast logo-glow">
                 Bit Vend
               </span>
-              <span
-                className="inline-block ml-1"
-                style={{
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}
-              >
+              <span className="inline-block ml-1 text-white">
                 POS
               </span>
-              <ShoppingCart
-                size={20}
-                className="ml-2"
-                style={{
-                  color: '#FFB84D !important',
-                  fill: '#FFB84D !important',
-                  stroke: '#FFB84D !important',
-                  filter: 'drop-shadow(0 0 10px rgba(255,184,77,0.45))'
-                }}
-              />
+              <ShoppingCart size={20} className="ml-2 cart-gold" />
             </span>
           </Link>
         )}
