@@ -79,13 +79,23 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Reapply after route change to avoid jumps
+  // Reapply after route change and ensure active item is visible
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const id = requestAnimationFrame(() => {
       const saved = sessionStorage.getItem(SCROLL_KEY);
       if (saved) el.scrollTop = parseInt(saved, 10) || 0;
+      const active = el.querySelector('[data-active="true"]') as HTMLElement | null;
+      if (active) {
+        const aTop = active.offsetTop;
+        const aBottom = aTop + active.offsetHeight;
+        const cTop = el.scrollTop;
+        const cBottom = cTop + el.clientHeight;
+        if (aTop < cTop || aBottom > cBottom) {
+          active.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }
+      }
     });
     return () => cancelAnimationFrame(id);
   }, [location.pathname]);
@@ -294,6 +304,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                       <li key={item.href}>
                         <Link
                           to={item.href}
+                          data-active={isActive ? 'true' : undefined}
                           onClick={() => { const el = scrollRef.current; if (el) sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop)); }}
                           className={cn(
                             "w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
