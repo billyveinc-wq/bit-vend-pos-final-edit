@@ -421,7 +421,7 @@ const AuthPage = () => {
               <div className="h-8 w-8 bg-gradient-to-br from-orange-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">BV</span>
               </div>
-              <span className="font-bold text-xl">BitVend</span>
+              <span className="font-bold text-xl logo-gradient animate-gradient-fast bg-clip-text text-transparent">BitVend</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Button
