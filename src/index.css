@@ -427,7 +427,32 @@ All colors MUST be HSL.
   .animate-slideInLeft {
     animation: slideInLeft 0.3s ease-out;
   }
-  
+
+  /* Animated gradient text for sidebar logo */
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .logo-gradient {
+    background: linear-gradient(90deg,
+      hsl(var(--accent-orange)),
+      hsl(30 100% 55%),
+      hsl(var(--accent-orange))
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+    text-shadow: 0 1px 1px hsl(0 0% 0% / 0.15);
+  }
+  .dark .logo-gradient {
+    text-shadow: 0 0 10px hsl(var(--accent-orange) / 0.25);
+  }
+  .animate-gradient {
+    animation: gradientShift 8s ease infinite;
+  }
+
   /* Focus States */
   .pos-input:focus {
     @apply outline-none ring-2;
