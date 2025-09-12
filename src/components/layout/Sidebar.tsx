@@ -257,14 +257,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         {!collapsed && (
           <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
             <span className="text-xl font-bold flex items-center">
-              <span
-                className="inline-block"
-                style={{
-                  color: '#f97316 !important',
-                  textShadow: '0 0 12px rgba(249, 115, 22, 0.4)',
-                  fontWeight: 'bold'
-                }}
-              >
+              <span className="inline-block bitvend-orange">
                 Bit Vend
               </span>
               <span
