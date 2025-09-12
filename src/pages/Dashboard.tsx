@@ -126,7 +126,7 @@ const Dashboard: React.FC = () => {
               variant="outline" 
               size="sm"
               className="gap-2"
-              onClick={() => navigate('/settings?section=business&subsection=subscription')}
+              onClick={() => navigate('/dashboard/settings?section=business&subsection=subscription')}
             >
               <Crown className="h-4 w-4" />
               Upgrade
@@ -151,7 +151,7 @@ const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => navigate('/settings?section=business&subsection=subscription')}
+              onClick={() => navigate('/dashboard/settings?section=business&subsection=subscription')}
               className="bg-amber-600 hover:bg-amber-700 text-white"
             >
               View Plans & Pricing
@@ -316,7 +316,7 @@ const Dashboard: React.FC = () => {
                 Customer and supplier insights available in Pro plan
               </p>
               <Button 
-                onClick={() => navigate('/settings?section=business&subsection=subscription')}
+                onClick={() => navigate('/dashboard/settings?section=business&subsection=subscription')}
                 className="gap-2"
               >
                 <Crown className="h-4 w-4" />
