@@ -88,13 +88,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       if (saved) el.scrollTop = parseInt(saved, 10) || 0;
       const active = el.querySelector('[data-active="true"]') as HTMLElement | null;
       if (active) {
-        const aTop = active.offsetTop;
-        const aBottom = aTop + active.offsetHeight;
-        const cTop = el.scrollTop;
-        const cBottom = cTop + el.clientHeight;
-        if (aTop < cTop || aBottom > cBottom) {
-          active.scrollIntoView({ block: 'center', inline: 'nearest' });
-        }
+        const targetTop = Math.max(0, active.offsetTop - Math.floor(el.clientHeight / 2));
+        el.scrollTop = targetTop;
+        sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
       }
     });
     return () => cancelAnimationFrame(id);
