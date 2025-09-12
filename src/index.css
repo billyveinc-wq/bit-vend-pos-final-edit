@@ -510,7 +510,6 @@ All colors MUST be HSL.
   .bitvend-orange {
     color: #f97316 !important;
     text-shadow: 0 0 12px rgba(249, 115, 22, 0.4) !important;
-    font-weight: bold !important;
   }
 
   /* remove previous hover pulse */
