@@ -494,6 +494,18 @@ All colors MUST be HSL.
     -webkit-text-fill-color: transparent !important;
   }
 
+  /* Force cart icon color */
+  .pos-sidebar .lucide-shopping-cart {
+    color: #FFB84D !important;
+    fill: #FFB84D !important;
+    stroke: #FFB84D !important;
+  }
+
+  .pos-sidebar .lucide-shopping-cart * {
+    fill: #FFB84D !important;
+    stroke: #FFB84D !important;
+  }
+
   /* remove previous hover pulse */
   .logo-pulse { animation: none !important; }
 
