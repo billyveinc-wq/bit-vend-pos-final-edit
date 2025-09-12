@@ -480,8 +480,18 @@ All colors MUST be HSL.
 
   /* automatic subtle glow + gradient animation */
   .logo-glow {
-    animation: gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite;
-    -webkit-animation: gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite;
+    animation: gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite !important;
+    -webkit-animation: gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite !important;
+  }
+
+  /* Force logo gradient to work */
+  .pos-sidebar .logo-gradient {
+    background: linear-gradient(90deg, #FF6B35, #FFB84D, #FF6B35) !important;
+    background-size: 300% 300% !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
   }
 
   /* remove previous hover pulse */
