@@ -263,7 +263,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
               <span className="inline-block ml-1 text-white">
                 POS
               </span>
-              <ShoppingCart size={20} className="ml-2 cart-gold" />
+              <ShoppingCart size={20} className="ml-2 cart-bitvend" />
             </span>
           </Link>
         )}

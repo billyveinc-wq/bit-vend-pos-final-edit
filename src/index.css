@@ -470,6 +470,12 @@ All colors MUST be HSL.
     filter: drop-shadow(0 0 10px rgba(255,184,77,0.45));
   }
 
+  .pos-sidebar .cart-bitvend {
+    color: #f97316 !important; /* BitVend orange */
+    stroke: #f97316 !important;
+    filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.45));
+  }
+
   @keyframes logoGlow {
     0% {
       text-shadow: 0 0 6px hsl(var(--accent-orange) / 0.10);
