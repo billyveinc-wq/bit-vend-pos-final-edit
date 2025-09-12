@@ -211,7 +211,7 @@ const Subscription = () => {
     });
   };
 
-  const handleSTKConfirm = () => {
+  const handleSTKConfirm = async () => {
     const plan = plans.find(p => p.id === selectedPlan);
     
     if (stkPushModal.pin.length !== 4) {
@@ -219,19 +219,29 @@ const Subscription = () => {
       return;
     }
     
-    // Simulate successful payment
-    toast.success(`Payment of $${stkPushModal.amount} via M-Pesa successful! Subscription to ${plan?.name} is ready for backend processing`);
-    
-    console.log('M-Pesa Payment Data Ready:', {
-      plan: plan?.id,
-      paymentMethod: 'mpesa',
-      paymentData: {
-        phoneNumber: stkPushModal.phone,
-        amount: stkPushModal.amount,
-        transactionType: 'STK_PUSH'
+    // Simulate successful payment and persist subscription
+    toast.success(`Payment of $${stkPushModal.amount} via M-Pesa successful! Subscription to ${plan?.name} activated`);
+
+    try {
+      const { data: { session } } = await safeGetSession();
+      const user = session?.user;
+      if (user && plan) {
+        const startedAt = new Date();
+        const expiresAt = new Date();
+        expiresAt.setMonth(startedAt.getMonth() + 1);
+        await supabase.from('user_subscriptions').upsert({
+          user_id: user.id,
+          plan_id: plan.id,
+          status: 'active',
+          started_at: startedAt.toISOString(),
+          expires_at: expiresAt.toISOString(),
+          payment_method: 'mpesa',
+          payment_details: { phone: stkPushModal.phone }
+        }, { onConflict: 'user_id' });
+        await refreshSubscription();
       }
-    });
-    
+    } catch {}
+
     setStkPushModal({ isOpen: false, amount: 0, phone: '', pin: '' });
   };
 
@@ -246,10 +256,20 @@ const Subscription = () => {
     let discountAmount = 0;
     
     if (referralCode) {
-      // In a real app, this would fetch from the database
-      // For now, we'll simulate a 30% discount
-      discountAmount = Math.round(finalPrice * 0.30);
-      finalPrice = finalPrice - discountAmount;
+      try {
+        const { data: promo } = await supabase.from('promo_codes').select('*').eq('code', referralCode).maybeSingle();
+        if (promo) {
+          const now = Date.now();
+          const expiresAt = (promo as any).expires_at ? new Date((promo as any).expires_at).getTime() : null;
+          const notExpired = !expiresAt || expiresAt > now;
+          const pctRaw = (promo as any).discount_percent ?? (promo as any).discount;
+          const pct = typeof pctRaw === 'number' ? pctRaw : parseFloat(pctRaw || '0');
+          if (notExpired && isFinite(pct) && pct > 0) {
+            discountAmount = Math.round(finalPrice * (pct / 100));
+            finalPrice = Math.max(0, finalPrice - discountAmount);
+          }
+        }
+      } catch {}
     }
     
     // Validate payment data based on selected method
