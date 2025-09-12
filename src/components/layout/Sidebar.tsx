@@ -258,29 +258,20 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
           <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
             <span className="text-xl font-bold flex items-center">
               <span
-                className="inline-block logo-gradient logo-glow"
+                className="inline-block"
                 style={{
-                  background: 'linear-gradient(90deg, #FF6B35, #FFB84D, #FF6B35)',
-                  backgroundSize: '300% 300%',
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                  WebkitTextFillColor: 'transparent',
-                  animation: 'gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite'
+                  color: '#f97316',
+                  textShadow: '0 0 12px rgba(249, 115, 22, 0.4)',
+                  fontWeight: 'bold'
                 }}
               >
                 Bit Vend
               </span>
               <span
-                className="inline-block logo-gradient logo-glow ml-1"
+                className="inline-block ml-1"
                 style={{
-                  background: 'linear-gradient(90deg, #FF6B35, #FFB84D, #FF6B35)',
-                  backgroundSize: '300% 300%',
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                  WebkitTextFillColor: 'transparent',
-                  animation: 'gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite'
+                  color: 'white',
+                  fontWeight: 'bold'
                 }}
               >
                 POS
