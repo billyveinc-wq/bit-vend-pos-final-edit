@@ -257,9 +257,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         {!collapsed && (
           <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
             <span className="text-xl font-bold flex items-center">
-              <span className="inline-block logo-gradient animate-gradient-fast logo-pulse bg-clip-text text-transparent">Bit Vend</span>
-              <span className="inline-block logo-gradient bg-clip-text text-transparent ml-1">POS</span>
-              <ShoppingCart size={20} color="#FFC107" className="ml-2" style={{ filter: 'drop-shadow(0 0 6px rgba(255,193,7,0.45))' }} />
+              <span className="inline-block logo-gradient logo-glow bg-clip-text text-transparent">Bit Vend</span>
+              <span className="inline-block logo-gradient logo-glow bg-clip-text text-transparent ml-1">POS</span>
+              <ShoppingCart size={20} color="#FFD166" className="ml-2" style={{ filter: 'drop-shadow(0 0 8px rgba(255,209,102,0.45))' }} />
             </span>
           </Link>
         )}
