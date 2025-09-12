@@ -453,6 +453,15 @@ All colors MUST be HSL.
   .animate-gradient {
     animation: gradientShift 8s ease infinite;
   }
+  .animate-gradient-fast {
+    animation: gradientShift 4s linear infinite;
+  }
+  .icon-gold {
+    color: hsl(var(--accent-orange)) !important;
+    filter: drop-shadow(0 0 6px hsl(var(--accent-orange) / 0.45));
+    transition: transform 0.2s ease;
+  }
+  .icon-gold:hover { transform: scale(1.05); }
 
   /* Focus States */
   .pos-input:focus {
