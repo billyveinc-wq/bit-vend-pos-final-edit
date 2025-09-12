@@ -59,7 +59,7 @@ const Brands = () => {
             id: String(row.id),
             name: row.name,
             description: row.description || '',
-            logoUrl: row.image_url || undefined,
+            logoUrl: row.logo_url || undefined,
             website: '',
             contactEmail: '',
             isActive: !!row.is_active,
@@ -95,7 +95,9 @@ const Brands = () => {
           .update({
             name: formData.name,
             description: formData.description || null,
-            image_url: logoPreview || null,
+            logo_url: logoPreview || null,
+            website: formData.website || null,
+            contact_email: formData.contactEmail || null,
             is_active: formData.isActive,
           })
           .eq('id', editingBrand.id);
@@ -112,7 +114,9 @@ const Brands = () => {
           .insert({
             name: formData.name,
             description: formData.description || null,
-            image_url: logoPreview || null,
+            logo_url: logoPreview || null,
+            website: formData.website || null,
+            contact_email: formData.contactEmail || null,
             is_active: formData.isActive,
           })
           .select('*')
