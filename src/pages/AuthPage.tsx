@@ -301,7 +301,29 @@ const AuthPage = () => {
         const selectedPlan = (urlPlan && urlPlan.trim()) || (storedPlan && storedPlan.trim()) || '';
         if (signUpData?.user) {
           const now = new Date();
-          if (!selectedPlan || selectedPlan === 'starter') {
+          if (!selectedPlan) {
+            const expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+            try {
+              await supabase.from('user_subscriptions').insert({
+                user_id: signUpData.user.id,
+                plan_id: 'trial',
+                status: 'active',
+                started_at: now.toISOString(),
+                expires_at: expires.toISOString()
+              });
+            } catch (err) {
+              // Fallback if 'trial' plan is not allowed/available
+              try {
+                await supabase.from('user_subscriptions').insert({
+                  user_id: signUpData.user.id,
+                  plan_id: 'starter',
+                  status: 'active',
+                  started_at: now.toISOString(),
+                  expires_at: expires.toISOString()
+                });
+              } catch {}
+            }
+          } else if (selectedPlan === 'starter') {
             const expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
             await supabase.from('user_subscriptions').insert({
               user_id: signUpData.user.id,
@@ -393,8 +415,11 @@ const AuthPage = () => {
       const urlPlan2 = (new URLSearchParams(window.location.search)).get('plan');
       let storedPlan2 = '';
       try { storedPlan2 = localStorage.getItem('selected-plan') || ''; } catch {}
-      const selectedPlanNav = (urlPlan2 && urlPlan2.trim()) || (storedPlan2 && storedPlan2.trim()) || 'starter';
-      if (selectedPlanNav !== 'starter') {
+      const selectedPlanNav = (urlPlan2 && urlPlan2.trim()) || (storedPlan2 && storedPlan2.trim()) || '';
+      if (!selectedPlanNav) {
+        toast.success('Account created! 14-day trial activated.');
+        navigate('/dashboard');
+      } else if (selectedPlanNav !== 'starter') {
         toast.success('Account created! Continue to set up billing.');
         navigate(`/dashboard/subscription?startCheckout=1&plan=${selectedPlanNav}`);
       } else {
