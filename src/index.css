@@ -643,7 +643,7 @@ All colors MUST be HSL.
     color: hsl(var(--text-primary)) !important;
   }
 
-  p, span, div {
+  p:not(.logo-gradient), span:not(.logo-gradient), div:not(.logo-gradient) {
     @apply text-foreground;
     color: hsl(var(--text-primary)) !important;
   }
