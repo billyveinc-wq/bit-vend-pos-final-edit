@@ -260,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
               <span
                 className="inline-block"
                 style={{
-                  color: '#f97316',
+                  color: '#f97316 !important',
                   textShadow: '0 0 12px rgba(249, 115, 22, 0.4)',
                   fontWeight: 'bold'
                 }}
