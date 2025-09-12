@@ -375,10 +375,13 @@ const AuthPage = () => {
         }
       }
 
-      const selectedPlan = (new URLSearchParams(window.location.search)).get('plan') || 'starter';
-      if (selectedPlan !== 'starter') {
+      const urlPlan2 = (new URLSearchParams(window.location.search)).get('plan');
+      let storedPlan2 = '';
+      try { storedPlan2 = localStorage.getItem('selected-plan') || ''; } catch {}
+      const selectedPlanNav = (urlPlan2 && urlPlan2.trim()) || (storedPlan2 && storedPlan2.trim()) || 'starter';
+      if (selectedPlanNav !== 'starter') {
         toast.success('Account created! Continue to set up billing.');
-        navigate(`/dashboard/subscription?startCheckout=1&plan=${selectedPlan}`);
+        navigate(`/dashboard/subscription?startCheckout=1&plan=${selectedPlanNav}`);
       } else {
         toast.success('Account created! 14-day trial activated.');
         navigate('/dashboard');
