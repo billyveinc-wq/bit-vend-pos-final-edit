@@ -78,6 +78,4 @@ export const currencies: Currency[] = [
   { code: 'GMD', name: 'Gambian Dalasi', symbol: 'D' },
   { code: 'SLL', name: 'Sierra Leonean Leone', symbol: 'Le' },
   { code: 'LRD', name: 'Liberian Dollar', symbol: '$' },
-  { code: 'XOF', name: 'West African CFA Franc', symbol: 'CFA' },
-  { code: 'XAF', name: 'Central African CFA Franc', symbol: 'FCFA' },
 ];
