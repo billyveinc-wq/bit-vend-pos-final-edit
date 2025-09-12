@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettings } from '@/hooks/useSettings';
@@ -69,6 +70,11 @@ const GeneralSettings: React.FC = () => {
     navigate('/dashboard/settings');
   };
 
+  const uniqueCurrencies = useMemo(() => {
+    const seen = new Set<string>();
+    return currencies.filter(c => { if (seen.has(c.code)) return false; seen.add(c.code); return true; });
+  }, []);
+
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
       <header>
@@ -92,7 +98,7 @@ const GeneralSettings: React.FC = () => {
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent className="max-h-72 overflow-auto">
-                  {currencies.map((c)=> (
+                  {uniqueCurrencies.map((c)=> (
                     <SelectItem key={c.code} value={c.code}>{c.code} — {c.name}</SelectItem>
                   ))}
                 </SelectContent>
