@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettings } from '@/hooks/useSettings';
+import { useCompany } from '@/hooks/useCompany';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { currencies } from '@/data/currencies';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +16,7 @@ const GeneralSettings: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
+  const { companyId } = useCompany();
   useSEO('General Settings | Bit Vend POS', 'Configure general application settings.', '/settings/general');
 
   const [company, setCompany] = useState('');
@@ -21,25 +25,37 @@ const GeneralSettings: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data } = await supabase.from('companies').select('id, name').order('id').limit(1).maybeSingle();
-        if (data?.name) setCompany(data.name);
+        let id = companyId;
+        if (!id) {
+          const { data } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+          id = (data as any)?.id || null;
+        }
+        if (id) {
+          const { data } = await supabase.from('companies').select('name').eq('id', id).maybeSingle();
+          if (data?.name) setCompany(data.name);
+        }
       } catch {}
       const saved = localStorage.getItem('pos-company-name');
       if (saved && !company) setCompany(saved);
     };
     load();
-  }, []);
+  }, [companyId]);
 
   const handleSave = async () => {
     try {
       updateSetting('currency', currency as any);
       localStorage.setItem('pos-company-name', company);
       try {
-        const existing = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
-        if (existing.data?.id) {
-          await supabase.from('companies').update({ name: company }).eq('id', existing.data.id);
+        let id = companyId;
+        if (!id) {
+          const { data } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+          id = (data as any)?.id || null;
+        }
+        if (!id) {
+          const { data } = await supabase.from('companies').insert({ name: company || 'My Company' }).select('id').single();
+          id = (data as any)?.id || null;
         } else {
-          await supabase.from('companies').insert({ name: company });
+          await supabase.from('companies').update({ name: company }).eq('id', id);
         }
       } catch {}
       toast({ title: 'Saved', description: 'Settings updated.' });
@@ -71,7 +87,16 @@ const GeneralSettings: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <Input id="currency" placeholder="e.g., USD" value={currency} onChange={(e)=>setCurrency(e.target.value)} />
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger id="currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72 overflow-auto">
+                  {currencies.map((c)=> (
+                    <SelectItem key={c.code} value={c.code}>{c.code} — {c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="md:col-span-2 flex gap-2">
               <Button onClick={handleSave} className="bg-save hover:bg-save-hover text-save-foreground">
