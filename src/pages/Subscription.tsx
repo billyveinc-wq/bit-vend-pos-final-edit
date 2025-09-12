@@ -344,7 +344,7 @@ const Subscription = () => {
                 "relative cursor-pointer transition-all duration-300 hover:shadow-lg animate-fadeInUp",
                 isCurrentPlan && "border-success bg-success/5",
                 isSelected && !isCurrentPlan && "border-primary bg-primary/5",
-                plan.popular && "ring-2 ring-primary shadow-xl scale-105"
+                plan.popular && "ring-2 ring-orange-500 shadow-xl scale-105"
               )}
               onClick={() => !isCurrentPlan && handlePlanSelect(plan.id)}
               style={{ animationDelay: `${index * 0.1 + 0.3}s` }}
