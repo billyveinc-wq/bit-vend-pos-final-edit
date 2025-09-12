@@ -159,6 +159,7 @@ const Subscription = () => {
     pin: ''
   });
 
+  const formatWords = (s: string) => String(s || '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);
   };
@@ -316,7 +317,7 @@ const Subscription = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-success" />
-                Current Plan: {currentPlan ? currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1) : 'Starter'} Plan
+                Current Plan: {currentPlan ? (formatWords(currentPlan).charAt(0).toUpperCase() + formatWords(currentPlan).slice(1)) : 'Starter'} Plan
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Next billing date: January 15, 2024
@@ -349,8 +350,8 @@ const Subscription = () => {
               style={{ animationDelay: `${index * 0.1 + 0.3}s` }}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground px-3 py-1">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1">
                     Most Popular
                   </Badge>
                 </div>
@@ -366,21 +367,16 @@ const Subscription = () => {
 
               <CardHeader className="text-center space-y-4">
                 <div className="flex justify-center">
-                  <div className={cn(
-                    "p-3 rounded-full",
-                    isCurrentPlan ? "bg-success/20 text-success" :
-                    isSelected ? "bg-primary/20 text-primary" :
-                    "bg-muted text-muted-foreground"
-                  )}>
-                    <IconComponent className="h-8 w-8" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500/10 to-blue-600/10 rounded-xl flex items-center justify-center mx-auto">
+                    <IconComponent className="h-6 w-6 text-orange-500" />
                   </div>
                 </div>
-                
+
                 <div>
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                  <CardTitle className="text-xl">{formatWords(plan.name)}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">{formatWords(plan.description)}</p>
                 </div>
-                
+
                 <div className="space-y-1">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-3xl font-bold text-foreground">${plan.price}</span>
@@ -394,7 +390,7 @@ const Subscription = () => {
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                      <span className="text-foreground">{feature}</span>
+                      <span className="text-foreground">{formatWords(feature)}</span>
                     </li>
                   ))}
                 </ul>
@@ -409,9 +405,9 @@ const Subscription = () => {
                       Manage Plan
                     </Button>
                   ) : (
-                    <Button 
-                      variant={isSelected ? "default" : "outline"} 
-                      className="w-full"
+                    <Button
+                      className={`w-full ${plan.popular ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white' : ''}`}
+                      variant={plan.popular ? 'default' : (isSelected ? 'default' : 'outline')}
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePlanSelect(plan.id);
@@ -622,9 +618,7 @@ const Subscription = () => {
             {/* Subscribe Button */}
             <div className="flex items-center justify-between pt-4 border-t">
               <div className="text-sm text-muted-foreground">
-                {selectedPlan && (
-                  <>Selected: {subscriptionPlans.find(p => p.id === selectedPlan)?.name} - ${subscriptionPlans.find(p => p.id === selectedPlan)?.price}/month</>
-                )}
+                {selectedPlan && (() => { const sel = plans.find(p => p.id === selectedPlan); return sel ? <>Selected: {formatWords(sel.name)} - ${sel.price}/month</> : null; })() }
               </div>
               <Button 
                 onClick={handleSubscribe}
@@ -656,7 +650,7 @@ const Subscription = () => {
               <div className="text-center space-y-2">
                 <div className="text-lg font-semibold">BitVend POS</div>
                 <div className="text-2xl font-bold text-green-600">
-                  ${stkPushModal.amount}.00
+                  ${stkPushModal.amount}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Subscription payment for {subscriptionPlans.find(p => p.id === selectedPlan)?.name}
