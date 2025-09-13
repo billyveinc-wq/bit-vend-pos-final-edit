@@ -1,11 +1,19 @@
 import './integrations/sentry';
 import { startUptimeMonitor } from './monitoring/uptime';
+import { setupAutomaticCleanup } from './services/accountCleanupService';
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
 startUptimeMonitor();
+
+// Initialize automatic account cleanup (30-day retention)
+try {
+  setupAutomaticCleanup();
+} catch (error) {
+  console.warn('Failed to setup automatic account cleanup:', error);
+}
 
 // Suppress noisy ResizeObserver loop warnings caused by third-party UI libs
 try {
