@@ -662,8 +662,8 @@ const Subscription = () => {
                     </Button>
                   ) : (
                     <Button
-                      className={`w-full ${plan.popular ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white' : ''}`}
-                      variant={plan.popular ? 'default' : (isSelected ? 'default' : 'outline')}
+                      className={`w-full ${isSelected ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white' : ''} ${animatingPlan === plan.id ? 'transform scale-105 transition-transform duration-200' : ''}`}
+                      variant={isSelected ? 'default' : 'outline'}
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePlanSelect(plan.id);
