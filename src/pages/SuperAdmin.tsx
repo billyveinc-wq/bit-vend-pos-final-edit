@@ -373,6 +373,131 @@ const SuperAdmin = () => {
     toast.success('User deleted successfully!');
   };
 
+  // Load deleted accounts
+  const loadDeletedAccounts = async () => {
+    setLoadingDeletedAccounts(true);
+    try {
+      const { data: deletions, error } = await supabase
+        .from('account_deletions')
+        .select(`
+          id,
+          user_id,
+          email,
+          deleted_at,
+          scheduled_cleanup_at,
+          cleanup_completed,
+          cleanup_completed_at,
+          metadata
+        `)
+        .eq('cleanup_completed', false)
+        .order('deleted_at', { ascending: false });
+
+      if (error) {
+        console.error('Failed to load deleted accounts:', error);
+        toast.error('Failed to load deleted accounts');
+        return;
+      }
+
+      const accountsWithStatus = await Promise.all(
+        (deletions || []).map(async (deletion) => {
+          try {
+            const status = await getAccountDeletionStatus(deletion.user_id);
+            return {
+              ...deletion,
+              days_remaining: status.days_remaining,
+              can_restore: canRestoreAccount(status),
+            };
+          } catch (error) {
+            console.error(`Failed to get status for ${deletion.user_id}:`, error);
+            return {
+              ...deletion,
+              days_remaining: null,
+              can_restore: false,
+            };
+          }
+        })
+      );
+
+      setDeletedAccounts(accountsWithStatus);
+    } catch (err) {
+      console.error('Failed loading deleted accounts', err);
+      setDeletedAccounts([]);
+      toast.error('Failed to load deleted accounts');
+    } finally {
+      setLoadingDeletedAccounts(false);
+    }
+  };
+
+  // Handle soft delete
+  const handleSoftDeleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Are you sure you want to delete ${email}? The account will be retained for 30 days before permanent deletion.`)) {
+      return;
+    }
+
+    try {
+      const result = await softDeleteUserAccount(userId, email);
+      toast.success(result.message);
+
+      // Reload the lists
+      await Promise.all([
+        loadRegistrations(),
+        loadSystemUsers(),
+        loadDeletedAccounts()
+      ]);
+    } catch (error) {
+      console.error('Failed to soft delete user:', error);
+      toast.error('Failed to delete user account');
+    }
+  };
+
+  // Handle restore account
+  const handleRestoreAccount = async (userId: string) => {
+    if (!confirm('Are you sure you want to restore this account? All associated data will be reactivated.')) {
+      return;
+    }
+
+    try {
+      const result = await restoreUserAccount(userId);
+      toast.success(result.message);
+
+      // Reload the lists
+      await Promise.all([
+        loadRegistrations(),
+        loadSystemUsers(),
+        loadDeletedAccounts()
+      ]);
+    } catch (error) {
+      console.error('Failed to restore account:', error);
+      toast.error('Failed to restore account');
+    }
+  };
+
+  // Handle manual cleanup
+  const handleManualCleanup = async () => {
+    if (!confirm('This will permanently delete all expired accounts. This action cannot be undone. Continue?')) {
+      return;
+    }
+
+    setCleanupRunning(true);
+    try {
+      const result = await runAccountCleanup();
+      toast.success(`Cleanup completed: ${result.total_processed} accounts processed`);
+
+      if (result.auth_cleanup_errors.length > 0) {
+        console.warn('Auth cleanup errors:', result.auth_cleanup_errors);
+        toast.warning(`${result.auth_cleanup_errors.length} auth cleanup errors occurred. Check console for details.`);
+      }
+
+      // Reload deleted accounts
+      await loadDeletedAccounts();
+    } catch (error) {
+      console.error('Manual cleanup failed:', error);
+      toast.error('Cleanup failed');
+    } finally {
+      setCleanupRunning(false);
+    }
+  };
+
   const [promoCodes, setPromoCodes] = useState<Array<{id: number; name: string; code: string; discount: number; created_at?: string}>>([]);
   const [promoDialogOpen, setPromoDialogOpen] = useState(false);
   const [promoName, setPromoName] = useState('');
