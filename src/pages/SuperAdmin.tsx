@@ -1036,10 +1036,11 @@ const SuperAdmin = () => {
 
       {/* Main Tabs: Promo / Registrations / System Users / Billing / Alerts */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-5 mb-4">
+        <TabsList className="grid w-full grid-cols-6 mb-4">
           <TabsTrigger value="promo">Promo Codes</TabsTrigger>
           <TabsTrigger value="registrations">Registrations</TabsTrigger>
           <TabsTrigger value="system">System Users</TabsTrigger>
+          <TabsTrigger value="deleted">Deleted Accounts</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="alerts">System Alerts</TabsTrigger>
         </TabsList>
