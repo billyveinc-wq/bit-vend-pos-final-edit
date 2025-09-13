@@ -229,7 +229,7 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/dashboard`; let createdCompanyId: number | null = null;
       
       const { data: signUpData, error } = await supabase.auth.signUp({
         email,
@@ -362,7 +362,7 @@ const AuthPage = () => {
             const { data: created, error: cErr } = await supabase.from('companies').insert({ name: companyName }).select('id').single();
             if (!cErr) companyId = created.id;
           }
-          if (companyId) {
+          if (companyId) { createdCompanyId = Number(companyId);
             // How many users linked to this company?
             const { count } = await supabase.from('company_users').select('id', { count: 'exact', head: true }).eq('company_id', companyId);
             const isFirst = (count || 0) === 0;
@@ -427,13 +427,21 @@ const AuthPage = () => {
 
       if (!selectedPlanNav) {
         toast.success('Account created! 14-day trial activated.');
-        navigate('/dashboard');
+        if (createdCompanyId) {
+          navigate(`/dashboard/settings?section=business&subsection=business-info&edit=${createdCompanyId}`);
+        } else {
+          navigate('/dashboard/settings?section=business&subsection=business-info');
+        }
       } else if (selectedPlanNav !== 'starter') {
         toast.success('Account created! Continue to set up billing.');
         navigate(`/dashboard/subscription?startCheckout=1&plan=${selectedPlanNav}`);
       } else {
         toast.success('Account created! 14-day trial activated.');
-        navigate('/dashboard');
+        if (createdCompanyId) {
+          navigate(`/dashboard/settings?section=business&subsection=business-info&edit=${createdCompanyId}`);
+        } else {
+          navigate('/dashboard/settings?section=business&subsection=business-info');
+        }
       }
     } catch (error) {
       console.error('Sign up error:', error);
