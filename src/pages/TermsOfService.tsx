@@ -167,10 +167,12 @@ const TermsOfService = () => {
           </Card>
 
           {/* Data and Privacy */}
-          <Card>
+          <Card className={`border-l-4 border-l-teal-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-teal-50/50 to-blue-50/50 dark:from-teal-950/20 dark:to-blue-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '500ms'}}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 text-white">
+                  <Database className="h-5 w-5" />
+                </div>
                 5. Data Ownership and Privacy
               </CardTitle>
             </CardHeader>
