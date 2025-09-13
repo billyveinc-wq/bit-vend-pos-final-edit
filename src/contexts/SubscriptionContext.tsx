@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export type SubscriptionPlan = 'starter' | 'standard' | 'pro' | 'enterprise';
@@ -76,16 +77,28 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchSubscription = async () => {
     try {
       setIsLoading(true);
-      
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error('Error fetching user:', userError);
+
+      // Short-circuit if offline
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        console.warn('Offline: using default subscription features');
         setSubscription(null);
         setFeatures(DEFAULT_FEATURES);
         return;
       }
-      
+
+      // First get the session to avoid AuthSessionMissingError when no session exists
+      const { data: { session }, error: sessionError } = await safeGetSession();
+      if (sessionError) {
+        console.warn('Error fetching session:', sessionError);
+        setSubscription(null);
+        setFeatures(DEFAULT_FEATURES);
+        return;
+      }
+
+      const user = session?.user || null;
+
       if (!user) {
+        // No authenticated user
         setSubscription(null);
         setFeatures(DEFAULT_FEATURES);
         return;
@@ -100,8 +113,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         .maybeSingle();
 
       if (subError && subError.code !== 'PGRST116') {
-        console.error('Error fetching subscription:', subError);
-        // Continue with default features instead of failing
+        const info = (subError as any)?.message || (subError as any)?.details || (subError as any)?.hint || JSON.stringify(subError);
+        console.warn('Subscription not available, using defaults:', info);
         setSubscription(null);
         setFeatures(DEFAULT_FEATURES);
         return;
@@ -118,7 +131,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .single();
 
         if (planError) {
-          console.error('Error fetching plan features:', planError);
+          const info = (planError as any)?.message || (planError as any)?.details || (planError as any)?.hint || JSON.stringify(planError);
+          console.warn('Plan features not available, keeping defaults:', info);
           return;
         }
 

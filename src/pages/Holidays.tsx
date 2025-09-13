@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,8 @@ import {
   Edit2, 
   Trash2
 } from 'lucide-react';
-import { toast } from "sonner";
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Holiday {
   id: string;
@@ -25,6 +26,7 @@ interface Holiday {
   type: 'public' | 'company' | 'religious';
   createdAt: string;
 }
+
 const Holidays: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -39,20 +41,55 @@ const Holidays: React.FC = () => {
 
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('holidays')
+          .select('*')
+          .order('date', { ascending: true });
+        if (error) throw error;
+        const mapped: Holiday[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          name: row.name,
+          date: row.date,
+          description: row.description || '',
+          isRecurring: !!row.is_recurring,
+          type: (row.type || 'company') as Holiday['type'],
+          createdAt: row.created_at,
+        }));
+        setHolidays(mapped);
+      } catch (e) {
+        console.warn('holidays not available');
+      }
+    };
+    load();
+  }, []);
+
   const filteredHolidays = holidays.filter(holiday =>
     holiday.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (holiday.description && holiday.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.name || !formData.date) {
       toast.error('Please enter holiday name and date');
       return;
     }
-    
+
     if (editingHoliday) {
+      const { error } = await supabase
+        .from('holidays')
+        .update({
+          name: formData.name,
+          date: formData.date,
+          description: formData.description || null,
+          is_recurring: formData.isRecurring,
+          type: formData.type,
+        })
+        .eq('id', editingHoliday.id);
+      if (error) { toast.error(error.message); return; }
       setHolidays(prev => prev.map(holiday =>
         holiday.id === editingHoliday.id
           ? { ...holiday, ...formData }
@@ -60,12 +97,28 @@ const Holidays: React.FC = () => {
       ));
       toast.success('Holiday updated successfully!');
     } else {
+      const { data, error } = await supabase
+        .from('holidays')
+        .insert({
+          name: formData.name,
+          date: formData.date,
+          description: formData.description || null,
+          is_recurring: formData.isRecurring,
+          type: formData.type,
+        })
+        .select('*')
+        .single();
+      if (error) { toast.error(error.message); return; }
       const newHoliday: Holiday = {
-        id: Date.now().toString(),
-        ...formData,
-        createdAt: new Date().toISOString()
+        id: String((data as any).id),
+        name: (data as any).name,
+        date: (data as any).date,
+        description: (data as any).description || '',
+        isRecurring: !!(data as any).is_recurring,
+        type: ((data as any).type || 'company') as Holiday['type'],
+        createdAt: (data as any).created_at,
       };
-      setHolidays(prev => [...prev, newHoliday]);
+      setHolidays(prev => [newHoliday, ...prev]);
       toast.success('Holiday created successfully!');
     }
 
@@ -85,8 +138,10 @@ const Holidays: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this holiday?')) {
+      const { error } = await supabase.from('holidays').delete().eq('id', id);
+      if (error) { toast.error(error.message); return; }
       setHolidays(prev => prev.filter(holiday => holiday.id !== id));
       toast.success('Holiday deleted successfully!');
     }
@@ -301,7 +356,7 @@ const Holidays: React.FC = () => {
                     </TableCell>
                     <TableCell className="max-w-xs truncate">{holiday.description || '-'}</TableCell>
                     <TableCell>
-                      <Badge variant={holiday.isRecurring ? "default" : "secondary"}>
+                      <Badge variant={holiday.isRecurring ? 'default' : 'secondary'}>
                         {holiday.isRecurring ? 'Yes' : 'No'}
                       </Badge>
                     </TableCell>

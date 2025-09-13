@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X, Upload as LucideUploadIcon, RotateCcw, Calendar, Package } from 'lucide-react';
+import { ArrowLeft, Save, X, Upload as LucideUploadIcon, RotateCcw, Calendar, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,53 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
+import { supabase } from '@/integrations/supabase/client';
+
+// Minimal Code39 SVG renderer (supports 0-9, A-Z, space and - . $ / + %)
+const CODE39_MAP: Record<string, string> = {
+  '0':'nnnwwnwnw','1':'wnnwnnnnw','2':'nnwwnnnnw','3':'wnwwnnnnn','4':'nnnwwnnnw','5':'wnnwwnnnn','6':'nnwwwnnnn','7':'nnnwnnwnw','8':'wnnwnnwnn','9':'nnwwnnwnn',
+  'A':'wnnnnwnnw','B':'nnwnnwnnw','C':'wnwnnwnnn','D':'nnnnwwnnw','E':'wnnnwwnnn','F':'nnwnwwnnn','G':'nnnnnwwnw','H':'wnnnnwwnn','I':'nnwnnwwnn','J':'nnnnwwwnn',
+  'K':'wnnnnnnww','L':'nnwnnnnww','M':'wnwnnnnwn','N':'nnnnwnnww','O':'wnnnwnnwn','P':'nnwnwnnwn','Q':'nnnnnnwww','R':'wnnnnnwwn','S':'nnwnnnwwn','T':'nnnnwnwwn',
+  'U':'wwnnnnnnw','V':'nwwnnnnnw','W':'wwwnnnnnn','X':'nwnnwnnnw','Y':'wwnnwnnnn','Z':'nwwnwnnnn','-':'nwnnnnwnw','.':'wwnnnnwnn',' ':'nwwnnnwnn',
+  '$':'nwnwnwnnn','/':'nwnwnnnwn','+':'nwnnnwnwn','%':'nnnwnwnwn','*':'nwnnwnwnn'
+};
+
+const Code39Barcode: React.FC<{ value: string; height?: number; unit?: number; className?: string }> = ({ value, height = 48, unit = 2, className }) => {
+  const text = `*${(value || '').toUpperCase().replace(/[^0-9A-Z\-\. \$/\+%]/g, '-') }*`;
+  let totalUnits = 0;
+  const seq: { isBar: boolean; w: number }[] = [];
+  for (let ci = 0; ci < text.length; ci++) {
+    const ch = text[ci];
+    const pat = CODE39_MAP[ch];
+    if (!pat) continue;
+    for (let i = 0; i < pat.length; i++) {
+      const isBar = i % 2 === 0;
+      const w = pat[i] === 'w' ? 3 : 1;
+      seq.push({ isBar, w });
+      totalUnits += w;
+    }
+    // Inter-character narrow space (one unit)
+    seq.push({ isBar: false, w: 1 });
+    totalUnits += 1;
+  }
+  const width = totalUnits * unit;
+  let x = 0;
+  return (
+    <div className={className}>
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`Barcode ${value}`}>
+        {seq.map((seg, idx) => {
+          const segWidth = seg.w * unit;
+          const rect = seg.isBar ? (
+            <rect key={idx} x={x} y={0} width={segWidth} height={height} fill="currentColor" />
+          ) : null;
+          x += segWidth;
+          return rect;
+        })}
+      </svg>
+      <div className="text-center text-xs font-mono mt-1 text-muted-foreground">{value}</div>
+    </div>
+  );
+};
 
 const categories = ["Electronics", "Beverages", "Food", "Clothing", "Books", "Health"];
 const brands = ["Apple", "Samsung", "Nike", "Adidas", "Generic"];
@@ -114,15 +161,35 @@ const ProductAdd = () => {
     setFormData(prev => ({ ...prev, barcode: randomBarcode }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Basic validation
     if (!formData.name || !formData.category || !formData.sku) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
-    // Create product using context
     try {
+      // Persist to Supabase
+      const { error: insertErr } = await supabase.from('products').insert({
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.sellingPrice) || 0,
+        category: formData.category,
+        sku: formData.sku,
+        barcode: formData.barcode,
+        stock: parseInt(formData.stockQuantity) || 0,
+        min_stock: parseInt(formData.minStockAlert) || 0,
+        brand: formData.brand,
+        supplier: formData.supplier,
+        status: (formData.status || 'Active').toString().toLowerCase(),
+        image: imagePreview || null
+      });
+      if (insertErr) {
+        toast.error(insertErr.message.includes('duplicate') ? 'SKU already exists. Use a unique SKU.' : insertErr.message);
+        return;
+      }
+
+      // Update local context too (for immediate UI)
       const productId = addProduct({
         name: formData.name,
         description: formData.description,
@@ -134,11 +201,11 @@ const ProductAdd = () => {
         minStock: parseInt(formData.minStockAlert) || 0,
         brand: formData.brand,
         supplier: formData.supplier,
-        status: formData.status as 'active' | 'inactive' | 'draft'
+        status: (formData.status || 'Active').toString().toLowerCase() as 'active' | 'inactive' | 'draft'
       });
-      
+
       toast.success("Product added successfully!");
-      navigate('/products');
+      navigate('/dashboard/products');
     } catch (error) {
       toast.error("Error adding product. Please try again.");
       console.error('Error adding product:', error);
@@ -146,7 +213,7 @@ const ProductAdd = () => {
   };
 
   const handleCancel = () => {
-    navigate('/products');
+    navigate('/dashboard/products');
   };
 
   const handleReset = () => {
@@ -179,10 +246,20 @@ const ProductAdd = () => {
     calculateProfitMargin(formData.purchasePrice, formData.sellingPrice);
   }, [formData.purchasePrice, formData.sellingPrice]);
 
+  const goToStep = (id: string) => setActiveTab(id);
+  const goNext = () => {
+    const idx = tabs.findIndex(t => t.id === activeTab);
+    if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id);
+  };
+  const goPrev = () => {
+    const idx = tabs.findIndex(t => t.id === activeTab);
+    if (idx > 0) setActiveTab(tabs[idx - 1].id);
+  };
+
   return (
     <div className="space-y-6 p-6 bg-background dark:bg-settings-form min-h-screen animate-fadeInUp">
       {/* Header */}
-      <div className="flex items-center justify-between animate-slideInLeft">
+      <div className="flex items-center justify-between animate-fadeInUp">
         <div className="flex items-center gap-4">
           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
             <span className="text-white text-lg font-bold">+</span>
@@ -197,7 +274,7 @@ const ProductAdd = () => {
       </div>
 
       {/* Progress Bar */}
-      <div className="space-y-2 animate-slideInLeft" style={{ animationDelay: '0.1s' }}>
+      <div className="space-y-2 animate-fadeInUp">
         <div className="flex justify-between text-sm">
           <span className="text-foreground">Step {currentStep} of 4</span>
           <span className="text-foreground">{Math.round(progress)}%</span>
@@ -208,13 +285,27 @@ const ProductAdd = () => {
             style={{ width: `${progress}%` }}
           />
         </div>
+        <div className="flex items-center justify-between mt-1">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              aria-label={`Go to ${t.label}`}
+              onClick={() => goToStep(t.id)}
+              className={cn(
+                "h-2 w-2 rounded-full transition-colors",
+                activeTab === t.id ? "bg-success" : "bg-muted-foreground/40 hover:bg-muted-foreground/60"
+              )}
+            />
+          ))}
+        </div>
+
       </div>
 
       {/* Form */}
-      <Card className="bg-card dark:bg-settings-form shadow-lg border border-border animate-slideInLeft" style={{ animationDelay: '0.2s' }}>
+      <Card className="bg-card dark:bg-settings-form shadow-lg border border-border animate-fadeInUp">
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full h-12 bg-muted/50 rounded-none border-b animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
+            <TabsList className="w-full h-12 bg-muted/50 rounded-none border-b animate-fadeInUp">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
@@ -232,9 +323,9 @@ const ProductAdd = () => {
             </TabsList>
 
             {/* General Tab */}
-            <TabsContent value="general" className="p-6 space-y-6 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <TabsContent value="general" className="p-6 space-y-6 animate-fadeInUp">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="name">Product Name *</Label>
                   <Input
                     id="name"
@@ -244,7 +335,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="category">Category *</Label>
                   <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -259,7 +350,7 @@ const ProductAdd = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.7s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="addedBy">Added By</Label>
                   <Select value={formData.addedBy} onValueChange={(value) => handleInputChange('addedBy', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -275,7 +366,7 @@ const ProductAdd = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label>Created Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -301,7 +392,7 @@ const ProductAdd = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.9s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="warranty">Warranty (months)</Label>
                   <Input
                     id="warranty"
@@ -312,7 +403,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '1.0s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="productType">Product Type</Label>
                   <Select value={formData.productType} onValueChange={(value) => handleInputChange('productType', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -340,7 +431,7 @@ const ProductAdd = () => {
                       onChange={(e) => handleInputChange('sku', e.target.value)}
                       className="dark:bg-settings-form dark:text-white"
                     />
-                    <Button type="button" variant="outline" onClick={generateSKU} className="dark:bg-settings-form dark:text-white">
+                    <Button type="button" onClick={generateSKU} className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600">
                       Generate
                     </Button>
                   </div>
@@ -356,7 +447,7 @@ const ProductAdd = () => {
                       onChange={(e) => handleInputChange('barcode', e.target.value)}
                       className="dark:bg-settings-form dark:text-white"
                     />
-                    <Button type="button" variant="outline" onClick={generateBarcode} className="dark:bg-settings-form dark:text-white">
+                    <Button type="button" onClick={generateBarcode} className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600">
                       Generate
                     </Button>
                   </div>
@@ -402,8 +493,12 @@ const ProductAdd = () => {
                 </div>
                 <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '1.6s' }}>
                   <Label>Barcode Preview</Label>
-                  <div className="h-10 bg-gray-100 dark:bg-settings-form rounded border flex items-center justify-center text-xs text-muted-foreground">
-                    {formData.barcode || 'Generate barcode to preview'}
+                  <div className="bg-gray-100 dark:bg-settings-form rounded border flex items-center justify-center p-3 h-20 w-full overflow-hidden">
+                    {formData.barcode ? (
+                      <Code39Barcode value={formData.barcode} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Generate barcode to preview</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -450,9 +545,9 @@ const ProductAdd = () => {
             </TabsContent>
 
             {/* Pricing Tab */}
-            <TabsContent value="pricing" className="p-6 space-y-6 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <TabsContent value="pricing" className="p-6 space-y-6 animate-fadeInUp">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="purchasePrice">Purchase Price *</Label>
                   <Input
                     id="purchasePrice"
@@ -464,7 +559,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="sellingPrice">Selling Price *</Label>
                   <Input
                     id="sellingPrice"
@@ -476,7 +571,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.7s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="discount">Discount</Label>
                   <div className="flex gap-2">
                     <Input
@@ -501,7 +596,7 @@ const ProductAdd = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="tax">Tax (%)</Label>
                   <Input
                     id="tax"
@@ -512,7 +607,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.9s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="profitMargin">Profit Margin</Label>
                   <Input
                     id="profitMargin"
@@ -527,7 +622,7 @@ const ProductAdd = () => {
               </div>
 
               <div className="flex items-center justify-end">
-                <div className="flex items-center space-x-2 animate-fadeInUp" style={{ animationDelay: '1.0s' }}>
+                <div className="flex items-center space-x-2 animate-fadeInUp">
                   <Switch
                     checked={formData.taxable}
                     onCheckedChange={(checked) => handleInputChange('taxable', checked)}
@@ -538,9 +633,9 @@ const ProductAdd = () => {
             </TabsContent>
 
             {/* Inventory Tab */}
-            <TabsContent value="inventory" className="p-6 space-y-6 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <TabsContent value="inventory" className="p-6 space-y-6 animate-fadeInUp">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="unit">Unit *</Label>
                   <Select value={formData.unit} onValueChange={(value) => handleInputChange('unit', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -555,7 +650,7 @@ const ProductAdd = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="stockQuantity">Stock Quantity *</Label>
                   <Input
                     id="stockQuantity"
@@ -566,7 +661,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.7s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="minStockAlert">Min Stock Alert</Label>
                   <Input
                     id="minStockAlert"
@@ -577,7 +672,7 @@ const ProductAdd = () => {
                     className="dark:bg-settings-form dark:text-white"
                   />
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="reorderPoint">Reorder Point</Label>
                   <Input
                     id="reorderPoint"
@@ -590,7 +685,7 @@ const ProductAdd = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-settings-form rounded animate-fadeInUp" style={{ animationDelay: '0.9s' }}>
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-settings-form rounded animate-fadeInUp">
                 <div>
                   <h3 className="font-medium">Advanced Inventory Settings</h3>
                   <p className="text-sm text-muted-foreground">Track serial numbers? lot/expiry? batch-level stock?</p>
@@ -603,9 +698,9 @@ const ProductAdd = () => {
             </TabsContent>
 
             {/* Extras Tab */}
-            <TabsContent value="extras" className="p-6 space-y-6 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <TabsContent value="extras" className="p-6 space-y-6 animate-fadeInUp">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4 animate-slideInLeft" style={{ animationDelay: '0.5s' }}>
+                <div className="space-y-4 animate-fadeInUp">
                   <div className="space-y-2">
                     <Label>Product Image</Label>
                     <div 
@@ -668,7 +763,7 @@ const ProductAdd = () => {
                     </p>
                   </div>
 
-                  <div className="flex items-center space-x-2 animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
+                  <div className="flex items-center space-x-2 animate-fadeInUp">
                     <Switch
                       checked={formData.featuredProduct}
                       onCheckedChange={(checked) => handleInputChange('featuredProduct', checked)}
@@ -677,7 +772,7 @@ const ProductAdd = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4 animate-slideInLeft" style={{ animationDelay: '0.6s' }}>
+                <div className="space-y-4 animate-fadeInUp">
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
                     <Textarea
@@ -693,7 +788,7 @@ const ProductAdd = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '0.9s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="status">Status</Label>
                   <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
                     <SelectTrigger className="dark:bg-settings-form dark:text-white">
@@ -708,7 +803,7 @@ const ProductAdd = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '1.0s' }}>
+                <div className="space-y-2 animate-fadeInUp">
                   <Label htmlFor="tags">Tags</Label>
                   <Input
                     id="tags"
@@ -723,35 +818,29 @@ const ProductAdd = () => {
           </Tabs>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-4 p-6 border-t dark:border-gray-600 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleReset}
-              className="gap-2 transition-all duration-200 dark:bg-settings-form dark:text-white hover:scale-105 active:scale-95"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reset
-            </Button>
-            
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              className="gap-2 transition-all duration-200 border-cancel text-cancel hover:bg-cancel/10 dark:border-cancel dark:text-cancel dark:hover:bg-cancel/10 hover:scale-105 active:scale-95"
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              className="bg-save hover:bg-save-hover text-save-foreground gap-2 transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              <Save className="h-4 w-4" />
-              Save Product
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-6 border-t dark:border-gray-600 animate-fadeInUp">
+            <div className="flex gap-2 order-2 sm:order-1">
+              <Button type="button" onClick={handleReset} className="gap-2 bg-amber-500 hover:bg-amber-600 text-black">
+                <RotateCcw className="h-4 w-4" /> Reset
+              </Button>
+              <Button type="button" onClick={handleCancel} className="gap-2 bg-red-600 hover:bg-red-700 text-white">
+                <X className="h-4 w-4" /> Cancel
+              </Button>
+            </div>
+            <div className="flex gap-2 order-1 sm:order-2">
+              <Button type="button" variant="outline" onClick={goPrev} disabled={activeTab === 'general'} className="gap-2">
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              {activeTab !== 'extras' ? (
+                <Button type="button" onClick={goNext} className="gap-2">
+                  Next <ChevronRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button type="button" onClick={handleSubmit} className="bg-save hover:bg-save-hover text-save-foreground gap-2">
+                  <Save className="h-4 w-4" /> Save Product
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

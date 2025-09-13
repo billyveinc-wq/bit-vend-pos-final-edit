@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,9 +28,9 @@ const AccountStatement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
 
-  const [accounts] = useState([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
 
-  const [accountStatementData] = useState({
+  const [accountStatementData, setAccountStatementData] = useState({
     accountInfo: {
       accountCode: '',
       accountName: '',
@@ -38,6 +39,82 @@ const AccountStatement = () => {
     },
     transactions: []
   });
+
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const { data, error } = await supabase.from('bank_accounts').select('id, account_name');
+        if (!error && Array.isArray(data)) {
+          setAccounts([{ id: 'all', name: 'All Accounts' }, ...data.map(d => ({ id: String(d.id), name: d.account_name }))]);
+        } else {
+          setAccounts([{ id: 'all', name: 'All Accounts' }]);
+        }
+      } catch {
+        setAccounts([{ id: 'all', name: 'All Accounts' }]);
+      }
+    };
+    loadAccounts();
+  }, []);
+
+  const getRange = (period: string) => {
+    const now = new Date();
+    const start = new Date(now);
+    const end = new Date(now);
+    if (period === 'current-month') {
+      start.setDate(1);
+    } else if (period === 'last-month') {
+      start.setMonth(now.getMonth() - 1, 1);
+      end.setMonth(now.getMonth(), 0);
+    } else if (period === 'current-quarter') {
+      const q = Math.floor(now.getMonth() / 3);
+      start.setMonth(q * 3, 1);
+    } else if (period === 'last-quarter') {
+      const q = Math.floor(now.getMonth() / 3) - 1;
+      const month = ((q + 4) % 4) * 3;
+      start.setMonth(month, 1);
+      end.setMonth(month + 3, 0);
+    } else if (period === 'current-year') {
+      start.setMonth(0, 1);
+    } else if (period === 'last-year') {
+      start.setFullYear(now.getFullYear() - 1, 0, 1);
+      end.setFullYear(now.getFullYear() - 1, 11, 31);
+    }
+    const s = start.toISOString().split('T')[0];
+    const e = end.toISOString().split('T')[0];
+    return { start: s, end: e };
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      const { start, end } = getRange(selectedPeriod);
+      try {
+        const [salesRes, expensesRes, incomeRes] = await Promise.all([
+          supabase.from('sales').select('invoice_no, total, date').gte('date', start).lte('date', end),
+          supabase.from('expenses').select('description, amount, date').gte('date', start).lte('date', end),
+          supabase.from('income').select('description, amount, date').gte('date', start).lte('date', end),
+        ]);
+        if (salesRes.error) throw salesRes.error;
+        if (expensesRes.error) throw expensesRes.error;
+        if (incomeRes.error) throw incomeRes.error;
+        const tx: any[] = [];
+        (salesRes.data || []).forEach((s: any) => tx.push({ id: `S-${s.invoice_no}`, date: s.date, description: 'Sale', reference: s.invoice_no, type: 'receipt', debit: Number(s.total)||0, credit: 0, balance: 0 }));
+        (incomeRes.data || []).forEach((i: any) => tx.push({ id: `I-${i.date}-${i.description}` , date: i.date, description: i.description || 'Income', reference: 'INC', type: 'deposit', debit: Number(i.amount)||0, credit: 0, balance: 0 }));
+        (expensesRes.data || []).forEach((e: any) => tx.push({ id: `E-${e.date}-${e.description}` , date: e.date, description: e.description || 'Expense', reference: 'EXP', type: 'payment', debit: 0, credit: Number(e.amount)||0, balance: 0 }));
+        tx.sort((a,b)=> new Date(a.date).getTime() - new Date(b.date).getTime());
+        let running = 0;
+        const withBal = tx.map(t => ({ ...t, balance: (running += (t.debit - t.credit)) }));
+        const opening = 0;
+        const closing = opening + withBal.reduce((s,t)=> s + (t.debit - t.credit), 0);
+        setAccountStatementData({
+          accountInfo: { accountCode: selectedAccount || 'ALL', accountName: (accounts.find(a=>a.id===selectedAccount)?.name) || 'All Accounts', openingBalance: opening, closingBalance: closing },
+          transactions: withBal,
+        });
+      } catch {
+        // Keep defaults
+      }
+    };
+    load();
+  }, [selectedPeriod, selectedAccount]);
 
   const filteredTransactions = accountStatementData.transactions.filter(transaction =>
     transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,7 +178,7 @@ const AccountStatement = () => {
                 <SelectContent>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
-                      {account.id} - {account.name}
+                      {account.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

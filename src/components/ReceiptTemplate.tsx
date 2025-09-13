@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { formatCurrency } from '@/lib/currency';
+
 interface ReceiptTemplateProps {
   template: string;
   cart: Array<{product: any, quantity: number}>;
@@ -68,7 +70,7 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
         {cart.map((item, index) => (
           <div key={index} className="flex justify-between text-foreground">
             <span>{item.product.name} x{item.quantity}</span>
-            <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+            <span>{formatCurrency(item.product.price * item.quantity)}</span>
           </div>
         ))}
       </div>
@@ -76,15 +78,15 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
       <div className="space-y-1 text-foreground">
         <div className="flex justify-between">
           <span>Subtotal:</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span>Tax (8%):</span>
-          <span>${tax.toFixed(2)}</span>
+          <span>{formatCurrency(tax)}</span>
         </div>
         <div className="flex justify-between font-bold">
           <span>Total:</span>
-          <span>${total.toFixed(2)}</span>
+          <span>{formatCurrency(total)}</span>
         </div>
       </div>
       
@@ -123,7 +125,7 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
           {cart.map((item, index) => (
             <div key={index} className="flex justify-between">
               <span>{item.product.name} × {item.quantity}</span>
-              <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+              <span>{formatCurrency(item.product.price * item.quantity)}</span>
             </div>
           ))}
         </div>
@@ -132,15 +134,15 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
       <div className="space-y-1 border-t border-border pt-2 text-foreground">
         <div className="flex justify-between">
           <span>Subtotal:</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span>Tax:</span>
-          <span>${tax.toFixed(2)}</span>
+          <span>{formatCurrency(tax)}</span>
         </div>
         <div className="flex justify-between font-bold text-lg">
           <span>Total:</span>
-          <span>${total.toFixed(2)}</span>
+          <span>{formatCurrency(total)}</span>
         </div>
       </div>
       
@@ -169,7 +171,7 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
         {cart.map((item, index) => (
           <div key={index} className="flex justify-between">
             <span>{item.product.name}</span>
-            <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+            <span>{formatCurrency(item.product.price * item.quantity)}</span>
           </div>
         ))}
       </div>
@@ -177,15 +179,15 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
       <div className="border-t border-dashed border-border pt-2 text-foreground">
         <div className="flex justify-between">
           <span>Subtotal</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span>Tax</span>
-          <span>${tax.toFixed(2)}</span>
+          <span>{formatCurrency(tax)}</span>
         </div>
         <p className="font-bold flex justify-between">
           <span>TOTAL</span>
-          <span>${total.toFixed(2)}</span>
+          <span>{formatCurrency(total)}</span>
         </p>
       </div>
       
@@ -231,8 +233,8 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
             <div className="flex justify-between text-foreground">
               <span>{item.product.name}</span>
               <span>{item.quantity}</span>
-              <span>${item.product.price.toFixed(2)}</span>
-              <span>${(item.product.price * item.quantity).toFixed(2)}</span>
+              <span>{formatCurrency(item.product.price)}</span>
+              <span>{formatCurrency(item.product.price * item.quantity)}</span>
             </div>
           </div>
         ))}
@@ -241,15 +243,15 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
       <div className="space-y-1 border-t border-border pt-2 text-foreground">
         <div className="flex justify-between">
           <span>Subtotal:</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span>Tax Rate (8%):</span>
-          <span>${tax.toFixed(2)}</span>
+          <span>{formatCurrency(tax)}</span>
         </div>
         <div className="flex justify-between font-bold text-base border-t border-border pt-1">
           <span>TOTAL:</span>
-          <span>${total.toFixed(2)}</span>
+          <span>{formatCurrency(total)}</span>
         </div>
       </div>
       
@@ -279,7 +281,7 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
         {cart.map((item, index) => (
           <div key={index}>
             <p>{item.product.name}</p>
-            <p className="text-right">${(item.product.price * item.quantity).toFixed(2)}</p>
+            <p className="text-right">{formatCurrency(item.product.price * item.quantity)}</p>
           </div>
         ))}
       </div>
@@ -287,15 +289,15 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({
       <div className="border-t border-dashed border-border pt-1 text-foreground">
         <div className="flex justify-between">
           <span>Subtotal:</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span>Tax:</span>
-          <span>${tax.toFixed(2)}</span>
+          <span>{formatCurrency(tax)}</span>
         </div>
         <div className="flex justify-between font-bold">
           <span>TOTAL:</span>
-          <span>${total.toFixed(2)}</span>
+          <span>{formatCurrency(total)}</span>
         </div>
       </div>
       

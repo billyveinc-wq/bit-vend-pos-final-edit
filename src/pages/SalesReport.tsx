@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,9 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { PRODUCTS } from '@/data/posData';
 import ReportsTable from '@/components/ReportsTable';
 import BusinessReports from '@/components/BusinessReports';
-import { 
-  BarChart3, 
-  TrendingUp, 
+import { supabase } from '@/integrations/supabase/client';
+import {
+  BarChart3,
+  TrendingUp,
   TrendingDown,
   Calendar,
   Filter,
@@ -27,8 +29,14 @@ import {
   PieChart,
   Target,
   Clock,
-  FileBarChart
+  FileBarChart,
+  FileText,
+  Trash
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import { formatCurrency } from '@/lib/currency';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 interface SaleItem {
   productId: number;
@@ -55,6 +63,9 @@ interface Sale {
   cashier: string;
 }
 
+interface QuoteItem { name: string; quantity: number; price: number; total: number; }
+interface Quote { id: string; quoteNo: string; customer: string; customerEmail: string; phone?: string; date: string; validUntil?: string; notes?: string; template?: string; status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'; subtotal: number; tax: number; total: number; items: QuoteItem[]; }
+
 const SalesReport: React.FC = () => {
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState({
@@ -64,10 +75,89 @@ const SalesReport: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [activeView, setActiveView] = useState<'overview' | 'detailed' | 'products' | 'customers'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'detailed' | 'products' | 'customers' | 'quotations'>('overview');
 
-  // Use real database data - placeholder data removed for clean production app
-  const [sales] = useState<Sale[]>([]);
+  // Load sales from Supabase
+  const [sales, setSales] = useState<Sale[]>([]);
+  // Load quotations
+  const [quotations, setQuotations] = useState<Quote[]>([]);
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('id, invoice_number, subtotal, tax_amount, discount_amount, total_amount, payment_method, payment_status, created_at, sale_items ( product_id, product_name, quantity, unit_price, total_amount )')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Sale[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          invoiceNo: row.invoice_number || '-',
+          date: new Date(row.created_at).toISOString().split('T')[0],
+          time: new Date(row.created_at).toLocaleTimeString(),
+          customerName: undefined,
+          customerPhone: undefined,
+          items: (row.sale_items || []).map((it: any) => ({
+            productId: Number(it.product_id) || 0,
+            productName: it.product_name || (PRODUCTS.find(p => p.id === Number(it.product_id))?.name ?? `Product ${it.product_id ?? ''}`),
+            quantity: Number(it.quantity) || 0,
+            unitPrice: Number(it.unit_price) || 0,
+            total: Number(it.total_amount) || 0,
+          })),
+          subtotal: Number(row.subtotal) || 0,
+          tax: Number(row.tax_amount) || 0,
+          discount: Number(row.discount_amount) || 0,
+          total: Number(row.total_amount) || 0,
+          paymentMethod: (row.payment_method || 'cash') as any,
+          status: (row.payment_status || 'completed') as any,
+          cashier: '',
+        }));
+        setSales(mapped);
+      } catch (e) {
+        console.warn('Failed to load sales report');
+      }
+    };
+    load();
+  }, []);
+
+  useEffect(() => {
+    const loadQuotes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('quotations')
+          .select('id, quote_no, customer, email, phone, date, valid_until, notes, template, status, subtotal, tax, total, quotation_items(id, name, quantity, price, total)')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Quote[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          quoteNo: row.quote_no,
+          customer: row.customer,
+          customerEmail: row.email,
+          phone: row.phone || undefined,
+          date: row.date,
+          validUntil: row.valid_until || undefined,
+          notes: row.notes || undefined,
+          template: row.template || undefined,
+          status: (row.status || 'draft') as Quote['status'],
+          subtotal: Number(row.subtotal) || 0,
+          tax: Number(row.tax) || 0,
+          total: Number(row.total) || 0,
+          items: (row.quotation_items || []).map((it: any) => ({
+            name: it.name,
+            quantity: it.quantity,
+            price: Number(it.price) || 0,
+            total: Number(it.total) || 0,
+          })),
+        }));
+        setQuotations(mapped);
+      } catch (e) {
+        console.warn('Failed to load quotations');
+      }
+    };
+    loadQuotes();
+  }, []);
 
   // Filter sales based on date range and filters
   const filteredSales = useMemo(() => {
@@ -269,6 +359,102 @@ const SalesReport: React.FC = () => {
     }
   };
 
+  const getQuoteStatusBadge = (status: Quote['status']) => {
+    switch (status) {
+      case 'draft':
+        return <Badge variant="secondary">Draft</Badge>;
+      case 'sent':
+        return <Badge className="bg-blue-500 hover:bg-blue-600">Sent</Badge>;
+      case 'accepted':
+        return <Badge className="bg-success text-success-foreground">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      case 'expired':
+        return <Badge variant="outline">Expired</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const handleDownloadQuotePDF = async (id: string) => {
+    const q = quotations.find(x => x.id === id);
+    if (!q) return;
+    try {
+      let logoDataUrl: string | null = null;
+      try {
+        const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        const companyId = (comp as any)?.id;
+        if (companyId) {
+          const { data } = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', `quote_logo_${q.quoteNo || q.id}`).maybeSingle();
+          const val = (data as any)?.value;
+          if (val && typeof val === 'string') logoDataUrl = val; else if (val && typeof val.dataUrl === 'string') logoDataUrl = val.dataUrl;
+        }
+      } catch {}
+
+      const doc = new jsPDF();
+      let y = 14;
+      if (logoDataUrl) {
+        try { doc.addImage(logoDataUrl, 'PNG', 15, 10, 30, 15); y = 30; } catch {}
+      }
+      doc.setFontSize(16);
+      doc.text(`Quotation ${q.quoteNo || q.id}`, 15, y);
+      doc.setFontSize(11);
+      doc.text(`Customer: ${q.customer}`, 15, y + 8);
+      doc.text(`Email: ${q.customerEmail}`, 15, y + 14);
+      doc.text(`Date: ${q.date}`, 15, y + 20);
+      if (q.validUntil) doc.text(`Valid Until: ${q.validUntil}`, 15, y + 26);
+
+      const rows = q.items.map(it => [it.name, String(it.quantity), it.price.toFixed(2), it.total.toFixed(2)]);
+      autoTable(doc, { startY: y + 32, head: [["Item", "Qty", "Price", "Total"]], body: rows });
+      const finalY = (doc as any).lastAutoTable?.finalY || y + 32;
+      doc.text(`Subtotal: ${formatCurrency(q.subtotal)}`, 150, finalY + 10);
+      doc.text(`Tax: ${formatCurrency(q.tax)}`, 150, finalY + 16);
+      doc.text(`Total: ${formatCurrency(q.total)}`, 150, finalY + 22);
+      if (q.notes) {
+        const split = doc.splitTextToSize(`Notes: ${q.notes}`, 180);
+        doc.text(split, 15, finalY + 32);
+      }
+      doc.save(`quotation_${q.quoteNo || q.id}.pdf`);
+      toast({ title: 'Download', description: 'Quotation PDF downloaded.' });
+    } catch { toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' }); }
+  };
+
+  const handleDownloadQuoteXLS = async (id: string) => {
+    const q = quotations.find(x => x.id === id);
+    if (!q) return;
+    try {
+      const wb = XLSX.utils.book_new();
+      const details = [
+        ["Quote No", q.quoteNo],
+        ["Customer", q.customer],
+        ["Email", q.customerEmail],
+        ["Date", q.date],
+        ["Valid Until", q.validUntil || ''],
+        ["Subtotal", q.subtotal],
+        ["Tax", q.tax],
+        ["Total", q.total],
+      ];
+      const ws1 = XLSX.utils.aoa_to_sheet(details);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Details');
+      const items = [["Item", "Qty", "Price", "Total"], ...q.items.map(it => [it.name, it.quantity, it.price, it.total])];
+      const ws2 = XLSX.utils.aoa_to_sheet(items);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Items');
+      XLSX.writeFile(wb, `quotation_${q.quoteNo || q.id}.xlsx`);
+      toast({ title: 'Download', description: 'Quotation XLS downloaded.' });
+    } catch { toast({ title: 'Error', description: 'Failed to generate XLS', variant: 'destructive' }); }
+  };
+
+  const handleDeleteQuote = async (id: string) => {
+    try {
+      const { error } = await supabase.from('quotations').delete().eq('id', Number(id));
+      if (error) throw error;
+      setQuotations(prev => prev.filter(q => q.id !== id));
+      toast({ title: 'Deleted', description: 'Quotation deleted.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to delete quotation.', variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
       {/* Header */}
@@ -308,23 +494,51 @@ const SalesReport: React.FC = () => {
             <Package className="h-4 w-4 mr-2" />
             Products
           </Button>
+          <Button
+            variant={activeView === 'quotations' ? 'default' : 'outline'}
+            onClick={() => setActiveView('quotations')}
+            className="transition-all duration-200 hover:scale-105"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Quotations
+          </Button>
         </div>
       </div>
 
       {/* Filters */}
       <Card className="animate-slideInLeft">
-        <CardHeader>
-          <CardTitle className="flex items-center">
+        <CardHeader className="w-full flex items-center gap-3 sm:flex-nowrap pl-0">
+          <CardTitle className="flex items-center whitespace-nowrap">
             <Filter className="h-5 w-5 mr-2" />
             Filters & Date Range
           </CardTitle>
+          <div className="ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={handleExportData}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={handleRefresh}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div className="space-y-2 md:col-span-2">
               <Label>Quick Period</Label>
               <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full md:w-40 h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -338,30 +552,30 @@ const SalesReport: React.FC = () => {
               </Select>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label>Start Date</Label>
               <Input
                 type="date"
                 value={dateRange.startDate}
                 onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
-                className="transition-all duration-200 focus:scale-105"
+                className="w-full md:w-40 h-9"
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label>End Date</Label>
               <Input
                 type="date"
                 value={dateRange.endDate}
                 onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
-                className="transition-all duration-200 focus:scale-105"
+                className="w-full md:w-40 h-9"
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-3">
               <Label>Payment Method</Label>
               <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full md:w-44 h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -373,10 +587,10 @@ const SalesReport: React.FC = () => {
               </Select>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-3">
               <Label>Status</Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full md:w-36 h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -387,33 +601,14 @@ const SalesReport: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="flex items-end space-x-2">
-              <Button 
-                variant="outline" 
-                className="flex-1 transition-all duration-200 hover:scale-105"
-                onClick={handleRefresh}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1 transition-all duration-200 hover:scale-105"
-                onClick={handleExportData}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
+
           </div>
         </CardContent>
       </Card>
 
       {activeView === 'overview' && (
         <div className="space-y-6">
-          {/* Key Business Metrics - moved above comprehensive reports */}
-          <BusinessReports />
+          {/* Metrics removed to create space */}
 
           {/* Comprehensive Reports Table */}
           <ReportsTable />
@@ -452,7 +647,7 @@ const SalesReport: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold">${sale.total.toFixed(2)}</div>
+                      <div className="text-xl font-bold">{formatCurrency(sale.total)}</div>
                       {getStatusBadge(sale.status)}
                     </div>
                   </div>
@@ -464,7 +659,7 @@ const SalesReport: React.FC = () => {
                       {sale.items.map((item, itemIndex) => (
                         <div key={itemIndex} className="flex justify-between text-sm">
                           <span>{item.productName} × {item.quantity}</span>
-                          <span>${item.total.toFixed(2)}</span>
+                          <span>{formatCurrency(item.total)}</span>
                         </div>
                       ))}
                     </div>
@@ -474,15 +669,15 @@ const SalesReport: React.FC = () => {
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Subtotal: </span>
-                      <span>${sale.subtotal.toFixed(2)}</span>
+                      <span>{formatCurrency(sale.subtotal)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Tax: </span>
-                      <span>${sale.tax.toFixed(2)}</span>
+                      <span>{formatCurrency(sale.tax)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Discount: </span>
-                      <span>${sale.discount.toFixed(2)}</span>
+                      <span>{formatCurrency(sale.discount)}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Payment: </span>
@@ -490,12 +685,137 @@ const SalesReport: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Total: </span>
-                      <span className="font-medium">${sale.total.toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(sale.total)}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeView === 'quotations' && (
+        <Card className="animate-slideInLeft">
+          <CardHeader>
+            <CardTitle>View Quotations</CardTitle>
+            <CardDescription>Browse saved quotations and perform actions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {quotations.map((quote) => (
+                <div key={quote.id} className="p-4 border rounded-lg hover:shadow-md transition-all duration-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <FileText className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{quote.quoteNo || quote.id}</h4>
+                        <p className="text-sm text-muted-foreground">{quote.customer} • {quote.date}</p>
+                        {quote.template && (
+                          <p className="text-xs text-muted-foreground">Template: {quote.template}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold">{formatCurrency(quote.total)}</div>
+                      {getQuoteStatusBadge(quote.status)}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
+                    <div>
+                      <span className="text-muted-foreground">Items: </span>
+                      <span>{quote.items.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Subtotal: </span>
+                      <span>{formatCurrency(quote.subtotal)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Tax: </span>
+                      <span>{formatCurrency(quote.tax)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Valid Until: </span>
+                      <span>{quote.validUntil || '-'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t">
+                    <Button variant="outline" size="sm" onClick={() => { setSelectedQuote(quote); setShowQuoteDialog(true); }}>
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadQuoteXLS(quote.id)}>
+                      <Download className="w-4 h-4 mr-1" />
+                      XLS
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadQuotePDF(quote.id)}>
+                      <Download className="w-4 h-4 mr-1" />
+                      PDF
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteQuote(quote.id)}>
+                      <Trash className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {quotations.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground">No quotations found.</div>
+              )}
+            </div>
+
+            <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Quotation Details</DialogTitle>
+                </DialogHeader>
+                {selectedQuote && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">{selectedQuote.quoteNo || selectedQuote.id}</p>
+                        <p className="text-sm text-muted-foreground">{selectedQuote.customer} • {selectedQuote.customerEmail}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold">{formatCurrency(selectedQuote.total)}</p>
+                        {getQuoteStatusBadge(selectedQuote.status)}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <Label>Date</Label>
+                        <div>{selectedQuote.date}</div>
+                      </div>
+                      <div>
+                        <Label>Valid Until</Label>
+                        <div>{selectedQuote.validUntil || '-'}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Items</Label>
+                      <div className="space-y-1 text-sm">
+                        {selectedQuote.items.map((it, idx) => (
+                          <div key={idx} className="flex justify-between">
+                            <span>{it.name} × {it.quantity}</span>
+                            <span>{formatCurrency(it.total)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {selectedQuote.notes && (
+                      <div>
+                        <Label>Notes</Label>
+                        <div className="text-sm whitespace-pre-wrap">{selectedQuote.notes}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       )}
@@ -509,8 +829,8 @@ const SalesReport: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               {analytics.topProducts.map((product, index) => (
-                <div 
-                  key={product.id} 
+                <div
+                  key={product.id}
                   className="p-4 border rounded-lg animate-fadeInUp"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
@@ -526,18 +846,18 @@ const SalesReport: React.FC = () => {
                     </div>
                     <Badge variant="outline">Rank #{index + 1}</Badge>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4 mt-4">
                     <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{product.quantity}</p>
                       <p className="text-xs text-blue-600 dark:text-blue-400">Units Sold</p>
                     </div>
                     <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">${product.revenue.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(product.revenue)}</p>
                       <p className="text-xs text-green-600 dark:text-green-400">Revenue</p>
                     </div>
                     <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">${(product.revenue / product.quantity).toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(product.revenue / product.quantity)}</p>
                       <p className="text-xs text-purple-600 dark:text-purple-400">Avg Price</p>
                     </div>
                   </div>

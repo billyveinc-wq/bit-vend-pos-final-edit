@@ -13,10 +13,11 @@ import { useProducts } from '@/contexts/ProductContext';
 import { useSales } from '@/contexts/SalesContext';
 import { useSettings } from '@/hooks/useSettings';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { products } = useProducts();
+  const { products, updateProduct } = useProducts();
   const { addSale } = useSales();
   const { settings } = useSettings();
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -25,6 +26,8 @@ const Checkout = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [paymentMethod, setPaymentMethod] = useState("Card");
+  const [enabledProviders, setEnabledProviders] = useState<string[] | null>(null);
+  const [companyId, setCompanyId] = useState<number | null>(null);
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
@@ -43,6 +46,31 @@ const Checkout = () => {
         setCart([]);
       }
     }
+  }, []);
+
+  // Load enabled providers per company
+  useEffect(() => {
+    (async () => {
+      try {
+        // Skip when offline to avoid network errors
+        if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+        const res = await supabase.auth.getUser();
+        const user = res?.data?.user || null;
+        if (!user) return;
+        const { data: cu } = await supabase.from('company_users').select('company_id').eq('user_id', user.id).maybeSingle();
+        if (!cu?.company_id) return;
+        setCompanyId(Number(cu.company_id));
+        const { data: settingsRows } = await supabase
+          .from('payment_provider_settings')
+          .select('provider_key, enabled')
+          .eq('company_id', cu.company_id);
+        const enabled = (settingsRows || []).filter(r => r.enabled).map(r => r.provider_key as string);
+        setEnabledProviders(enabled);
+      } catch (e) {
+        console.warn('Failed to load payment providers, continuing without:', e);
+        setEnabledProviders([]);
+      }
+    })();
   }, []);
 
   // Save cart to localStorage whenever it changes
@@ -108,31 +136,111 @@ const Checkout = () => {
     return true; // Cash payment doesn't need validation
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!isPaymentValid()) {
       toast.error('Please fill in all payment details');
       return;
     }
-    
+
     if (cart.length === 0) {
       toast.error('Your cart is empty');
       return;
     }
-    
-    // Create sale record using SalesContext
+
     try {
+      // If using M-Pesa, trigger STK Push through server using stored company credentials
+      if (paymentMethod === 'Mobile') {
+        if (!companyId) { toast.error('No company linked'); return; }
+        const phone = mpesaPhone.trim();
+        if (!/^\d{10,12}$/.test(phone)) { toast.error('Enter a valid phone number'); return; }
+        const normalized = phone.startsWith('254') ? phone : (phone.startsWith('0') ? `254${phone.slice(1)}` : `254${phone}`);
+        const invoiceProbe = `INV-${Date.now()}`;
+        const resp = await fetch('/api/payments/mpesa/stk-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company_id: companyId,
+            phone: normalized,
+            amount: Number(finalTotal.toFixed(2)),
+            currency: (JSON.parse(localStorage.getItem('pos-app-settings')||'{}')?.currency)||'USD',
+            reference: invoiceProbe,
+          })
+        });
+        if (!resp.ok) {
+          const msg = await resp.text().catch(()=>'');
+          toast.error(`M-Pesa initiation failed${msg ? `: ${msg}` : ''}`);
+          return;
+        }
+        toast.success('M-Pesa prompt sent. Complete on your phone...');
+      }
+
       const saleItems = cart.map(item => ({
         productId: item.product.id,
         productName: item.product.name,
         quantity: item.quantity,
         unitPrice: item.product.price,
-        total: item.product.price * item.quantity
+        total: item.product.price * item.quantity,
+        sku: item.product.sku
       }));
 
+      // Generate invoice no (client-side consistent with SalesContext)
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+      const invoiceNo = `INV-${dateStr}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
+      // Persist sale (align with Supabase schema)
+      const { data: saleInsert, error: saleErr } = await supabase
+        .from('sales')
+        .insert({
+          invoice_number: invoiceNo,
+          subtotal: cartTotal,
+          tax_amount: tax,
+          discount_amount: 0,
+          total_amount: finalTotal,
+          payment_method: paymentMethod.toLowerCase(),
+          payment_status: 'completed',
+          notes: null
+        })
+        .select('id')
+        .single();
+      if (saleErr) throw saleErr;
+      const dbSaleId = saleInsert?.id as string;
+
+      // Persist sale items (expects product_id)
+      const itemsPayload = cart.map(item => ({
+        sale_id: dbSaleId,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        unit_price: item.product.price,
+        discount_amount: 0,
+        tax_amount: 0,
+        total_amount: item.product.price * item.quantity
+      }));
+      const { error: itemsErr } = await supabase.from('sale_items').insert(itemsPayload);
+      if (itemsErr) throw itemsErr;
+
+      // Update inventory for each item and record movement
+      for (const item of cart) {
+        // Read current stock, decrement, update
+        const { data: prodRow } = await supabase.from('products').select('stock_quantity').eq('id', item.product.id).maybeSingle();
+        const current = Number(prodRow?.stock_quantity || 0);
+        const next = Math.max(0, current - item.quantity);
+        await supabase.from('products').update({ stock_quantity: next }).eq('id', item.product.id);
+        await supabase.from('stock_movements').insert({
+          product_id: item.product.id,
+          movement_type: 'sale',
+          quantity: item.quantity,
+          reference_type: 'sale',
+          reference_id: dbSaleId,
+          reason: 'sale'
+        });
+      }
+
+      // Update local state (context) for immediate UI and receipt flow
       const saleId = addSale({
         date: new Date().toISOString().split('T')[0],
         time: new Date().toLocaleTimeString(),
-        items: saleItems,
+        items: saleItems.map(({ sku, ...rest }) => rest),
         subtotal: cartTotal,
         tax,
         discount: 0,
@@ -143,14 +251,23 @@ const Checkout = () => {
         receiptTemplate: settings.receiptTemplate || 'classic-receipt'
       });
 
+      // Adjust local product stocks
+      saleItems.forEach(si => {
+        const p = products.find(pr => pr.id === si.productId);
+        if (p) {
+          const curr = typeof p.stock === 'number' ? p.stock : 0;
+          const newStock = Math.max(0, curr - si.quantity);
+          updateProduct(p.id, { stock: newStock });
+        }
+      });
+
       // Clear cart after successful payment
       setCart([]);
       localStorage.removeItem('pos-cart');
-      
-      // Show success message
+
       toast.success(`Payment of $${finalTotal.toFixed(2)} processed successfully!`);
-      
-      navigate('/receipt', {
+
+      navigate('/dashboard/receipt', {
         state: {
           saleId,
           cart,
@@ -356,22 +473,29 @@ const Checkout = () => {
         <div className="mb-6">
           <Label className="text-base font-semibold mb-3 block">Payment Method</Label>
           <div className="grid grid-cols-3 gap-2">
-            <Button
-              variant={paymentMethod === "Card" ? "default" : "outline"}
-              onClick={() => setPaymentMethod("Card")}
-              className="flex items-center gap-2"
-            >
-              <CreditCard className="h-4 w-4" />
-              Card
-            </Button>
-            <Button
-              variant={paymentMethod === "Mobile" ? "default" : "outline"}
-              onClick={() => setPaymentMethod("Mobile")}
-              className="flex items-center gap-2"
-            >
-              <Smartphone className="h-4 w-4" />
-              Mobile
-            </Button>
+            {/* Show Card only if Flutterwave enabled or if settings not configured */}
+            {(enabledProviders === null || enabledProviders.includes('flutterwave')) && (
+              <Button
+                variant={paymentMethod === "Card" ? "default" : "outline"}
+                onClick={() => setPaymentMethod("Card")}
+                className="flex items-center gap-2"
+              >
+                <CreditCard className="h-4 w-4" />
+                Card
+              </Button>
+            )}
+            {/* Show Mobile only if M-Pesa enabled or if settings not configured */}
+            {(enabledProviders === null || enabledProviders.includes('mpesa')) && (
+              <Button
+                variant={paymentMethod === "Mobile" ? "default" : "outline"}
+                onClick={() => setPaymentMethod("Mobile")}
+                className="flex items-center gap-2"
+              >
+                <Smartphone className="h-4 w-4" />
+                Mobile
+              </Button>
+            )}
+            {/* Always allow Cash */}
             <Button
               variant={paymentMethod === "Cash" ? "default" : "outline"}
               onClick={() => setPaymentMethod("Cash")}

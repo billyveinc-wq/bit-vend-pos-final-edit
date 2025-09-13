@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,9 @@ import {
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface SalesReturnItem {
   name: string;
@@ -46,7 +49,41 @@ const SalesReturn = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('today');
 
-  const [salesReturns] = useState<SalesReturn[]>([]);
+  const [salesReturns, setSalesReturns] = useState<SalesReturn[]>([]);
+  const [processOpen, setProcessOpen] = useState(false);
+  const [processForm, setProcessForm] = useState({ customer: '', originalInvoice: '', refundMethod: 'cash', reason: '', amount: '', date: '' });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('sales_returns')
+          .select('id, return_number, total_amount, return_date, refund_method, status, reason, return_items:sales_return_items ( name, quantity, unit_price, total_amount )')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: SalesReturn[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          customer: '',
+          originalInvoice: row.return_number || '-',
+          status: row.status || 'pending',
+          totalAmount: Number(row.total_amount) || 0,
+          returnDate: row.return_date,
+          refundMethod: row.refund_method || 'cash',
+          reason: row.reason || '',
+          items: (row.return_items || []).map((it: any) => ({
+            name: it.name || '',
+            quantity: it.quantity || 0,
+            reason: row.reason || '',
+            returnPrice: Number(it.unit_price) || 0,
+          })),
+        }));
+        setSalesReturns(mapped);
+      } catch (e) {
+        console.warn('Failed to load sales returns');
+      }
+    };
+    load();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -69,6 +106,60 @@ const SalesReturn = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const exportCSV = () => {
+    const rows = filteredReturns.map(r => ({ id: r.id, return_number: r.originalInvoice, status: r.status, total_amount: r.totalAmount, return_date: r.returnDate, refund_method: r.refundMethod, reason: r.reason, items: r.items.length }));
+    const header = Object.keys(rows[0] || { id: '', return_number: '', status: '', total_amount: '', return_date: '', refund_method: '', reason: '', items: '' });
+    const csv = [header.join(','), ...rows.map(r => header.map(h => JSON.stringify((r as any)[h] ?? '')).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'sales_returns.csv'; a.click(); URL.revokeObjectURL(url);
+    toast.success('Exported sales returns to CSV');
+  };
+
+  const approveReturn = async (id: string) => {
+    try { await supabase.from('sales_returns').update({ status: 'completed' }).eq('id', Number(id)); } catch {}
+    setSalesReturns(prev => prev.map(r => r.id === id ? { ...r, status: 'completed' } : r));
+    toast.success('Return approved');
+  };
+
+  const rejectReturn = async (id: string) => {
+    try { await supabase.from('sales_returns').update({ status: 'cancelled' }).eq('id', Number(id)); } catch {}
+    setSalesReturns(prev => prev.map(r => r.id === id ? { ...r, status: 'cancelled' } : r));
+    toast.success('Return rejected');
+  };
+
+  const handleProcessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const today = new Date();
+      const dateStr = (processForm.date || today.toISOString().split('T')[0]).replace(/-/g, '');
+      const { data: countData } = await supabase.from('sales_returns').select('id', { count: 'exact', head: true }).like('return_number', `R-${dateStr}-%`);
+      const seq = ((countData as any)?.count || 0) + 1;
+      const returnNo = `R-${dateStr}-${String(seq).padStart(4, '0')}`;
+      const { error } = await supabase.from('sales_returns').insert({
+        return_number: returnNo,
+        total_amount: Number(processForm.amount || 0),
+        return_date: processForm.date || today.toISOString().split('T')[0],
+        refund_method: processForm.refundMethod,
+        status: 'pending',
+        reason: processForm.reason || null
+      });
+      if (error) { toast.error(error.message); return; }
+      setProcessOpen(false);
+      setProcessForm({ customer: '', originalInvoice: '', refundMethod: 'cash', reason: '', amount: '', date: '' });
+      toast.success('Return created');
+      const { data } = await supabase
+        .from('sales_returns')
+        .select('id, return_number, total_amount, return_date, refund_method, status, reason, return_items:sales_return_items ( name, quantity, unit_price, total_amount )')
+        .order('created_at', { ascending: false });
+      const mapped: SalesReturn[] = (data || []).map((row: any) => ({ id: String(row.id), customer: '', originalInvoice: row.return_number || '-', status: row.status || 'pending', totalAmount: Number(row.total_amount) || 0, returnDate: row.return_date, refundMethod: row.refund_method || 'cash', reason: row.reason || '', items: (row.return_items || []).map((it: any) => ({ name: it.name || '', quantity: it.quantity || 0, reason: row.reason || '', returnPrice: Number(it.unit_price) || 0 })) }));
+      setSalesReturns(mapped);
+    } catch {
+      toast.error('Failed to create return');
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">
       <div className="flex items-center justify-between">
@@ -77,11 +168,11 @@ const SalesReturn = () => {
           <p className="text-muted-foreground">Manage product returns and refunds</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={exportCSV}>
             <FileText className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={() => navigate('/dashboard/checkout')}>
+          <Button onClick={() => setProcessOpen(true)}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Process Return
           </Button>
@@ -204,10 +295,10 @@ const SalesReturn = () => {
                 </Button>
                 {returnItem.status === 'pending' && (
                   <>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => rejectReturn(returnItem.id)}>
                       Reject
                     </Button>
-                    <Button size="sm" className="bg-success hover:bg-success/90">
+                    <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => approveReturn(returnItem.id)}>
                       Approve Return
                     </Button>
                   </>
@@ -227,6 +318,45 @@ const SalesReturn = () => {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={processOpen} onOpenChange={setProcessOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Process Return</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleProcessSubmit} className="space-y-3">
+            <div>
+              <Label htmlFor="pr-date">Return Date</Label>
+              <Input id="pr-date" type="date" value={processForm.date} onChange={(e) => setProcessForm(prev => ({ ...prev, date: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="pr-amount">Amount</Label>
+              <Input id="pr-amount" type="number" step="0.01" value={processForm.amount} onChange={(e) => setProcessForm(prev => ({ ...prev, amount: e.target.value }))} />
+            </div>
+            <div>
+              <Label htmlFor="pr-method">Refund Method</Label>
+              <Select value={processForm.refundMethod} onValueChange={(v) => setProcessForm(prev => ({ ...prev, refundMethod: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="store_credit">Store Credit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="pr-reason">Reason</Label>
+              <Textarea id="pr-reason" value={processForm.reason} onChange={(e) => setProcessForm(prev => ({ ...prev, reason: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setProcessOpen(false)}>Cancel</Button>
+              <Button type="submit">Create Return</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

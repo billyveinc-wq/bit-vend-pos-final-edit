@@ -26,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import { Shield } from 'lucide-react';
+import { isAllowedAdminEmail } from '@/lib/admin';
 
 const AuthPage = () => {
   const { theme, setTheme } = useTheme();
@@ -43,17 +44,28 @@ const AuthPage = () => {
   const [phone, setPhone] = useState('');
   const [referralCodeInput, setReferralCodeInput] = useState(referralCode);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [currentMode, setCurrentMode] = useState<'signin' | 'signup' | 'forgot'>(mode as any);
+  const [currentMode, setCurrentMode] = useState<'signin' | 'signup' | 'forgot' | 'reset'>(mode as any);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Check if user is already authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // If user is already authenticated, redirect to dashboard instead of staying on auth page
-        navigate('/dashboard', { replace: true });
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const qp = new URLSearchParams(window.location.search);
+          const redirect = qp.get('redirect');
+          const stored = localStorage.getItem('last-route');
+          const isAdminUser = isAllowedAdminEmail(session.user.email || null);
+          const adminOnly = ['/dashboard/superadmin', '/dashboard/application', '/dashboard/layout', '/dashboard/admin-settings'];
+          const storedIsAdminOnly = stored ? adminOnly.some(p => stored.startsWith(p)) : false;
+          const candidate = (redirect && redirect.startsWith('/dashboard')) ? redirect : (stored && stored.startsWith('/dashboard') ? stored : '/dashboard');
+          const target = (!isAdminUser && storedIsAdminOnly) ? '/dashboard' : candidate;
+          navigate(target, { replace: true });
+        }
+      } catch (err) {
+        console.warn('Auth check failed (offline or misconfigured Supabase). Proceeding without redirect.');
       }
     };
     checkAuth();
@@ -61,7 +73,21 @@ const AuthPage = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        navigate('/dashboard', { replace: true });
+        if ((new URLSearchParams(window.location.search)).get('mode') === 'reset') return;
+        const qp = new URLSearchParams(window.location.search);
+        const redirect = qp.get('redirect');
+        const stored = localStorage.getItem('last-route');
+        const isAdminUser = isAllowedAdminEmail(session.user.email || null);
+        const adminOnly = ['/dashboard/superadmin', '/dashboard/application', '/dashboard/layout', '/dashboard/admin-settings'];
+        const storedIsAdminOnly = stored ? adminOnly.some(p => stored.startsWith(p)) : false;
+
+        // Don't redirect to subscription checkout routes on regular login
+        const isSubscriptionCheckout = stored && stored.includes('/dashboard/subscription') && stored.includes('startCheckout=1');
+
+        const candidate = (redirect && redirect.startsWith('/dashboard')) ? redirect :
+                         (stored && stored.startsWith('/dashboard') && !isSubscriptionCheckout ? stored : '/dashboard');
+        const target = (!isAdminUser && storedIsAdminOnly) ? '/dashboard' : candidate;
+        navigate(target, { replace: true });
       }
     });
 
@@ -73,24 +99,56 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      // Check if this is an admin login
-      if (email === 'admn.bitvend@gmail.com') {
-        // Admin authentication
-        if (password === 'admin123') {
-          // Store admin session
+      // Check if this is an admin login (strictly allowed admin emails only)
+      if (isAllowedAdminEmail(email)) {
+        // First, try authenticating with Supabase (in case admin is a Supabase user)
+        try {
+          const { error: supErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (!supErr) {
+            // successful Supabase auth -> ensure enterprise subscription
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              const uid = session?.user?.id;
+              if (uid) {
+                const now = new Date().toISOString();
+                await supabase.from('user_subscriptions').upsert({
+                  user_id: uid,
+                  plan_id: 'enterprise',
+                  status: 'active',
+                  started_at: now,
+                  expires_at: null
+                }, { onConflict: 'user_id' });
+              }
+            } catch {}
+            // create local admin session and redirect
+            localStorage.setItem('admin-session', JSON.stringify({
+              email: email,
+              loginTime: new Date().toISOString(),
+              role: 'super_admin'
+            }));
+            toast.success('Admin login successful! Redirecting to admin dashboard...');
+            navigate('/dashboard/superadmin');
+            return;
+          }
+        } catch (err) {
+          console.warn('Supabase admin login attempt failed', err);
+        }
+
+        // Fallback: check local stored admin password (for local/demo admin)
+        const stored = localStorage.getItem('admin-password') || 'admin123';
+        if (password === stored) {
           localStorage.setItem('admin-session', JSON.stringify({
             email: email,
             loginTime: new Date().toISOString(),
             role: 'super_admin'
           }));
-          
           toast.success('Admin login successful! Redirecting to admin dashboard...');
-          navigate('/dashboard');
-          return;
-        } else {
-          toast.error('Invalid admin credentials');
+          navigate('/dashboard/superadmin');
           return;
         }
+
+        toast.error('Invalid admin credentials');
+        return;
       }
       
       // Regular user authentication via Supabase
@@ -98,6 +156,18 @@ const AuthPage = () => {
         email,
         password,
       });
+
+      if (!error) {
+        try {
+          // Clear any stale local admin session when a regular user signs in
+          try { localStorage.removeItem('admin-session'); } catch {}
+          const { data: { session } } = await supabase.auth.getSession();
+          const user = session?.user;
+          if (user) {
+            await supabase.from('system_users').upsert({ id: user.id, last_sign_in_at: new Date().toISOString() }, { onConflict: 'id' });
+          }
+        } catch {}
+      }
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
@@ -117,6 +187,25 @@ const AuthPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const [newPw, setNewPw] = useState('');
+  const [newPw2, setNewPw2] = useState('');
+
+  const handleCompleteReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    if (newPw.length < 8) { toast.error('Password must be at least 8 characters'); setIsLoading(false); return; }
+    if (newPw !== newPw2) { toast.error('Passwords do not match'); setIsLoading(false); return; }
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPw });
+      if (error) { toast.error(error.message); setIsLoading(false); return; }
+      toast.success('Password updated. Please sign in.');
+      setCurrentMode('signin');
+    } catch (err) {
+      console.error('Reset password error', err);
+      toast.error('Failed to update password');
+    } finally { setIsLoading(false); }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -140,9 +229,9 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/dashboard`; let createdCompanyId: number | null = null;
       
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -166,10 +255,164 @@ const AuthPage = () => {
         return;
       }
 
-      toast.success('Account created! Please check your email to confirm your account.');
-      
-      // Show success message
-      setCurrentMode('signin');
+      // If this is the reserved admin email, create an admin session locally and redirect to admin dashboard
+      if (isAllowedAdminEmail(email)) {
+        localStorage.setItem('admin-session', JSON.stringify({
+          email: email,
+          loginTime: new Date().toISOString(),
+          role: 'super_admin'
+        }));
+        toast.success('Admin account created! Redirecting to admin dashboard...');
+        navigate('/dashboard/superadmin');
+        // Also insert into system_users table for admin visibility
+        try {
+          if (signUpData?.user) {
+            await supabase.from('system_users').upsert({ id: signUpData.user.id, email, user_metadata: { full_name: fullName, company_name: companyName, phone }, created_at: new Date().toISOString() });
+          }
+        } catch (err) {
+          console.warn('Failed to upsert admin into system_users', err);
+        }
+        return;
+      }
+
+      // Insert basic system_users row so admin dashboard can see this new user (mirror of auth.users)
+      try {
+        if (signUpData?.user) {
+          await supabase.from('system_users').upsert({ id: signUpData.user.id, email, user_metadata: { full_name: fullName, company_name: companyName, phone }, created_at: new Date().toISOString() });
+        }
+      } catch (err) {
+        console.warn('Failed to upsert new user into system_users', err);
+      }
+
+      // Handle selected plan: free trial for starter, pending for paid plans
+      try {
+        const urlPlan = (new URLSearchParams(window.location.search)).get('plan');
+        let storedPlan = '';
+        try { storedPlan = localStorage.getItem('selected-plan') || ''; } catch {}
+        const selectedPlan = (urlPlan && urlPlan.trim()) || (storedPlan && storedPlan.trim()) || '';
+        if (signUpData?.user) {
+          const now = new Date();
+          if (!selectedPlan) {
+            const expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+            try {
+              await supabase.from('user_subscriptions').insert({
+                user_id: signUpData.user.id,
+                plan_id: 'trial',
+                status: 'active',
+                started_at: now.toISOString(),
+                expires_at: expires.toISOString()
+              });
+            } catch (err) {
+              // Fallback if 'trial' plan is not allowed/available
+              try {
+                await supabase.from('user_subscriptions').insert({
+                  user_id: signUpData.user.id,
+                  plan_id: 'starter',
+                  status: 'active',
+                  started_at: now.toISOString(),
+                  expires_at: expires.toISOString()
+                });
+              } catch {}
+            }
+          } else if (selectedPlan === 'starter') {
+            const expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+            await supabase.from('user_subscriptions').insert({
+              user_id: signUpData.user.id,
+              plan_id: 'starter',
+              status: 'active',
+              started_at: now.toISOString(),
+              expires_at: expires.toISOString()
+            });
+          } else {
+            await supabase.from('user_subscriptions').insert({
+              user_id: signUpData.user.id,
+              plan_id: selectedPlan,
+              status: 'pending',
+              started_at: now.toISOString(),
+              expires_at: null
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to set up subscription on signup', err);
+      }
+
+      // Link user to company (create if missing). Make first user admin by default.
+      try {
+        if (signUpData?.user && companyName) {
+          const { id: newUserId } = signUpData.user;
+          // Find or create company
+          const { data: existing } = await supabase.from('companies').select('id').eq('name', companyName).maybeSingle();
+          let companyId = existing?.id as number | undefined;
+          if (!companyId) {
+            const { data: created, error: cErr } = await supabase.from('companies').insert({ name: companyName }).select('id').single();
+            if (!cErr) companyId = created.id;
+          }
+          if (companyId) { createdCompanyId = Number(companyId);
+            // How many users linked to this company?
+            const { count } = await supabase.from('company_users').select('id', { count: 'exact', head: true }).eq('company_id', companyId);
+            const isFirst = (count || 0) === 0;
+            // Set company_users role accordingly
+            await supabase.from('company_users').upsert({ company_id: companyId, user_id: newUserId, role: isFirst ? 'owner' : 'member' }, { onConflict: 'company_id,user_id' });
+            await supabase.from('system_users').update({ company_id: companyId }).eq('id', newUserId);
+            if (isFirst) {
+              // Ensure an 'admin' role exists and assign it to the first user
+              const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
+              let roleId = adminRole?.id as number | undefined;
+              if (!roleId) {
+                const { data: createdRole } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+                roleId = createdRole?.id;
+              }
+              if (roleId) {
+                // Grant all permissions to admin role
+                const { data: allPerms } = await supabase.from('permissions').select('id');
+                if ((allPerms || []).length) {
+                  await supabase.from('role_permissions').delete().eq('role_id', roleId);
+                  const rows = (allPerms || []).map((p: any) => ({ role_id: roleId as number, permission_id: p.id }));
+                  await supabase.from('role_permissions').insert(rows);
+                }
+                // Assign admin role to first user
+                const { data: existingUR } = await supabase.from('user_roles').select('user_id, role_id').eq('user_id', newUserId).eq('role_id', roleId).maybeSingle();
+                if (!existingUR) await supabase.from('user_roles').insert({ user_id: newUserId, role_id: roleId });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to link user to company', err);
+      }
+
+      // If a promo/referral code was provided, check if it exists and attach to user_promotions
+      if (referralCodeInput && signUpData?.user) {
+        try {
+          const { data: promoData, error: promoErr } = await supabase.from('promo_codes').select('*').eq('code', referralCodeInput).maybeSingle();
+          if (promoErr) console.warn('Promo lookup error', promoErr);
+          if (promoData) {
+            // record user promotion in user_promotions table
+            const { error: upErr } = await supabase.from('user_promotions').insert({
+              user_id: signUpData.user.id,
+              promo_code_id: promoData.id,
+              discount: promoData.discount,
+              influencer_name: promoData.name
+            });
+            if (upErr) console.warn('Failed to attach promo to user:', upErr);
+            else toast.success(`Promo code applied: ${promoData.discount}% off`);
+          }
+        } catch (err) {
+          console.warn('Promo lookup failed', err);
+        }
+      }
+
+      const urlPlan2 = (new URLSearchParams(window.location.search)).get('plan');
+      let storedPlan2 = '';
+      try { storedPlan2 = localStorage.getItem('selected-plan') || ''; } catch {}
+      const selectedPlanNav = (urlPlan2 && urlPlan2.trim()) || (storedPlan2 && storedPlan2.trim()) || '';
+
+      // Clear the selected plan from localStorage to prevent future login redirects
+      try { localStorage.removeItem('selected-plan'); } catch {}
+
+      toast.success('Account created! Please sign in to continue.');
+      navigate('/auth?mode=signin');
     } catch (error) {
       console.error('Sign up error:', error);
       toast.error('An unexpected error occurred. Please try again.');
@@ -211,7 +454,7 @@ const AuthPage = () => {
               <div className="h-8 w-8 bg-gradient-to-br from-orange-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">BV</span>
               </div>
-              <span className="font-bold text-xl">BitVend</span>
+              <span className="font-bold text-xl logo-gradient animate-gradient-fast bg-clip-text text-transparent">BitVend</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Button
@@ -469,13 +712,13 @@ const AuthPage = () => {
                         />
                         <Label htmlFor="terms" className="text-sm">
                           I agree to the{' '}
-                          <a href="/terms" className="text-orange-600 hover:underline">
+                          <Link to="/terms" className="text-orange-600 hover:underline">
                             Terms of Service
-                          </a>{' '}
+                          </Link>{' '}
                           and{' '}
-                          <a href="/privacy" className="text-orange-600 hover:underline">
+                          <Link to="/privacy" className="text-orange-600 hover:underline">
                             Privacy Policy
-                          </a>
+                          </Link>
                         </Label>
                       </div>
 
@@ -495,6 +738,23 @@ const AuthPage = () => {
                           </div>
                         </div>
                       </div>
+                    </form>
+                  </TabsContent>
+
+                  {/* Reset Password Form (after email link) */}
+                  <TabsContent value="reset">
+                    <form onSubmit={handleCompleteReset} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="newPw">New Password</Label>
+                        <Input id="newPw" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="newPw2">Confirm New Password</Label>
+                        <Input id="newPw2" type="password" value={newPw2} onChange={(e) => setNewPw2(e.target.value)} required />
+                      </div>
+                      <Button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white" disabled={isLoading}>
+                        Set New Password
+                      </Button>
                     </form>
                   </TabsContent>
 

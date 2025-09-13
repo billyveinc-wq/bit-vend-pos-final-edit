@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  FileText, 
+import {
+  Plus,
+  Search,
+  Filter,
+  FileText,
   Calendar,
   DollarSign,
   Package,
@@ -27,114 +27,12 @@ import {
   XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 
-// Create a new quotation page component
-const NewQuotationPage = () => {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    customer: '',
-    email: '',
-    phone: '',
-    validUntil: '',
-    notes: '',
-    template: 'standard'
-  });
-
-  const handleSave = () => {
-    if (!formData.customer || !formData.email) {
-      toast.error('Please fill in customer name and email');
-      return;
-    }
-
-    toast.success('Quotation created successfully!');
-    navigate('/dashboard/quotation');
-  };
-
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={() => navigate('/dashboard/quotation')}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Quotations
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">New Quotation</h1>
-          <p className="text-muted-foreground">Create a new customer quotation</p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Quotation Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="customer">Customer Name *</Label>
-              <Input
-                id="customer"
-                value={formData.customer}
-                onChange={(e) => setFormData({...formData, customer: e.target.value})}
-                placeholder="Enter customer name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                placeholder="customer@email.com"
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                placeholder="+1 555-0123"
-              />
-            </div>
-            <div>
-              <Label htmlFor="validUntil">Valid Until</Label>
-              <Input
-                id="validUntil"
-                type="date"
-                value={formData.validUntil}
-                onChange={(e) => setFormData({...formData, validUntil: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              placeholder="Additional notes or terms..."
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={handleSave} className="bg-save hover:bg-save-hover text-save-foreground">
-              <Save className="w-4 h-4 mr-2" />
-              Save Quotation
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/dashboard/quotation')}>
-              Cancel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
 
 const Quotation = () => {
   const navigate = useNavigate();
@@ -142,23 +40,181 @@ const Quotation = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
-  const [quotations] = useState([]);
+  interface QuoteItem { name: string; quantity: number; price: number; total: number; }
+  interface Quote { id: string; quoteNo: string; customer: string; customerEmail: string; phone?: string; date: string; validUntil?: string; notes?: string; template?: string; status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'; subtotal: number; tax: number; total: number; items: QuoteItem[]; }
+
+  const [quotations, setQuotations] = useState<Quote[]>([]);
+  const LOCAL_KEY = 'pos-quotations';
+  const readLocal = (): Quote[] => {
+    try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch { return []; }
+  };
+  const writeLocal = (q: Quote[]) => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(q)); } catch {} };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: sess } = await safeGetSession();
+        const session = (sess as any)?.session;
+        if (!session?.user) {
+          setQuotations(readLocal());
+          return;
+        }
+        const { data, error } = await supabase
+          .from('quotations')
+          .select('id, quote_no, customer, email, phone, date, valid_until, notes, template, status, subtotal, tax, total, quotation_items(id, name, quantity, price, total)')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Quote[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          quoteNo: row.quote_no,
+          customer: row.customer,
+          customerEmail: row.email,
+          phone: row.phone || undefined,
+          date: row.date,
+          validUntil: row.valid_until || undefined,
+          notes: row.notes || undefined,
+          template: row.template || undefined,
+          status: (row.status || 'draft') as Quote['status'],
+          subtotal: Number(row.subtotal) || 0,
+          tax: Number(row.tax) || 0,
+          total: Number(row.total) || 0,
+          items: (row.quotation_items || []).map((it: any) => ({
+            name: it.name,
+            quantity: it.quantity,
+            price: Number(it.price) || 0,
+            total: Number(it.total) || 0,
+          })),
+        }));
+        setQuotations(mapped);
+      } catch (e: any) {
+        console.warn('quotations not available, using local storage');
+        const localQuotes = readLocal();
+        setQuotations(localQuotes);
+      }
+    };
+    load();
+  }, []);
   
   // Add missing handlers for quotation actions
-  const handleSendQuotation = (id: string) => {
+  const handleSendQuotation = async (id: string) => {
+    try { await supabase.from('quotations').update({ status: 'sent' }).eq('id', Number(id)); } catch {}
+    setQuotations(prev => {
+      const next = prev.map(q => q.id === id ? { ...q, status: 'sent' } : q);
+      writeLocal(next);
+      return next;
+    });
     toast.success('Quotation sent to customer successfully!');
   };
   
-  const handleDuplicateQuotation = (id: string) => {
+  const handleDuplicateQuotation = async (id: string) => {
+    const q = quotations.find(x => x.id === id);
+    if (!q) return;
+    try {
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+      let seq = 0;
+      try {
+        const { data: countData } = await supabase.from('quotations').select('id', { count: 'exact', head: true }).like('quote_no', `Q-${dateStr}-%`);
+        seq = ((countData as any)?.count || 0);
+      } catch {
+        seq = readLocal().filter(x => (x.quoteNo || '').startsWith(`Q-${dateStr}-`)).length;
+      }
+      const quoteNo = `Q-${dateStr}-${String(seq + 1).padStart(4, '0')}`;
+      let newId = '';
+      try {
+        const { data, error } = await supabase.from('quotations').insert({
+          quote_no: quoteNo,
+          customer: q.customer,
+          email: q.customerEmail,
+          phone: q.phone || null,
+          date: today.toISOString().split('T')[0],
+          valid_until: q.validUntil || null,
+          notes: q.notes || null,
+          template: q.template || null,
+          status: 'draft',
+          subtotal: q.subtotal,
+          tax: q.tax,
+          total: q.total,
+        }).select('id').single();
+        if (!error && data?.id) newId = String(data.id);
+      } catch {}
+      const dup: Quote = { ...q, id: newId || `local-${Date.now()}`, quoteNo, status: 'draft' };
+      setQuotations(prev => { const next = [dup, ...prev]; writeLocal(next); return next; });
+    } catch {}
     toast.success('Quotation duplicated successfully!');
   };
   
-  const handleDownloadPDF = (id: string) => {
-    toast.success('Quotation PDF downloaded successfully!');
+  const handleDownloadPDF = async (id: string) => {
+    const q = quotations.find(x => x.id === id);
+    if (!q) return;
+    try {
+      // Try load logo for this quote
+      let logoDataUrl: string | null = null;
+      try {
+        const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        const companyId = (comp as any)?.id;
+        if (companyId) {
+          const { data } = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', `quote_logo_${q.quoteNo || q.id}`).maybeSingle();
+          const val = (data as any)?.value;
+          if (val && typeof val === 'string') logoDataUrl = val; else if (val && typeof val.dataUrl === 'string') logoDataUrl = val.dataUrl;
+        }
+      } catch {}
+
+      const doc = new jsPDF();
+      let y = 14;
+      if (logoDataUrl) {
+        try { doc.addImage(logoDataUrl, 'PNG', 15, 10, 30, 15); y = 30; } catch {}
+      }
+      doc.setFontSize(16);
+      doc.text(`Quotation ${q.quoteNo || q.id}`, 15, y);
+      doc.setFontSize(11);
+      doc.text(`Customer: ${q.customer}`, 15, y + 8);
+      doc.text(`Email: ${q.customerEmail}`, 15, y + 14);
+      doc.text(`Date: ${q.date}`, 15, y + 20);
+      if (q.validUntil) doc.text(`Valid Until: ${q.validUntil}`, 15, y + 26);
+
+      const rows = q.items.map(it => [it.name, String(it.quantity), it.price.toFixed(2), it.total.toFixed(2)]);
+      autoTable(doc, { startY: y + 32, head: [["Item", "Qty", "Price", "Total"]], body: rows });
+      const finalY = (doc as any).lastAutoTable?.finalY || y + 32;
+      doc.text(`Subtotal: $${q.subtotal.toFixed(2)}`, 150, finalY + 10);
+      doc.text(`Tax: $${q.tax.toFixed(2)}`, 150, finalY + 16);
+      doc.text(`Total: $${q.total.toFixed(2)}`, 150, finalY + 22);
+      if (q.notes) {
+        const split = doc.splitTextToSize(`Notes: ${q.notes}`, 180);
+        doc.text(split, 15, finalY + 32);
+      }
+      doc.save(`quotation_${q.quoteNo || q.id}.pdf`);
+      toast.success('Quotation PDF downloaded');
+    } catch { toast.error('Failed to generate PDF'); }
   };
   
   const handleViewQuotation = (id: string) => {
     toast.info('Opening quotation details...');
+  };
+
+  const handleDownloadXLS = async (id: string) => {
+    const q = quotations.find(x => x.id === id);
+    if (!q) return;
+    try {
+      const wb = XLSX.utils.book_new();
+      const details = [
+        ["Quote No", q.quoteNo],
+        ["Customer", q.customer],
+        ["Email", q.customerEmail],
+        ["Date", q.date],
+        ["Valid Until", q.validUntil || ''],
+        ["Subtotal", q.subtotal],
+        ["Tax", q.tax],
+        ["Total", q.total],
+      ];
+      const ws1 = XLSX.utils.aoa_to_sheet(details);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Details');
+      const items = [["Item", "Qty", "Price", "Total"], ...q.items.map(it => [it.name, it.quantity, it.price, it.total])];
+      const ws2 = XLSX.utils.aoa_to_sheet(items);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Items');
+      XLSX.writeFile(wb, `quotation_${q.quoteNo || q.id}.xlsx`);
+      toast.success('XLS downloaded');
+    } catch { toast.error('Failed to generate XLS'); }
   };
   
   const handleEditQuotation = (id: string) => {
@@ -215,6 +271,12 @@ const Quotation = () => {
                   { id: 'service', name: 'Service Quote', description: 'Template for service-based quotes' },
                   { id: 'product', name: 'Product Quote', description: 'Template for product sales' },
                   { id: 'wholesale', name: 'Wholesale Quote', description: 'Bulk pricing template' },
+                  { id: 'pro_forma', name: 'Pro Forma', description: 'Invoice-style quotation' },
+                  { id: 'subscription', name: 'Subscription', description: 'Recurring services/products quote' },
+                  { id: 'maintenance', name: 'Maintenance', description: 'Support and maintenance plan' },
+                  { id: 'consulting', name: 'Consulting', description: 'Professional services quote' },
+                  { id: 'rental', name: 'Rental', description: 'Short-term equipment rental quote' },
+                  { id: 'installation', name: 'Installation', description: 'Setup and installation quote' },
                   { id: 'custom', name: 'Custom Template', description: 'Create your own template' }
                 ].map((template) => (
                   <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
@@ -247,53 +309,6 @@ const Quotation = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <FileText className="w-8 h-8 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">24</p>
-                <p className="text-sm text-muted-foreground">Total Quotes</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-8 h-8 text-success" />
-              <div>
-                <p className="text-2xl font-bold">18</p>
-                <p className="text-sm text-muted-foreground">Accepted</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Send className="w-8 h-8 text-orange-500" />
-              <div>
-                <p className="text-2xl font-bold">4</p>
-                <p className="text-sm text-muted-foreground">Pending</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-8 h-8 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">$142.5K</p>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Filters */}
       <Card>
@@ -353,7 +368,10 @@ const Quotation = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold">${quote.total.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground">Valid until {quote.validUntil}</p>
+                  <div className="flex items-center justify-end gap-2">
+                    {quote.template && <Badge variant="outline">Template: {quote.template}</Badge>}
+                    <p className="text-sm text-muted-foreground">Valid until {quote.validUntil}</p>
+                  </div>
                 </div>
               </div>
 
@@ -416,26 +434,30 @@ const Quotation = () => {
               )}
 
               <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleDuplicateQuotation(quote.id)}>
                   <Copy className="w-4 h-4 mr-1" />
                   Duplicate
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleDownloadXLS(quote.id)}>
+                  <Download className="w-4 h-4 mr-1" />
+                  XLS
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(quote.id)}>
                   <Download className="w-4 h-4 mr-1" />
                   PDF
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleViewQuotation(quote.id)}>
                   <Eye className="w-4 h-4 mr-1" />
                   View
                 </Button>
                 {quote.status === 'draft' && (
-                  <Button size="sm">
+                  <Button size="sm" onClick={() => handleSendQuotation(quote.id)}>
                     <Send className="w-4 h-4 mr-1" />
                     Send
                   </Button>
                 )}
                 {quote.status === 'sent' && (
-                  <Button size="sm" className="bg-success hover:bg-success/90">
+                  <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => handleEditQuotation(quote.id)}>
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
                   </Button>

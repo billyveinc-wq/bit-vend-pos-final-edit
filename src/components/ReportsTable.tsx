@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Search,
   Filter,
@@ -333,9 +335,9 @@ const ReportsTable: React.FC = () => {
   };
 
   return (
-    <Card className="animate-slideInLeft mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+    <Card className="animate-slideInLeft mt-6 overflow-visible">
+        <CardHeader className="overflow-visible">
+          <CardTitle className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center">
               <FileBarChart className="h-5 w-5 mr-2" />
               Comprehensive Reports Center
@@ -348,63 +350,52 @@ const ReportsTable: React.FC = () => {
               Export All ZIP
             </Button>
           </CardTitle>
-          <CardDescription>
-            Generate, view, and export detailed business reports with advanced filtering
+          <CardDescription className="flex items-center gap-3 flex-wrap">
+            <span>Generate, view, and export detailed business reports with advanced filtering</span>
           </CardDescription>
         </CardHeader>
       <CardContent>
-        {/* Filters and Search */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-          {/* Search */}
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search reports..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        {/* Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center mb-6">
+          <div className="flex items-center gap-2 justify-center">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Category:</span>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
-          {/* Filters */}
-          <div className="flex gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Category:</span>
+          <div className="relative flex items-center justify-center">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search reports..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-full"
+              />
             </div>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className="rounded-full"
-              >
-                {category}
-              </Button>
-            ))}
           </div>
-
-          {/* Type Filter */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex items-center gap-2 justify-center">
             <span className="text-sm font-medium text-muted-foreground">Type:</span>
-            {types.map((type) => (
-              <Button
-                key={type}
-                variant={selectedType === type ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedType(type)}
-                className="rounded-full capitalize"
-              >
-                {type}
-              </Button>
-            ))}
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-40 capitalize"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {types.map((t) => (
+                  <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {/* Reports Table */}
         <div className="rounded-md border">
-          <Table>
+          <Table className="min-w-[1150px]">
             <TableHeader>
               <TableRow className="bg-blue-500 hover:bg-blue-500">
                 <TableHead className="text-white font-semibold">Report Name</TableHead>
@@ -412,7 +403,7 @@ const ReportsTable: React.FC = () => {
                 <TableHead className="text-white font-semibold">Type</TableHead>
                 <TableHead className="text-white font-semibold">Description</TableHead>
                 <TableHead className="text-white font-semibold">Status</TableHead>
-                <TableHead className="text-white font-semibold">Actions</TableHead>
+                <TableHead className="text-white font-semibold w-[200px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -452,35 +443,32 @@ const ReportsTable: React.FC = () => {
                   <TableCell>
                     {getStatusBadge(report.status)}
                   </TableCell>
-                   <TableCell>
-                     <div className="flex items-center space-x-2">
-                       <div className="group relative">
-                         <Eye 
-                           className="h-4 w-4 text-blue-500 cursor-pointer hover:text-blue-600 transition-colors" 
-                           onClick={() => handleViewReport(report.id)}
-                         />
-                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md border z-50">
-                           View Report
-                         </div>
-                       </div>
-                       <div className="group relative">
-                         <FileDown 
-                           className="h-4 w-4 text-red-500 cursor-pointer hover:text-red-600 transition-colors" 
-                           onClick={() => handleExportPDF(report.id)}
-                         />
-                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md border z-50">
-                           Export PDF
-                         </div>
-                       </div>
-                       <div className="group relative">
-                         <FileSpreadsheet 
-                           className="h-4 w-4 text-green-500 cursor-pointer hover:text-green-600 transition-colors" 
-                           onClick={() => handleExportExcel(report.id)}
-                         />
-                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md border z-50">
-                           Export Excel
-                         </div>
-                       </div>
+                   <TableCell className="w-[200px]">
+                     <div className="flex items-center justify-end gap-2">
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button variant="outline" size="icon" onClick={() => handleViewReport(report.id)} aria-label="View Report">
+                             <Eye className="h-4 w-4 text-blue-600" />
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent>View Report</TooltipContent>
+                       </Tooltip>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button variant="outline" size="icon" onClick={() => handleExportPDF(report.id)} aria-label="Export PDF">
+                             <FileDown className="h-4 w-4 text-red-600" />
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent>Export PDF</TooltipContent>
+                       </Tooltip>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button variant="outline" size="icon" onClick={() => handleExportExcel(report.id)} aria-label="Export Excel">
+                             <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent>Export Excel</TooltipContent>
+                       </Tooltip>
                      </div>
                    </TableCell>
                 </TableRow>

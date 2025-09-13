@@ -211,7 +211,9 @@ All colors MUST be HSL.
   body:has([data-page="features"]),
   body:has([data-page="pricing"]),
   body:has([data-page="contact"]),
-  body:has([data-page="auth"]) {
+  body:has([data-page="auth"]),
+  body:has([data-page="terms"]),
+  body:has([data-page="privacy"]) {
     @apply overflow-auto;
   }
 
@@ -427,7 +429,107 @@ All colors MUST be HSL.
   .animate-slideInLeft {
     animation: slideInLeft 0.3s ease-out;
   }
-  
+
+  /* Animated gradient text for sidebar logo */
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .logo-gradient {
+    background: linear-gradient(90deg,
+      hsl(var(--accent-orange)),
+      hsl(30 100% 55%),
+      hsl(var(--accent-orange))
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    text-shadow: 0 1px 1px hsl(0 0% 0% / 0.15);
+  }
+  .dark .logo-gradient {
+    text-shadow: 0 0 10px hsl(var(--accent-orange) / 0.25);
+  }
+  .animate-gradient {
+    animation: gradientShift 8s ease infinite;
+  }
+  .animate-gradient-fast {
+    animation: gradientShift 4s linear infinite;
+  }
+  .icon-gold {
+    color: hsl(var(--accent-orange)) !important;
+    filter: drop-shadow(0 0 6px hsl(var(--accent-orange) / 0.45));
+    transition: transform 0.2s ease;
+  }
+  .icon-gold:hover { transform: scale(1.05); }
+
+  /* Explicit class to enforce golden cart color in sidebar */
+  .pos-sidebar .cart-gold {
+    color: #FFB84D !important;
+    stroke: #FFB84D !important;
+    filter: drop-shadow(0 0 10px rgba(255,184,77,0.45));
+  }
+
+  .pos-sidebar .cart-bitvend {
+    color: #f97316 !important; /* BitVend orange */
+    stroke: #f97316 !important;
+    filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.45));
+  }
+
+  @keyframes logoGlow {
+    0% {
+      text-shadow: 0 0 6px hsl(var(--accent-orange) / 0.10);
+      opacity: 0.95;
+    }
+    50% {
+      text-shadow: 0 0 22px hsl(var(--accent-orange) / 0.50), 0 8px 30px hsl(var(--accent-orange) / 0.12);
+      opacity: 1;
+    }
+    100% {
+      text-shadow: 0 0 6px hsl(var(--accent-orange) / 0.10);
+      opacity: 0.95;
+    }
+  }
+
+  /* automatic subtle glow + gradient animation */
+  .logo-glow {
+    animation: gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite !important;
+    -webkit-animation: gradientShift 6s linear infinite, logoGlow 3.2s ease-in-out infinite !important;
+  }
+
+  /* Force logo gradient to work */
+  .pos-sidebar .logo-gradient {
+    background: linear-gradient(90deg, #FF6B35, #FFB84D, #FF6B35) !important;
+    background-size: 300% 300% !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+
+  /* Force cart icon color */
+  .pos-sidebar .lucide-shopping-cart {
+    color: #FFB84D !important;
+    fill: #FFB84D !important;
+    stroke: #FFB84D !important;
+  }
+
+  .pos-sidebar .lucide-shopping-cart * {
+    fill: #FFB84D !important;
+    stroke: #FFB84D !important;
+  }
+
+  /* Force BitVend orange color */
+  .bitvend-orange {
+    color: #f97316 !important;
+    text-shadow: 0 0 12px rgba(249, 115, 22, 0.4) !important;
+  }
+
+  /* remove previous hover pulse */
+  .logo-pulse { animation: none !important; }
+
   /* Focus States */
   .pos-input:focus {
     @apply outline-none ring-2;
@@ -618,7 +720,7 @@ All colors MUST be HSL.
     color: hsl(var(--text-primary)) !important;
   }
 
-  p, span, div {
+  p:not(.logo-gradient), span:not(.logo-gradient), div:not(.logo-gradient) {
     @apply text-foreground;
     color: hsl(var(--text-primary)) !important;
   }

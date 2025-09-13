@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -26,9 +26,22 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+
+const saveAppSetting = async (key: string, value: any) => {
+  try {
+    const mod = await import('@/integrations/supabase/client');
+    const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+    if (comp?.id) {
+      await mod.supabase.from('app_settings').upsert({ company_id: comp.id, key, value }, { onConflict: 'company_id,key' });
+    }
+  } catch {}
+};
 
 const LayoutPage = () => {
   const { theme, setTheme } = useTheme();
+  const { isAdmin } = useAdminAuth();
+
   const [layoutSettings, setLayoutSettings] = useState({
     sidebarCollapsed: false,
     sidebarPosition: 'left',
@@ -52,6 +65,30 @@ const LayoutPage = () => {
   });
 
   const [previewDevice, setPreviewDevice] = useState('desktop');
+
+  useEffect(() => {
+    const loadLayout = async () => {
+      try {
+        const mod = await import('@/integrations/supabase/client');
+        const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        const companyId = comp?.id;
+        if (companyId) {
+          const { data } = await mod.supabase
+            .from('app_settings')
+            .select('value')
+            .eq('company_id', companyId)
+            .eq('key', 'layout_settings')
+            .maybeSingle();
+          if ((data as any)?.value) setLayoutSettings((prev) => ({ ...prev, ...(data as any).value }));
+        }
+      } catch {}
+      try {
+        const local = localStorage.getItem('pos-layout-settings');
+        if (local) setLayoutSettings((prev) => ({ ...prev, ...JSON.parse(local) }));
+      } catch {}
+    };
+    loadLayout();
+  }, []);
 
   const layoutOptions = [
     { value: 'default', label: 'Default Layout', description: 'Standard sidebar with main content area' },
@@ -80,7 +117,9 @@ const LayoutPage = () => {
     'Nunito'
   ];
 
-  const handleSaveLayout = () => {
+  const handleSaveLayout = async () => {
+    await saveAppSetting('layout_settings', layoutSettings);
+    localStorage.setItem('pos-layout-settings', JSON.stringify(layoutSettings));
     toast.success('Layout settings saved successfully!');
   };
 
@@ -125,6 +164,19 @@ const LayoutPage = () => {
       default: return Monitor;
     }
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>You do not have permission to access Layout settings.</CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 animate-fadeInUp">

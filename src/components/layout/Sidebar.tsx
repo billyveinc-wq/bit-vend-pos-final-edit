@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { supabase } from '@/integrations/supabase/client';
 import {
   BarChart3,
   Shield,
@@ -56,8 +57,88 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
+  const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
+  const [canManagePayments, setCanManagePayments] = useState<boolean>(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const SCROLL_KEY = 'sidebar-scroll-top';
 
-  const menuItems = [
+  // Restore saved scroll on mount
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved) el.scrollTop = parseInt(saved, 10) || 0;
+  }, []);
+
+  // Save scroll position
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Reapply after route change and ensure active item is visible
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      const saved = sessionStorage.getItem(SCROLL_KEY);
+      if (saved) el.scrollTop = parseInt(saved, 10) || 0;
+      const active = el.querySelector('[data-active="true"]') as HTMLElement | null;
+      if (active) {
+        const targetTop = Math.max(0, active.offsetTop - Math.floor(el.clientHeight / 2));
+        el.scrollTop = targetTop;
+        sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const { data: { session } } = await (await import('@/integrations/supabase/safeAuth')).safeGetSession();
+        const user = session?.user;
+        if (!user) return;
+        // Determine payment settings access: super admin OR company owner/admin OR first system user
+        if (isAdmin) { if (isMounted) setCanManagePayments(true); }
+        try {
+          const { data: cu } = await supabase.from('company_users').select('role').eq('user_id', user.id).maybeSingle();
+          const role = (cu as any)?.role;
+          if ((role === 'owner' || role === 'admin') && isMounted) setCanManagePayments(true);
+        } catch {}
+        try {
+          const { count } = await supabase.from('system_users').select('id', { count: 'exact', head: true });
+          if ((count || 0) === 1 && isMounted) setCanManagePayments(true);
+        } catch {}
+        // Restrictions metadata for other pages
+        if (!isAdmin) {
+          const { data } = await supabase.from('system_users').select('user_metadata').eq('id', user.id).maybeSingle();
+          const meta = (data as any)?.user_metadata || {};
+          const restr = meta?.restrictions;
+          if (isMounted && restr && restr.enabled && Array.isArray(restr.pages)) {
+            setAllowedPages(restr.pages as string[]);
+          } else if (isMounted) {
+            setAllowedPages(null);
+          }
+        } else if (isMounted) {
+          setAllowedPages(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setAllowedPages(null);
+          setCanManagePayments(isAdmin);
+        }
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [isAdmin]);
+
+  // Build menu sections with Admin-only pushed to top when available
+  const baseSections = [
     {
       title: 'Main',
       items: [
@@ -145,6 +226,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     {
       title: 'Settings',
       items: [
+        { href: '/dashboard/payment-settings', icon: CreditCard, label: 'Payment Settings', requiresPaymentAdmin: true },
         { href: '/dashboard/general-settings', icon: Settings, label: 'General Settings' },
         { href: '/dashboard/invoice-settings', icon: FileText, label: 'Invoice Settings' },
         { href: '/dashboard/tax-settings', icon: Calculator, label: 'Tax Settings' },
@@ -152,14 +234,20 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         { href: '/dashboard/backup', icon: Database, label: 'Backup & Restore' },
       ]
     },
-    ...(isAdmin ? [{
-      title: 'Admin Only',
-      items: [
-        { href: '/dashboard/superadmin', icon: Shield, label: 'Super Admin' },
-        { href: '/dashboard/application', icon: Settings, label: 'Application' },
-        { href: '/dashboard/layout', icon: LayoutGrid, label: 'Layout' },
-      ]
-    }] : []),
+  ];
+
+  const adminSection = isAdmin ? [{
+    title: 'Admin Only',
+    items: [
+      { href: '/dashboard/superadmin', icon: Shield, label: 'Super Admin' },
+      { href: '/dashboard/application', icon: Settings, label: 'Application' },
+      { href: '/dashboard/layout', icon: LayoutGrid, label: 'Layout' },
+    ]
+  }] : [];
+
+  const menuItems = [
+    ...adminSection,
+    ...baseSections
   ];
 
   return (
@@ -167,11 +255,15 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-black">
         {!collapsed && (
-          <Link to="/" className="flex items-center space-x-2 text-white hover:text-white/90 transition-colors">
-            <span className="text-xl font-bold flex items-center">
-              <span className="text-yellow-400">Bit Vend</span>
-              <span className="text-white ml-1">POS</span>
-              <ShoppingCart size={20} className="ml-2 text-yellow-400" />
+          <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
+            <span className="text-xl flex items-center">
+              <span className="inline-block logo-gradient animate-gradient-fast logo-glow">
+                Bit Vend
+              </span>
+              <span className="inline-block ml-1 text-white">
+                POS
+              </span>
+              <ShoppingCart size={20} className="ml-2 cart-bitvend" />
             </span>
           </Link>
         )}
@@ -185,7 +277,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
 
       {/* Navigation */}
       <nav className="flex-1 bg-black h-full overflow-hidden">
-        <div className="h-full overflow-y-auto py-4 px-0 bg-black">
+        <div ref={scrollRef} className="h-full overflow-y-auto py-4 px-0 bg-black">
           {menuItems.map((section) => (
             <div key={section.title} className="mb-6">
               {!collapsed && (
@@ -196,34 +288,44 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                 </div>
               )}
               <ul className="space-y-1 px-3">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.href;
-                  
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        to={item.href}
-                        className={cn(
-                          "w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
-                          isActive
-                            ? "bg-gray-800 text-white"
-                            : "text-white hover:text-white hover:bg-gray-800"
-                        )}
-                      >
-                        <Icon size={18} className="flex-shrink-0 text-white" />
-                        {!collapsed && (
-                          <span className="ml-3 text-white">{item.label}</span>
-                        )}
-                        {collapsed && (
-                          <div className="absolute left-full ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap z-50 shadow-lg">
-                            {item.label}
-                          </div>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
+                {section.items
+                  .filter((item: any) => {
+                    if (item.requiresPaymentAdmin) return isAdmin || canManagePayments;
+                    if (item.requiresAdmin) return isAdmin;
+                    return (isAdmin || !allowedPages || allowedPages.includes(item.href));
+                  })
+                  .map((item) => {
+                    const Icon = item.icon;
+                    const isActive = item.href === '/dashboard'
+                      ? location.pathname === item.href
+                      : (location.pathname === item.href || location.pathname.startsWith(item.href + '/'));
+
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          to={item.href}
+                          data-active={isActive ? 'true' : undefined}
+                          onClick={() => { const el = scrollRef.current; if (el) sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop)); }}
+                          className={cn(
+                            "w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
+                            isActive
+                              ? "bg-gray-800 text-white"
+                              : "text-white hover:text-white hover:bg-gray-800"
+                          )}
+                        >
+                          <Icon size={18} className="flex-shrink-0 text-white" />
+                          {!collapsed && (
+                            <span className="ml-3 text-white">{item.label}</span>
+                          )}
+                          {collapsed && (
+                            <div className="absolute left-full ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 whitespace-nowrap z-50 shadow-lg">
+                              {item.label}
+                            </div>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
               </ul>
             </div>
           ))}

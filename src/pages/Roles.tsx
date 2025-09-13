@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,19 +19,20 @@ import {
   Settings
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Permission {
-  id: string;
+  id: string; // key (e.g., 'sales_view')
   name: string;
   description: string;
   category: string;
 }
 
 interface Role {
-  id: string;
+  id: string; // DB id as string
   name: string;
   description?: string;
-  permissions: string[];
+  permissions: string[]; // permission keys
   userCount: number;
   isActive: boolean;
   createdAt: string;
@@ -57,26 +58,26 @@ const Roles = () => {
     { id: 'sales_create', name: 'Create Sales', description: 'Process new sales transactions', category: 'Sales' },
     { id: 'sales_edit', name: 'Edit Sales', description: 'Modify existing sales transactions', category: 'Sales' },
     { id: 'sales_delete', name: 'Delete Sales', description: 'Delete sales transactions', category: 'Sales' },
-    
+
     // Product permissions
     { id: 'products_view', name: 'View Products', description: 'View product catalog and inventory', category: 'Products' },
     { id: 'products_create', name: 'Create Products', description: 'Add new products to inventory', category: 'Products' },
     { id: 'products_edit', name: 'Edit Products', description: 'Modify product information', category: 'Products' },
     { id: 'products_delete', name: 'Delete Products', description: 'Remove products from inventory', category: 'Products' },
-    
+
     // Customer permissions
     { id: 'customers_view', name: 'View Customers', description: 'View customer information', category: 'Customers' },
     { id: 'customers_create', name: 'Create Customers', description: 'Add new customers', category: 'Customers' },
     { id: 'customers_edit', name: 'Edit Customers', description: 'Modify customer information', category: 'Customers' },
-    
+
     // Reports permissions
     { id: 'reports_view', name: 'View Reports', description: 'Access business reports', category: 'Reports' },
     { id: 'reports_export', name: 'Export Reports', description: 'Export reports to PDF/Excel', category: 'Reports' },
-    
+
     // Settings permissions
     { id: 'settings_view', name: 'View Settings', description: 'Access system settings', category: 'Settings' },
     { id: 'settings_edit', name: 'Edit Settings', description: 'Modify system configuration', category: 'Settings' },
-    
+
     // User management permissions
     { id: 'users_view', name: 'View Users', description: 'View user accounts', category: 'User Management' },
     { id: 'users_create', name: 'Create Users', description: 'Add new user accounts', category: 'User Management' },
@@ -86,35 +87,112 @@ const Roles = () => {
 
   const permissionCategories = [...new Set(permissions.map(p => p.category))];
 
+  // Map permission key -> DB id
+  const [permIdByKey, setPermIdByKey] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const seedAndLoad = async () => {
+      try {
+        // Seed permissions
+        await supabase.from('permissions').upsert(
+          permissions.map(p => ({ key: p.id, name: p.name, description: p.description, category: p.category })),
+          { onConflict: 'key' } as any
+        );
+      } catch {}
+      try {
+        // Ensure default admin role with full permissions
+        let adminRoleId: number | undefined;
+        const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
+        if (!adminRole?.id) {
+          const { data: created } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+          adminRoleId = created?.id;
+        } else {
+          adminRoleId = adminRole.id;
+        }
+        if (adminRoleId) {
+          const { data: allPerms } = await supabase.from('permissions').select('id');
+          await supabase.from('role_permissions').delete().eq('role_id', adminRoleId);
+          const rows = (allPerms || []).map((p: any) => ({ role_id: adminRoleId as number, permission_id: p.id }));
+          if (rows.length) await supabase.from('role_permissions').insert(rows);
+        }
+      } catch {}
+      try {
+        // Load permissions to build id map
+        const { data: per } = await supabase.from('permissions').select('id, key');
+        const map: Record<string, number> = {};
+        (per || []).forEach((r: any) => { map[r.key] = r.id; });
+        setPermIdByKey(map);
+      } catch {}
+      try {
+        // Load roles and their permissions
+        const { data: rolesData } = await supabase.from('roles').select('id, name, description, is_active, created_at').order('created_at', { ascending: false });
+        const { data: rp } = await supabase.from('role_permissions').select('role_id, permission_id');
+        const { data: allPerms } = await supabase.from('permissions').select('id, key');
+        const keyById = new Map((allPerms || []).map((r: any) => [r.id, r.key]));
+        const permsByRole = new Map<number, string[]>();
+        (rp || []).forEach((row: any) => {
+          const key = keyById.get(row.permission_id);
+          if (!key) return;
+          const arr = permsByRole.get(row.role_id) || [];
+          arr.push(key);
+          permsByRole.set(row.role_id, arr);
+        });
+        // Load user counts per role
+        const { data: ur } = await supabase.from('user_roles').select('role_id, user_id');
+        const countByRole = new Map<number, number>();
+        (ur || []).forEach((row: any) => {
+          countByRole.set(row.role_id, (countByRole.get(row.role_id) || 0) + 1);
+        });
+        const mapped: Role[] = (rolesData || []).map((r: any) => ({
+          id: String(r.id),
+          name: r.name,
+          description: r.description || '',
+          permissions: permsByRole.get(r.id) || [],
+          userCount: countByRole.get(r.id) || 0,
+          isActive: !!r.is_active,
+          createdAt: r.created_at,
+        }));
+        setRoles(mapped);
+      } catch {}
+    };
+    seedAndLoad();
+  }, []);
+
   const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (role.description && role.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name) {
       toast.error('Please enter a role name');
       return;
     }
-    
-    if (editingRole) {
-      setRoles(prev => prev.map(role =>
-        role.id === editingRole.id
-          ? { ...role, ...formData }
-          : role
-      ));
-      toast.success('Role updated successfully!');
-    } else {
-      const newRole: Role = {
-        id: Date.now().toString(),
-        ...formData,
-        userCount: 0,
-        createdAt: new Date().toISOString()
-      };
-      setRoles(prev => [...prev, newRole]);
-      toast.success('Role created successfully!');
+
+    try {
+      if (editingRole) {
+        const { error } = await supabase.from('roles').update({ name: formData.name, description: formData.description || null, is_active: formData.isActive }).eq('id', Number(editingRole.id));
+        if (error) { toast.error(error.message); return; }
+        // Update permissions: replace all
+        await supabase.from('role_permissions').delete().eq('role_id', Number(editingRole.id));
+        const rows = (formData.permissions || []).map(k => ({ role_id: Number(editingRole.id), permission_id: permIdByKey[k] })).filter(r => r.permission_id);
+        if (rows.length) await supabase.from('role_permissions').insert(rows);
+        setRoles(prev => prev.map(role => role.id === editingRole.id ? { ...role, ...formData } : role));
+        toast.success('Role updated successfully!');
+      } else {
+        const { data, error } = await supabase.from('roles').insert({ name: formData.name, description: formData.description || null, is_active: formData.isActive }).select('*').single();
+        if (error) { toast.error(error.message); return; }
+        const roleId = data.id as number;
+        const rows = (formData.permissions || []).map(k => ({ role_id: roleId, permission_id: permIdByKey[k] })).filter(r => r.permission_id);
+        if (rows.length) await supabase.from('role_permissions').insert(rows);
+        const newRole: Role = { id: String(roleId), name: data.name, description: data.description || '', permissions: [...formData.permissions], userCount: 0, isActive: !!data.is_active, createdAt: data.created_at };
+        setRoles(prev => [newRole, ...prev]);
+        toast.success('Role created successfully!');
+      }
+    } catch (err) {
+      toast.error('Failed to save role');
     }
 
     setIsDialogOpen(false);
@@ -132,10 +210,16 @@ const Roles = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this role?')) {
-      setRoles(prev => prev.filter(role => role.id !== id));
-      toast.success('Role deleted successfully!');
+      try {
+        const { error } = await supabase.from('roles').delete().eq('id', Number(id));
+        if (error) { toast.error(error.message); return; }
+        setRoles(prev => prev.filter(role => role.id !== id));
+        toast.success('Role deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete role');
+      }
     }
   };
 

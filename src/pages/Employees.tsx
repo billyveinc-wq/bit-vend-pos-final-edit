@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Employee {
   id: string;
@@ -61,6 +62,36 @@ const Employees = () => {
 
   const [employees, setEmployees] = useState<Employee[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase.from('employees').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Employee[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          firstName: row.first_name,
+          lastName: row.last_name,
+          email: row.email || '',
+          phone: row.phone || '',
+          position: row.position || '',
+          department: row.department || '',
+          salary: row.salary ? Number(row.salary) : undefined,
+          hireDate: row.hire_date,
+          employeeId: row.employee_number || '',
+          status: (row.status || 'active') as Employee['status'],
+          address: row.address || '',
+          emergencyContact: row.emergency_contact_name || '',
+          emergencyPhone: row.emergency_contact_phone || '',
+          createdAt: row.created_at,
+        }));
+        setEmployees(mapped);
+      } catch (e) {
+        console.warn('employees not available');
+      }
+    };
+    load();
+  }, []);
+
   const filteredEmployees = employees.filter(employee =>
     `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,7 +104,7 @@ const Employees = () => {
     setFormData(prev => ({ ...prev, employeeId: randomId }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.position) {
@@ -82,6 +113,22 @@ const Employees = () => {
     }
     
     if (editingEmployee) {
+      const { error } = await supabase.from('employees').update({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone || null,
+        position: formData.position,
+        department: formData.department,
+        salary: formData.salary ? parseFloat(formData.salary) : null,
+        hire_date: formData.hireDate,
+        employee_number: formData.employeeId,
+        status: formData.status,
+        address: formData.address || null,
+        emergency_contact_name: formData.emergencyContact || null,
+        emergency_contact_phone: formData.emergencyPhone || null,
+      }).eq('id', editingEmployee.id);
+      if (error) { toast.error(error.message); return; }
       setEmployees(prev => prev.map(employee =>
         employee.id === editingEmployee.id
           ? { ...employee, ...formData, salary: parseFloat(formData.salary) || undefined }
@@ -89,13 +136,40 @@ const Employees = () => {
       ));
       toast.success('Employee updated successfully!');
     } else {
+      const { data, error } = await supabase.from('employees').insert({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone || null,
+        position: formData.position,
+        department: formData.department,
+        salary: formData.salary ? parseFloat(formData.salary) : null,
+        hire_date: formData.hireDate,
+        employee_number: formData.employeeId || `EMP-${Math.random().toString(36).slice(2,8).toUpperCase()}`,
+        status: formData.status,
+        address: formData.address || null,
+        emergency_contact_name: formData.emergencyContact || null,
+        emergency_contact_phone: formData.emergencyPhone || null,
+      }).select('*').single();
+      if (error) { toast.error(error.message); return; }
       const newEmployee: Employee = {
-        id: Date.now().toString(),
-        ...formData,
-        salary: parseFloat(formData.salary) || undefined,
-        createdAt: new Date().toISOString()
+        id: String(data.id),
+        firstName: data.first_name,
+        lastName: data.last_name,
+        email: data.email || '',
+        phone: data.phone || '',
+        position: data.position || '',
+        department: data.department || '',
+        salary: data.salary ? Number(data.salary) : undefined,
+        hireDate: data.hire_date,
+        employeeId: data.employee_number || '',
+        status: (data.status || 'active') as Employee['status'],
+        address: data.address || '',
+        emergencyContact: data.emergency_contact_name || '',
+        emergencyPhone: data.emergency_contact_phone || '',
+        createdAt: data.created_at,
       };
-      setEmployees(prev => [...prev, newEmployee]);
+      setEmployees(prev => [newEmployee, ...prev]);
       toast.success('Employee created successfully!');
     }
 
@@ -123,8 +197,10 @@ const Employees = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this employee?')) {
+      const { error } = await supabase.from('employees').delete().eq('id', id);
+      if (error) { toast.error(error.message); return; }
       setEmployees(prev => prev.filter(employee => employee.id !== id));
       toast.success('Employee deleted successfully!');
     }

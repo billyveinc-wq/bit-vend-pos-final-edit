@@ -88,6 +88,19 @@ const SubscriptionManager: React.FC = () => {
     }
   }, [subscription]);
 
+  // Auto-open upgrade/payment flow based on query params
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const start = params.get('startCheckout');
+      const plan = params.get('plan');
+      if (start === '1' && plan) {
+        setSelectedPlan(plan);
+        setShowUpgradeDialog(true);
+      }
+    } catch {}
+  }, []);
+
   const fetchPlans = async () => {
     try {
       const { data, error } = await supabase
@@ -160,12 +173,13 @@ const SubscriptionManager: React.FC = () => {
 
   const handlePlanUpgrade = async () => {
     if (!selectedPlan) return;
-    
+
     try {
       // Simulate plan upgrade - integrate with actual payment processing
-      toast.success('Plan upgrade initiated. Redirecting to payment...');
+      toast.success('Plan upgrade initiated. Continue to payment.');
       setShowUpgradeDialog(false);
-      
+      setShowPaymentDialog(true);
+
       // Refresh subscription data
       await refreshSubscription();
     } catch (error) {
@@ -266,6 +280,8 @@ const SubscriptionManager: React.FC = () => {
   const currentPlan = getCurrentPlan();
   const nextBillingDate = subscription?.expires_at ? new Date(subscription.expires_at) : null;
 
+  const formatWords = (s: string) => String(s || '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -291,7 +307,7 @@ const SubscriptionManager: React.FC = () => {
               <Label className="text-sm text-muted-foreground">Current Plan</Label>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-lg">
-                  {currentPlan?.name || 'Free Plan'}
+                  {currentPlan ? formatWords(currentPlan.name) : 'Free Plan'}
                 </span>
                 {getStatusBadge(subscription?.status || 'active')}
               </div>
@@ -353,7 +369,7 @@ const SubscriptionManager: React.FC = () => {
                         onClick={() => setSelectedPlan(plan.id)}
                       >
                         <CardHeader>
-                          <CardTitle className="text-lg">{plan.name}</CardTitle>
+                          <CardTitle className="text-lg">{formatWords(plan.name)}</CardTitle>
                           <p className="text-2xl font-bold">${plan.price}/month</p>
                         </CardHeader>
                         <CardContent>
@@ -361,7 +377,7 @@ const SubscriptionManager: React.FC = () => {
                             {plan.features.slice(0, 4).map((feature, index) => (
                               <li key={index} className="flex items-center gap-2">
                                 <CheckCircle className="h-3 w-3 text-green-500" />
-                                {feature}
+                                {formatWords(feature)}
                               </li>
                             ))}
                           </ul>
@@ -443,7 +459,7 @@ const SubscriptionManager: React.FC = () => {
                         <DollarSign className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="font-medium">{bill.plan_name}</p>
+                        <p className="font-medium">{formatWords(bill.plan_name)}</p>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(bill.date), 'MMM dd, yyyy')}
                         </p>

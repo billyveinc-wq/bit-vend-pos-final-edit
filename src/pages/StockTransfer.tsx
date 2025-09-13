@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockTransfer {
   id: string;
@@ -55,6 +56,32 @@ const StockTransfer = () => {
 
   const [stockTransfers, setStockTransfers] = useState<StockTransfer[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('stock_transfers').select('*').order('created_at', { ascending: false });
+        const mapped: StockTransfer[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          productId: 0,
+          productName: row.product_name,
+          quantity: row.quantity,
+          fromLocation: row.from_location,
+          toLocation: row.to_location,
+          transferDate: row.transfer_date,
+          requestedBy: row.requested_by || 'System',
+          approvedBy: row.approved_by || undefined,
+          receivedBy: row.received_by || undefined,
+          status: row.status || 'pending',
+          trackingNumber: row.tracking_number || undefined,
+          notes: row.notes || '',
+          createdAt: row.created_at,
+        }));
+        setStockTransfers(mapped);
+      } catch (e) { console.warn('stock_transfers not available'); }
+    };
+    load();
+  }, []);
+
   const locations = [
     'Main Warehouse',
     'Store Location A',
@@ -75,7 +102,7 @@ const StockTransfer = () => {
     return `TRK-${Date.now().toString().slice(-8)}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.productId || !formData.quantity || !formData.fromLocation || !formData.toLocation) {
@@ -109,6 +136,22 @@ const StockTransfer = () => {
     };
     
     setStockTransfers(prev => [...prev, newTransfer]);
+
+    try {
+      const { error } = await supabase.from('stock_transfers').insert({
+        product_sku: product.sku || null,
+        product_name: product.name,
+        quantity: parseInt(formData.quantity),
+        from_location: formData.fromLocation,
+        to_location: formData.toLocation,
+        transfer_date: formData.transferDate,
+        requested_by: 'Current User',
+        status: 'pending',
+        notes: formData.notes || null,
+      });
+      if (error) console.warn('Failed to insert stock_transfer', error);
+    } catch {}
+
     toast.success('Stock transfer request created successfully!');
     setIsDialogOpen(false);
     resetForm();
@@ -125,30 +168,33 @@ const StockTransfer = () => {
     });
   };
 
-  const handleApproveTransfer = (id: string) => {
+  const handleApproveTransfer = async (id: string) => {
     const trackingNumber = generateTrackingNumber();
     setStockTransfers(prev => prev.map(transfer =>
-      transfer.id === id ? { 
-        ...transfer, 
-        status: 'approved', 
+      transfer.id === id ? {
+        ...transfer,
+        status: 'approved',
         approvedBy: 'Current User',
-        trackingNumber 
+        trackingNumber
       } : transfer
     ));
+    try { await supabase.from('stock_transfers').update({ status: 'approved', tracking_number: trackingNumber }).eq('id', Number(id)); } catch {}
     toast.success(`Transfer approved! Tracking: ${trackingNumber}`);
   };
 
-  const handleStartTransit = (id: string) => {
+  const handleStartTransit = async (id: string) => {
     setStockTransfers(prev => prev.map(transfer =>
       transfer.id === id ? { ...transfer, status: 'in_transit' } : transfer
     ));
+    try { await supabase.from('stock_transfers').update({ status: 'in_transit' }).eq('id', Number(id)); } catch {}
     toast.success('Stock is now in transit!');
   };
 
-  const handleReceiveTransfer = (id: string) => {
+  const handleReceiveTransfer = async (id: string) => {
     setStockTransfers(prev => prev.map(transfer =>
       transfer.id === id ? { ...transfer, status: 'received', receivedBy: 'Current User' } : transfer
     ));
+    try { await supabase.from('stock_transfers').update({ status: 'received', received_by: 'Current User' }).eq('id', Number(id)); } catch {}
     toast.success('Stock transfer received successfully!');
   };
 

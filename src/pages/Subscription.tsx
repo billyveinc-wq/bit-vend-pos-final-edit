@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CheckCircle, Star, CreditCard, Smartphone, Building2, Crown, Lock, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const subscriptionPlans = [
   {
@@ -102,11 +105,45 @@ const paymentMethods = [
 
 const Subscription = () => {
   const navigate = useNavigate();
+  const { subscription, refreshSubscription } = useSubscription();
   const [selectedPlan, setSelectedPlan] = useState<string>('standard');
   const [selectedPayment, setSelectedPayment] = useState<string>('card');
-  const [currentPlan] = useState<string>('starter'); // Current active plan
+  const [currentPlan, setCurrentPlan] = useState<string>('starter');
   const [showCvv, setShowCvv] = useState<boolean>(false);
-  
+  const [plans, setPlans] = useState<typeof subscriptionPlans>(subscriptionPlans);
+  const [promoDetails, setPromoDetails] = useState<{code: string, percent: number, expired: boolean} | null>(null);
+
+  useEffect(() => {
+    setCurrentPlan(subscription?.plan_id || 'starter');
+    if (subscription?.plan_id) setSelectedPlan(subscription.plan_id);
+  }, [subscription]);
+
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const { data } = await supabase.from('subscription_plans').select('id, name, price, features');
+        if (Array.isArray(data) && data.length) {
+          const mapped = data.map((p: any) => {
+            const raw = Number(p.price);
+            const normalized = isFinite(raw) ? (raw >= 100 ? Math.round(raw) / 100 : raw) : 0;
+            return {
+              id: p.id,
+              name: String(p.name || ''),
+              price: normalized,
+              period: 'month',
+              description: 'Plan',
+              icon: Crown,
+              popular: p.id === 'standard',
+              features: Array.isArray(p.features) ? p.features : []
+            };
+          });
+          setPlans(mapped as any);
+        }
+      } catch {}
+    };
+    loadPlans();
+  }, []);
+
   // Payment form data
   const [cardData, setCardData] = useState({
     cardNumber: '',
@@ -136,6 +173,7 @@ const Subscription = () => {
     pin: ''
   });
 
+  const formatWords = (s: string) => String(s || '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);
   };
@@ -159,7 +197,7 @@ const Subscription = () => {
   };
 
   const handleMpesaSTKPush = () => {
-    const plan = subscriptionPlans.find(p => p.id === selectedPlan);
+    const plan = plans.find(p => p.id === selectedPlan);
     if (!mpesaData.phoneNumber || !plan) {
       toast.error('Please enter a valid phone number');
       return;
@@ -174,45 +212,126 @@ const Subscription = () => {
     });
   };
 
-  const handleSTKConfirm = () => {
-    const plan = subscriptionPlans.find(p => p.id === selectedPlan);
+  const handleSTKConfirm = async () => {
+    const plan = plans.find(p => p.id === selectedPlan);
     
     if (stkPushModal.pin.length !== 4) {
       toast.error('Please enter your 4-digit M-Pesa PIN');
       return;
     }
     
-    // Simulate successful payment
-    toast.success(`Payment of $${stkPushModal.amount} via M-Pesa successful! Subscription to ${plan?.name} is ready for backend processing`);
-    
-    console.log('M-Pesa Payment Data Ready:', {
-      plan: plan?.id,
-      paymentMethod: 'mpesa',
-      paymentData: {
-        phoneNumber: stkPushModal.phone,
-        amount: stkPushModal.amount,
-        transactionType: 'STK_PUSH'
+    // Simulate successful payment and persist subscription
+    toast.success(`Payment of $${stkPushModal.amount} via M-Pesa successful! Subscription to ${plan?.name} activated`);
+
+    try {
+      const { data: { session } } = await safeGetSession();
+      const user = session?.user;
+      if (user && plan) {
+        const startedAt = new Date();
+        const expiresAt = new Date();
+        expiresAt.setMonth(startedAt.getMonth() + 1);
+        await supabase.from('user_subscriptions').upsert({
+          user_id: user.id,
+          plan_id: plan.id,
+          status: 'active',
+          started_at: startedAt.toISOString(),
+          expires_at: expiresAt.toISOString(),
+          payment_method: 'mpesa',
+          payment_details: { phone: stkPushModal.phone }
+        }, { onConflict: 'user_id' });
+        await refreshSubscription();
       }
-    });
-    
+    } catch {}
+
     setStkPushModal({ isOpen: false, amount: 0, phone: '', pin: '' });
   };
 
-  const handleSubscribe = () => {
-    const plan = subscriptionPlans.find(p => p.id === selectedPlan);
+  const handleSubscribe = async () => {
+    const plan = plans.find(p => p.id === selectedPlan);
     const payment = paymentMethods.find(p => p.id === selectedPayment);
     
-    // Check for referral code discount
+    // Check for referral code discount from multiple sources
     const urlParams = new URLSearchParams(window.location.search);
-    const referralCode = urlParams.get('ref') || localStorage.getItem('applied-referral-code');
+    let referralCode = urlParams.get('ref') || localStorage.getItem('applied-referral-code');
     let finalPrice = plan?.price || 0;
     let discountAmount = 0;
-    
+    let promoDetails = null;
+
+    // If no referral code in URL or localStorage, check user_promotions for this user
+    if (!referralCode) {
+      try {
+        const { data: { session } } = await safeGetSession();
+        if (session?.user) {
+          const { data: userPromo } = await supabase
+            .from('user_promotions')
+            .select('promo_codes!inner(*)')
+            .eq('user_id', session.user.id)
+            .order('applied_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (userPromo && userPromo.promo_codes) {
+            referralCode = (userPromo.promo_codes as any).code;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to check user promotions:', err);
+      }
+    }
+
     if (referralCode) {
-      // In a real app, this would fetch from the database
-      // For now, we'll simulate a 30% discount
-      discountAmount = Math.round(finalPrice * 0.30);
-      finalPrice = finalPrice - discountAmount;
+      try {
+        // Check both promo_codes and promos tables for compatibility
+        let promo = null;
+
+        const { data: promoCodesData } = await supabase
+          .from('promo_codes')
+          .select('*')
+          .eq('code', referralCode)
+          .maybeSingle();
+
+        if (promoCodesData) {
+          promo = promoCodesData;
+        } else {
+          // Fallback to promos table
+          const { data: promosData } = await supabase
+            .from('promos')
+            .select('*')
+            .eq('code', referralCode)
+            .maybeSingle();
+          promo = promosData;
+        }
+
+        if (promo) {
+          const now = Date.now();
+          const expiresAt = (promo as any).expires_at ? new Date((promo as any).expires_at).getTime() : null;
+          const notExpired = !expiresAt || expiresAt > now;
+          const pctRaw = (promo as any).discount_percent ?? (promo as any).discount;
+          const pct = typeof pctRaw === 'number' ? pctRaw : parseFloat(pctRaw || '0');
+
+          if (notExpired && isFinite(pct) && pct > 0 && pct <= 100) {
+            discountAmount = Math.round(finalPrice * (pct / 100) * 100) / 100; // Round to 2 decimal places
+            finalPrice = Math.max(0, finalPrice - discountAmount);
+            const details = { code: referralCode, percent: pct, expired: false };
+            setPromoDetails(details);
+
+            toast.success(`Promo code applied: ${pct}% discount ($${discountAmount.toFixed(2)} off)`, {
+              duration: 5000
+            });
+          } else if (!notExpired) {
+            toast.error('Promo code has expired');
+            setPromoDetails({ code: referralCode, percent: pct, expired: true });
+          } else {
+            toast.error('Invalid promo code discount value');
+          }
+        } else {
+          toast.error('Promo code not found');
+          setPromoDetails(null);
+        }
+      } catch (err) {
+        console.error('Error applying promo code:', err);
+        toast.error('Failed to apply promo code');
+      }
     }
     
     // Validate payment data based on selected method
@@ -246,21 +365,31 @@ const Subscription = () => {
     }
     
     if (plan && payment) {
-      const message = referralCode 
-        ? `Subscription to ${plan.name} ($${finalPrice}/month, $${discountAmount} discount applied) via ${paymentInfo} is ready for backend processing`
-        : `Subscription to ${plan.name} ($${plan.price}/month) via ${paymentInfo} is ready for backend processing`;
-      
-      toast.success(message);
-      console.log('Payment Data Ready:', {
-        plan: plan.id,
-        paymentMethod: selectedPayment,
-        referralCode,
-        originalPrice: plan.price,
-        discountAmount,
-        finalPrice,
-        paymentData: selectedPayment === 'card' ? cardData : 
-                     selectedPayment === 'paypal' ? paypalData : mpesaData
-      });
+      try {
+        const { data: { session } } = await safeGetSession();
+        const user = session?.user;
+        if (!user) { toast.error('Please sign in to subscribe'); return; }
+        const expires = new Date();
+        expires.setMonth(expires.getMonth() + 1);
+        const payload: any = {
+          user_id: user.id,
+          plan_id: plan.id,
+          status: 'active',
+          started_at: new Date().toISOString(),
+          expires_at: expires.toISOString(),
+          payment_method: selectedPayment,
+          payment_details: selectedPayment === 'card' ? { last4: cardData.cardNumber.slice(-4) } : selectedPayment === 'paypal' ? { email: paypalData.email } : { phone: mpesaData.phoneNumber },
+          referral_code: referralCode || null,
+          discount_applied: discountAmount || 0,
+        };
+        await supabase.from('user_subscriptions').upsert(payload, { onConflict: 'user_id' });
+        await refreshSubscription();
+        toast.success(`Subscribed to ${plan.name} successfully`);
+        navigate('/dashboard/subscription/manage');
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to activate subscription');
+      }
     }
   };
 
@@ -283,7 +412,7 @@ const Subscription = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-success" />
-                Current Plan: Starter Plan
+                Current Plan: {currentPlan ? (formatWords(currentPlan).charAt(0).toUpperCase() + formatWords(currentPlan).slice(1)) : 'Starter'} Plan
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Next billing date: January 15, 2024
@@ -298,7 +427,7 @@ const Subscription = () => {
 
       {/* Subscription Plans */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
-        {subscriptionPlans.map((plan, index) => {
+        {plans.map((plan, index) => {
           const IconComponent = plan.icon;
           const isCurrentPlan = plan.id === currentPlan;
           const isSelected = plan.id === selectedPlan;
@@ -310,14 +439,14 @@ const Subscription = () => {
                 "relative cursor-pointer transition-all duration-300 hover:shadow-lg animate-fadeInUp",
                 isCurrentPlan && "border-success bg-success/5",
                 isSelected && !isCurrentPlan && "border-primary bg-primary/5",
-                plan.popular && "ring-2 ring-primary shadow-xl scale-105"
+                plan.popular && "ring-2 ring-orange-500 shadow-xl scale-105"
               )}
               onClick={() => !isCurrentPlan && handlePlanSelect(plan.id)}
               style={{ animationDelay: `${index * 0.1 + 0.3}s` }}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground px-3 py-1">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1">
                     Most Popular
                   </Badge>
                 </div>
@@ -333,26 +462,30 @@ const Subscription = () => {
 
               <CardHeader className="text-center space-y-4">
                 <div className="flex justify-center">
-                  <div className={cn(
-                    "p-3 rounded-full",
-                    isCurrentPlan ? "bg-success/20 text-success" :
-                    isSelected ? "bg-primary/20 text-primary" :
-                    "bg-muted text-muted-foreground"
-                  )}>
-                    <IconComponent className="h-8 w-8" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500/10 to-blue-600/10 rounded-xl flex items-center justify-center mx-auto">
+                    <IconComponent className="h-6 w-6 text-orange-500" />
                   </div>
                 </div>
-                
+
                 <div>
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                  <CardTitle className="text-xl">{formatWords(plan.name)}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">{formatWords(plan.description)}</p>
                 </div>
-                
+
                 <div className="space-y-1">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-3xl font-bold text-foreground">${plan.price}</span>
                     <span className="text-sm text-muted-foreground">/{plan.period}</span>
                   </div>
+                  {promoDetails && !promoDetails.expired && plan.id === selectedPlan && (
+                    <div className="text-center">
+                      <div className="text-sm line-through text-muted-foreground">${plan.price}</div>
+                      <div className="text-lg font-bold text-green-600">
+                        ${(plan.price - Math.round(plan.price * (promoDetails.percent / 100) * 100) / 100).toFixed(2)}
+                        <span className="text-sm text-green-600 ml-1">after {promoDetails.percent}% off</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
 
@@ -361,7 +494,7 @@ const Subscription = () => {
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                      <span className="text-foreground">{feature}</span>
+                      <span className="text-foreground">{formatWords(feature)}</span>
                     </li>
                   ))}
                 </ul>
@@ -376,9 +509,9 @@ const Subscription = () => {
                       Manage Plan
                     </Button>
                   ) : (
-                    <Button 
-                      variant={isSelected ? "default" : "outline"} 
-                      className="w-full"
+                    <Button
+                      className={`w-full ${plan.popular ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white' : ''}`}
+                      variant={plan.popular ? 'default' : (isSelected ? 'default' : 'outline')}
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePlanSelect(plan.id);
@@ -589,11 +722,21 @@ const Subscription = () => {
             {/* Subscribe Button */}
             <div className="flex items-center justify-between pt-4 border-t">
               <div className="text-sm text-muted-foreground">
-                {selectedPlan && (
-                  <>Selected: {subscriptionPlans.find(p => p.id === selectedPlan)?.name} - ${subscriptionPlans.find(p => p.id === selectedPlan)?.price}/month</>
-                )}
+                {selectedPlan && (() => {
+                  const sel = plans.find(p => p.id === selectedPlan);
+                  return sel ? (
+                    <div className="space-y-1">
+                      <div>Selected: {formatWords(sel.name)} - ${sel.price}/month</div>
+                      {(promoDetails && !promoDetails.expired) && (
+                        <div className="text-green-600 font-medium">
+                          🎉 {promoDetails.percent}% discount applied with code "{promoDetails.code}"
+                        </div>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
               </div>
-              <Button 
+              <Button
                 onClick={handleSubscribe}
                 disabled={selectedPlan === currentPlan}
                 size="lg"
@@ -623,7 +766,7 @@ const Subscription = () => {
               <div className="text-center space-y-2">
                 <div className="text-lg font-semibold">BitVend POS</div>
                 <div className="text-2xl font-bold text-green-600">
-                  ${stkPushModal.amount}.00
+                  ${stkPushModal.amount}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Subscription payment for {subscriptionPlans.find(p => p.id === selectedPlan)?.name}

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,10 +22,66 @@ const TrialBalance = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('current-month');
   const [showModal, setShowModal] = useState(false);
 
-  const [trialBalanceData] = useState({
+  const [trialBalanceData, setTrialBalanceData] = useState({
     asOfDate: new Date().toISOString().split('T')[0],
     accounts: []
   });
+
+  const getRange = (period: string) => {
+    const now = new Date();
+    const start = new Date(now);
+    const end = new Date(now);
+    if (period === 'current-month') {
+      start.setDate(1);
+    } else if (period === 'last-month') {
+      start.setMonth(now.getMonth() - 1, 1);
+      end.setMonth(now.getMonth(), 0);
+    } else if (period === 'current-quarter') {
+      const q = Math.floor(now.getMonth() / 3);
+      start.setMonth(q * 3, 1);
+    } else if (period === 'last-quarter') {
+      const q = Math.floor(now.getMonth() / 3) - 1;
+      const month = ((q + 4) % 4) * 3;
+      start.setMonth(month, 1);
+      end.setMonth(month + 3, 0);
+    } else if (period === 'current-year') {
+      start.setMonth(0, 1);
+    } else if (period === 'last-year') {
+      start.setFullYear(now.getFullYear() - 1, 0, 1);
+      end.setFullYear(now.getFullYear() - 1, 11, 31);
+    }
+    const s = start.toISOString().split('T')[0];
+    const e = end.toISOString().split('T')[0];
+    return { start: s, end: e };
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      const { start, end } = getRange(selectedPeriod);
+      try {
+        const [salesRes, expensesRes, incomeRes] = await Promise.all([
+          supabase.from('sales').select('total, date').gte('date', start).lte('date', end),
+          supabase.from('expenses').select('amount, date').gte('date', start).lte('date', end),
+          supabase.from('income').select('amount, date').gte('date', start).lte('date', end),
+        ]);
+        if (salesRes.error) throw salesRes.error;
+        if (expensesRes.error) throw expensesRes.error;
+        if (incomeRes.error) throw incomeRes.error;
+        const salesTotal = (salesRes.data || []).reduce((s: number, r: any) => s + Number(r.total || 0), 0);
+        const expensesTotal = (expensesRes.data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+        const incomeTotal = (incomeRes.data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+        const accounts = [
+          { accountCode: '4000', accountName: 'Sales Revenue', debit: 0, credit: salesTotal },
+          { accountCode: '4100', accountName: 'Other Income', debit: 0, credit: incomeTotal },
+          { accountCode: '5000', accountName: 'Expenses', debit: expensesTotal, credit: 0 },
+        ];
+        setTrialBalanceData({ asOfDate: new Date().toISOString().split('T')[0], accounts });
+      } catch (err) {
+        console.warn('Failed to load trial balance data');
+      }
+    };
+    load();
+  }, [selectedPeriod]);
 
   const totalDebits = trialBalanceData.accounts.reduce((sum, account) => sum + account.debit, 0);
   const totalCredits = trialBalanceData.accounts.reduce((sum, account) => sum + account.credit, 0);

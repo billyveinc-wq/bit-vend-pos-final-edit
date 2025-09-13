@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,22 +6,50 @@ import { Label } from '@/components/ui/label';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Shield, Key, Save, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminSettings = () => {
-  const { adminSession } = useAdminAuth();
+  const { adminSession, isAdmin } = useAdminAuth();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <div className="p-6">Access Denied</div>
+        </Card>
+      </div>
+    );
+  }
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Ensure there's a stored admin password (for demo/local auth). Default is 'admin123'
+    const stored = localStorage.getItem('admin-password');
+    if (!stored) {
+      localStorage.setItem('admin-password', 'admin123');
+    }
+  }, []);
+
+  const isStrongPassword = (pw: string) => {
+    const lengthOk = pw.length >= 8;
+    const upper = /[A-Z]/.test(pw);
+    const lower = /[a-z]/.test(pw);
+    const number = /[0-9]/.test(pw);
+    const special = /[^A-Za-z0-9]/.test(pw);
+    return lengthOk && upper && lower && number && special;
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
       toast.error('Please fill in all password fields');
       return;
@@ -32,19 +60,41 @@ const AdminSettings = () => {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      toast.error('New password must be at least 6 characters long');
+    if (!isStrongPassword(passwordForm.newPassword)) {
+      toast.error('Weak password. Use at least 8 characters, include uppercase, lowercase, numbers and symbols.');
       return;
     }
 
-    if (passwordForm.currentPassword !== 'admin123') {
+    const storedPassword = localStorage.getItem('admin-password') || 'admin123';
+
+    if (passwordForm.currentPassword !== storedPassword) {
       toast.error('Current password is incorrect');
       return;
     }
 
-    // In a real implementation, this would update the admin password in the database
-    toast.success('Admin password changed successfully!');
-    
+    try {
+      const { data: { session } } = await (await import('@/integrations/supabase/safeAuth')).safeGetSession();
+      const user = session?.user || null;
+      if (user && user.email === adminSession?.email) {
+        const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword });
+        if (error) {
+          console.error('Supabase password update failed', error);
+          toast.error('Failed to update Supabase password, local password updated');
+          localStorage.setItem('admin-password', passwordForm.newPassword);
+        } else {
+          localStorage.setItem('admin-password', passwordForm.newPassword);
+          toast.success('Admin password changed successfully!');
+        }
+      } else {
+        localStorage.setItem('admin-password', passwordForm.newPassword);
+        toast.success('Admin password changed successfully!');
+      }
+    } catch (err) {
+      console.error('Change password error', err);
+      localStorage.setItem('admin-password', passwordForm.newPassword);
+      toast.success('Admin password changed successfully!');
+    }
+
     // Reset form
     setPasswordForm({
       currentPassword: '',

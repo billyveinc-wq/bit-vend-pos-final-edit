@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   UserCog, 
   Plus, 
@@ -21,6 +22,8 @@ import {
   Calendar
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
 
 interface User {
   id: string;
@@ -53,7 +56,119 @@ const Users = () => {
     confirmPassword: ''
   });
 
+  const AVAILABLE_PAGES = [
+    { path: '/dashboard', label: 'Dashboard' },
+    { path: '/dashboard/checkout', label: 'POS (Checkout)' },
+    { path: '/dashboard/sales', label: 'Sales List' },
+    { path: '/dashboard/purchases', label: 'Purchases' },
+    { path: '/dashboard/products', label: 'Products' },
+    { path: '/dashboard/categories', label: 'Categories' },
+    { path: '/dashboard/brands', label: 'Brands' },
+    { path: '/dashboard/units', label: 'Units' },
+    { path: '/dashboard/variants', label: 'Variants' },
+    { path: '/dashboard/stock-in', label: 'Stock In' },
+    { path: '/dashboard/stock-out', label: 'Stock Out' },
+    { path: '/dashboard/stock-transfer', label: 'Stock Transfer' },
+    { path: '/dashboard/stock-return', label: 'Stock Return' },
+    { path: '/dashboard/stock-adjustment', label: 'Stock Adjustment' },
+    { path: '/dashboard/expenses', label: 'Expenses' },
+    { path: '/dashboard/expense-category', label: 'Expense Category' },
+    { path: '/dashboard/income', label: 'Income' },
+    { path: '/dashboard/income-category', label: 'Income Category' },
+    { path: '/dashboard/bank-accounts', label: 'Bank Accounts' },
+    { path: '/dashboard/money-transfer', label: 'Money Transfer' },
+    { path: '/dashboard/balance-sheet', label: 'Balance Sheet' },
+    { path: '/dashboard/trial-balance', label: 'Trial Balance' },
+    { path: '/dashboard/cash-flow', label: 'Cash Flow' },
+    { path: '/dashboard/account-statement', label: 'Account Statement' },
+    { path: '/dashboard/customers', label: 'Customers' },
+    { path: '/dashboard/suppliers', label: 'Suppliers' },
+    { path: '/dashboard/employees', label: 'Employees' },
+    { path: '/dashboard/attendance', label: 'Attendance' },
+    { path: '/dashboard/holidays', label: 'Holidays' },
+    { path: '/dashboard/payroll', label: 'Payroll' },
+    { path: '/dashboard/sales-report', label: 'Sales Report' },
+    { path: '/dashboard/stock-report', label: 'Stock Report' },
+    { path: '/dashboard/purchase-report', label: 'Purchase Report' },
+    { path: '/dashboard/subscription', label: 'Subscription' },
+    { path: '/dashboard/backup', label: 'Backup & Restore' },
+    { path: '/dashboard/general-settings', label: 'General Settings' },
+    { path: '/dashboard/invoice-settings', label: 'Invoice Settings' },
+    { path: '/dashboard/tax-settings', label: 'Tax Settings' },
+  ];
+
+  const AVAILABLE_ACTIONS = ['view', 'create', 'edit', 'delete', 'export', 'approve', 'manage_settings'];
+
+  const [restrictAccess, setRestrictAccess] = useState(false);
+  const [selectedPages, setSelectedPages] = useState<string[]>([]);
+  const [selectedActions, setSelectedActions] = useState<string[]>([]);
+
   const [users, setUsers] = useState<User[]>([]);
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: sessionData } = await safeGetSession();
+        const uid = sessionData?.session?.user?.id || null;
+        let cId: number | null = null;
+        if (uid) {
+          const { data: cu } = await supabase.from('company_users').select('company_id').eq('user_id', uid).maybeSingle();
+          if (cu?.company_id) cId = Number(cu.company_id);
+        }
+        setCompanyId(cId);
+        setCurrentUserId(uid);
+
+        if (uid) {
+          const { data: existing } = await supabase.from('system_users').select('id, company_id').eq('id', uid).maybeSingle();
+          if (!existing) {
+            const { data: meData } = await safeGetSession();
+            const me = meData.session?.user || null;
+            const meta = (me as any)?.user_metadata || {};
+            await supabase.from('system_users').upsert({
+              id: uid,
+              email: me?.email || '',
+              user_metadata: meta,
+              created_at: new Date().toISOString(),
+              company_id: cId
+            });
+          } else if (cId && !existing.company_id) {
+            await supabase.from('system_users').update({ company_id: cId }).eq('id', uid);
+          }
+        }
+
+        const filter = cId ? `company_id.eq.${cId},id.eq.${uid}` : `id.eq.${uid}`;
+        const { data, error } = await supabase
+          .from('system_users')
+          .select('*')
+          .or(filter)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const filtered = (data || []).filter((row: any) => Boolean(row.user_metadata?.created_by_admin) || row.id === uid);
+        const mapped: User[] = filtered.map((row: any) => {
+          const meta = row.user_metadata || {};
+          return {
+            id: String(row.id),
+            username: meta.username || meta.full_name || row.email?.split('@')[0] || 'user',
+            email: row.email || meta.email || '',
+            firstName: meta.first_name || (meta.full_name ? String(meta.full_name).split(' ')[0] : ''),
+            lastName: meta.last_name || (meta.full_name ? String(meta.full_name).split(' ').slice(1).join(' ') : ''),
+            phone: meta.phone || '',
+            role: meta.role || 'cashier',
+            status: 'active',
+            lastLogin: row.last_sign_in_at,
+            createdAt: row.created_at,
+            permissions: Array.isArray(meta.permissions) ? meta.permissions : (meta.restrictions?.actions || []),
+          };
+        });
+        setUsers(mapped);
+      } catch (e) {
+        console.warn('Failed to load system users');
+      }
+    };
+    load();
+  }, []);
 
   const roles = [
     { id: 'admin', name: 'Administrator', permissions: ['all'] },
@@ -68,47 +183,148 @@ const Users = () => {
     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
 
     if (!formData.username || !formData.email || !formData.firstName || !formData.lastName || !formData.role) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    if (!editingUser && (!formData.password || formData.password !== formData.confirmPassword)) {
-      toast.error('Password and confirm password must match');
-      return;
-    }
-    const selectedRole = roles.find(r => r.id === formData.role);
-
     if (editingUser) {
-      setUsers(prev => prev.map(user =>
-        user.id === editingUser.id
-          ? { 
-            ...user, 
-            ...formData, 
-            permissions: selectedRole?.permissions || []
+      try {
+        const selectedRole = roles.find(r => r.id === formData.role);
+        const updatedMeta = {
+          username: formData.username,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          role: formData.role,
+          restrictions: restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false }
+        };
+        // Persist to DB (system_users mirror)
+        const { error } = await supabase.from('system_users').update({
+          email: formData.email,
+          user_metadata: updatedMeta
+        }).eq('id', editingUser.id);
+        if (error) { toast.error(error.message); return; }
+
+        // Ensure company linkage exists
+        try {
+          if (companyId) {
+            await supabase.from('company_users').upsert({ company_id: companyId, user_id: editingUser.id, role: formData.role || 'member' }, { onConflict: 'company_id,user_id' });
           }
-          : user
-      ));
-      toast.success('User updated successfully!');
+        } catch {}
+
+        // Sync RBAC user_roles with selected role
+        try {
+          let roleId: number | undefined;
+          const { data: roleRow } = await supabase.from('roles').select('id').eq('name', formData.role).maybeSingle();
+          roleId = roleRow?.id as number | undefined;
+          if (!roleId && formData.role === 'admin') {
+            const { data: createdRole } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+            roleId = createdRole?.id;
+          }
+          await supabase.from('user_roles').delete().eq('user_id', editingUser.id);
+          if (roleId) await supabase.from('user_roles').insert({ user_id: editingUser.id, role_id: roleId });
+        } catch {}
+
+        // Update local state
+        setUsers(prev => prev.map(user =>
+          user.id === editingUser.id
+            ? {
+              ...user,
+              ...formData,
+              permissions: selectedRole?.permissions || []
+            }
+            : user
+        ));
+        toast.success('User updated successfully!');
+      } catch (e) {
+        toast.error('Failed to update user');
+        return;
+      }
     } else {
-      const newUser: User = {
-        id: Date.now().toString(),
-        username: formData.username,
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        role: formData.role,
-        status: formData.status,
-        permissions: selectedRole?.permissions || [],
-        createdAt: new Date().toISOString()
-      };
-      setUsers(prev => [...prev, newUser]);
-      toast.success('User created successfully!');
+      try {
+        // Validate password input on create
+        if (formData.password.length < 8) { toast.error('Password must be at least 8 characters'); return; }
+        if (formData.password !== formData.confirmPassword) { toast.error('Passwords do not match'); return; }
+        const restrictions = restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false };
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              username: formData.username,
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              phone: formData.phone,
+              role: formData.role,
+              restrictions
+            }
+          }
+        });
+        if (error) { toast.error(error.message); return; }
+
+        // Mirror to system_users for admin visibility
+        const userId = data.user?.id;
+        if (userId) {
+          await supabase.from('system_users').upsert({
+            id: userId,
+            email: formData.email,
+            user_metadata: { username: formData.username, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, role: formData.role, restrictions: restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false }, created_by_admin: true },
+            created_at: new Date().toISOString(),
+            company_id: companyId || null
+          });
+
+          // Link to company as role
+          try {
+            if (companyId) {
+              await supabase.from('company_users').upsert({ company_id: companyId, user_id: userId, role: formData.role || 'member' }, { onConflict: 'company_id,user_id' });
+            }
+          } catch {}
+
+          // Sync RBAC user_roles with selected role
+          try {
+            let roleId: number | undefined;
+            const { data: roleRow } = await supabase.from('roles').select('id').eq('name', formData.role).maybeSingle();
+            roleId = roleRow?.id as number | undefined;
+            if (!roleId && formData.role === 'admin') {
+              const { data: createdRole } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
+              roleId = createdRole?.id;
+            }
+            await supabase.from('user_roles').delete().eq('user_id', userId);
+            if (roleId) await supabase.from('user_roles').insert({ user_id: userId, role_id: roleId });
+          } catch {}
+        }
+
+        // Ensure admin stays logged in (sign out any accidental session switch)
+        try { await safeGetSession().then(async ({ data }) => { if (data.session?.user?.email === formData.email) await supabase.auth.signOut(); }); } catch {}
+
+        // Immediately reflect in UI
+        if (userId) {
+          const selectedRole = roles.find(r => r.id === formData.role);
+          const newUser: User = {
+            id: String(userId),
+            username: formData.username,
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone || '',
+            role: formData.role,
+            status: 'active',
+            lastLogin: undefined,
+            createdAt: new Date().toISOString(),
+            permissions: selectedRole?.permissions || []
+          };
+          setUsers(prev => [newUser, ...prev]);
+        }
+
+        toast.success('User created successfully with the specified password.');
+      } catch (err) {
+        console.error('Create user error', err);
+        toast.error('Failed to create user');
+      }
     }
 
     setIsDialogOpen(false);
@@ -131,10 +347,21 @@ const Users = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this user?')) {
-      setUsers(prev => prev.filter(user => user.id !== id));
-      toast.success('User deleted successfully!');
+      try {
+        // Remove related public data
+        await supabase.from('user_subscriptions').delete().eq('user_id', id);
+        await supabase.from('user_promotions').delete().eq('user_id', id);
+        await supabase.from('company_users').delete().eq('user_id', id);
+        await supabase.from('user_roles').delete().eq('user_id', id);
+        const { error } = await supabase.from('system_users').delete().eq('id', id);
+        if (error) { toast.error(error.message); return; }
+        setUsers(prev => prev.filter(user => user.id !== id));
+        toast.success('User deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete user');
+      }
     }
   };
 
@@ -152,6 +379,9 @@ const Users = () => {
     });
     setEditingUser(null);
     setShowPassword(false);
+    setRestrictAccess(false);
+    setSelectedPages([]);
+    setSelectedActions([]);
   };
 
   const getStatusBadge = (status: string) => {
@@ -284,6 +514,65 @@ const Users = () => {
                 </Select>
               </div>
 
+              <div className="col-span-2 border rounded-md p-4 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="restrictAccess" checked={restrictAccess} onCheckedChange={(v) => setRestrictAccess(Boolean(v))} />
+                  <Label htmlFor="restrictAccess">Restrict access to specific pages and actions</Label>
+                </div>
+
+                {restrictAccess && (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>Allowed Pages</Label>
+                        <div className="space-x-2 text-sm">
+                          <button type="button" className="underline" onClick={() => setSelectedPages(AVAILABLE_PAGES.map(p => p.path))}>Select all</button>
+                          <button type="button" className="underline" onClick={() => setSelectedPages([])}>Clear</button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-auto pr-1">
+                        {AVAILABLE_PAGES.map((p) => (
+                          <label key={p.path} className="flex items-center space-x-2 text-sm">
+                            <Checkbox
+                              checked={selectedPages.includes(p.path)}
+                              onCheckedChange={(v) => {
+                                const checked = Boolean(v);
+                                setSelectedPages((prev) => checked ? Array.from(new Set([...prev, p.path])) : prev.filter(x => x !== p.path));
+                              }}
+                            />
+                            <span>{p.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>Allowed Actions</Label>
+                        <div className="space-x-2 text-sm">
+                          <button type="button" className="underline" onClick={() => setSelectedActions(AVAILABLE_ACTIONS)}>Select all</button>
+                          <button type="button" className="underline" onClick={() => setSelectedActions([])}>Clear</button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {AVAILABLE_ACTIONS.map((a) => (
+                          <label key={a} className="flex items-center space-x-2 text-sm capitalize">
+                            <Checkbox
+                              checked={selectedActions.includes(a)}
+                              onCheckedChange={(v) => {
+                                const checked = Boolean(v);
+                                setSelectedActions((prev) => checked ? Array.from(new Set([...prev, a])) : prev.filter(x => x !== a));
+                              }}
+                            />
+                            <span>{a.replace('_', ' ')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {!editingUser && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -294,7 +583,7 @@ const Users = () => {
                         type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                        placeholder="Enter password"
+                        placeholder="Enter password (min 8 characters)"
                         required={!editingUser}
                       />
                       <button
@@ -491,13 +780,15 @@ const Users = () => {
                           >
                             <Edit2 size={14} />
                           </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(user.id)}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
+                          {user.id !== currentUserId && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(user.id)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

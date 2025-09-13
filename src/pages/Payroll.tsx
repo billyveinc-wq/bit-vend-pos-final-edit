@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,8 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { toast } from "sonner";
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PayrollRecord {
   id: string;
@@ -39,9 +40,16 @@ interface PayrollRecord {
   createdAt: string;
 }
 
+interface EmployeeOption {
+  id: string;
+  name: string;
+  position: string;
+  baseSalary: number;
+}
+
 const Payroll = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
+  const [selectedPeriod, setSelectedPeriod] = useState(new Date().toISOString().slice(0, 7));
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     employeeId: '',
@@ -53,65 +61,117 @@ const Payroll = () => {
   });
 
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
 
-  // Mock employees for selection
-  const employees = [
-    { id: '1', name: 'John Doe', position: 'Manager', baseSalary: 5000 },
-    { id: '2', name: 'Jane Smith', position: 'Cashier', baseSalary: 3000 },
-    { id: '3', name: 'Mike Johnson', position: 'Sales Associate', baseSalary: 2800 }
-  ];
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [empRes, payRes] = await Promise.all([
+          supabase.from('employees').select('id, first_name, last_name, position, salary'),
+          supabase
+            .from('payroll_records')
+            .select('id, employee_id, pay_period, base_salary, overtime, bonuses, deductions, gross_pay, net_pay, status, pay_date, created_at, employees:employee_id ( first_name, last_name, position )')
+            .order('created_at', { ascending: false })
+        ]);
 
-  const filteredRecords = payrollRecords.filter(record =>
-    record.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.payPeriod.includes(searchTerm)
-  );
+        if (empRes.error) throw empRes.error;
+        const emps: EmployeeOption[] = (empRes.data || []).map((row: any) => ({
+          id: String(row.id),
+          name: `${row.first_name || ''} ${row.last_name || ''}`.trim(),
+          position: row.position || '',
+          baseSalary: row.salary ? Number(row.salary) : 0,
+        }));
+        setEmployees(emps);
+
+        if (payRes.error) throw payRes.error;
+        const mapped: PayrollRecord[] = (payRes.data || []).map((row: any) => ({
+          id: String(row.id),
+          employeeId: String(row.employee_id),
+          employeeName: `${row.employees?.first_name || ''} ${row.employees?.last_name || ''}`.trim() || 'Unknown',
+          position: row.employees?.position || '',
+          payPeriod: row.pay_period,
+          baseSalary: Number(row.base_salary) || 0,
+          overtime: Number(row.overtime) || 0,
+          bonuses: Number(row.bonuses) || 0,
+          deductions: Number(row.deductions) || 0,
+          grossPay: Number(row.gross_pay) || 0,
+          netPay: Number(row.net_pay) || 0,
+          status: (row.status || 'draft') as PayrollRecord['status'],
+          payDate: row.pay_date || undefined,
+          createdAt: row.created_at,
+        }));
+        setPayrollRecords(mapped);
+      } catch (e) {
+        console.warn('payroll not available');
+      }
+    };
+    load();
+  }, []);
+
+  const filteredRecords = useMemo(() => {
+    const bySearch = (r: PayrollRecord) =>
+      r.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.payPeriod.includes(searchTerm);
+    const byPeriod = (r: PayrollRecord) => !selectedPeriod || r.payPeriod === selectedPeriod;
+    return payrollRecords.filter(r => byPeriod(r) && bySearch(r));
+  }, [payrollRecords, searchTerm, selectedPeriod]);
 
   const calculatePayroll = () => {
     const baseSalary = parseFloat(formData.baseSalary) || 0;
     const overtime = parseFloat(formData.overtime) || 0;
     const bonuses = parseFloat(formData.bonuses) || 0;
     const deductions = parseFloat(formData.deductions) || 0;
-    
     const grossPay = baseSalary + overtime + bonuses;
     const netPay = grossPay - deductions;
-    
     return { grossPay, netPay };
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-
     if (!formData.employeeId || !formData.baseSalary) {
       toast.error('Please fill in all required fields');
       return;
     }
-
     const employee = employees.find(emp => emp.id === formData.employeeId);
-    if (!employee) {
-      toast.error('Employee not found');
-      return;
-    }
+    if (!employee) { toast.error('Employee not found'); return; }
+
     const { grossPay, netPay } = calculatePayroll();
 
+    const { data, error } = await supabase
+      .from('payroll_records')
+      .insert({
+        employee_id: formData.employeeId,
+        pay_period: formData.payPeriod,
+        base_salary: parseFloat(formData.baseSalary),
+        overtime: parseFloat(formData.overtime) || 0,
+        bonuses: parseFloat(formData.bonuses) || 0,
+        deductions: parseFloat(formData.deductions) || 0,
+        gross_pay: grossPay,
+        net_pay: netPay,
+        status: 'draft',
+      })
+      .select('id, employee_id, pay_period, base_salary, overtime, bonuses, deductions, gross_pay, net_pay, status, pay_date, created_at, employees:employee_id ( first_name, last_name, position )')
+      .single();
+    if (error) { toast.error(error.message); return; }
+
     const newRecord: PayrollRecord = {
-      id: Date.now().toString(),
-      employeeId: formData.employeeId,
-      employeeName: employee.name,
-      position: employee.position,
-      payPeriod: formData.payPeriod,
-      baseSalary: parseFloat(formData.baseSalary),
-      overtime: parseFloat(formData.overtime) || 0,
-      bonuses: parseFloat(formData.bonuses) || 0,
-      deductions: parseFloat(formData.deductions) || 0,
-      grossPay,
-      netPay,
-      status: 'draft',
-      createdAt: new Date().toISOString()
+      id: String((data as any).id),
+      employeeId: String((data as any).employee_id),
+      employeeName: `${(data as any).employees?.first_name || ''} ${(data as any).employees?.last_name || ''}`.trim() || employee.name,
+      position: (data as any).employees?.position || employee.position,
+      payPeriod: (data as any).pay_period,
+      baseSalary: Number((data as any).base_salary) || 0,
+      overtime: Number((data as any).overtime) || 0,
+      bonuses: Number((data as any).bonuses) || 0,
+      deductions: Number((data as any).deductions) || 0,
+      grossPay: Number((data as any).gross_pay) || 0,
+      netPay: Number((data as any).net_pay) || 0,
+      status: ((data as any).status || 'draft') as PayrollRecord['status'],
+      payDate: (data as any).pay_date || undefined,
+      createdAt: (data as any).created_at,
     };
-    
-    setPayrollRecords(prev => [...prev, newRecord]);
+    setPayrollRecords(prev => [newRecord, ...prev]);
     toast.success('Payroll record created successfully!');
     setIsDialogOpen(false);
     resetForm();
@@ -128,16 +188,21 @@ const Payroll = () => {
     });
   };
 
-  const handleProcessPayroll = (id: string) => {
+  const handleProcessPayroll = async (id: string) => {
+    const { error } = await supabase.from('payroll_records').update({ status: 'processed' }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
     setPayrollRecords(prev => prev.map(record =>
       record.id === id ? { ...record, status: 'processed' } : record
     ));
     toast.success('Payroll processed successfully!');
   };
 
-  const handleMarkPaid = (id: string) => {
+  const handleMarkPaid = async (id: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const { error } = await supabase.from('payroll_records').update({ status: 'paid', pay_date: today }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
     setPayrollRecords(prev => prev.map(record =>
-      record.id === id ? { ...record, status: 'paid', payDate: new Date().toISOString().split('T')[0] } : record
+      record.id === id ? { ...record, status: 'paid', payDate: today } : record
     ));
     toast.success('Payroll marked as paid!');
   };
@@ -160,7 +225,9 @@ const Payroll = () => {
     }
   };
 
-  const totalPayroll = payrollRecords.filter(r => r.status === 'paid').reduce((sum, r) => sum + r.netPay, 0);
+  const totalPayroll = useMemo(() => payrollRecords
+    .filter(r => r.status === 'paid')
+    .reduce((sum, r) => sum + r.netPay, 0), [payrollRecords]);
 
   return (
     <div className="space-y-6 p-6 animate-fadeInUp">
@@ -195,7 +262,7 @@ const Payroll = () => {
                       setFormData(prev => ({ 
                         ...prev, 
                         employeeId: value,
-                        baseSalary: employee?.baseSalary.toString() || ''
+                        baseSalary: (employee?.baseSalary ?? '').toString()
                       }));
                     }}>
                       <SelectTrigger>
@@ -273,7 +340,6 @@ const Payroll = () => {
                   </div>
                 </div>
 
-                {/* Payroll Summary */}
                 {formData.baseSalary && (
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                     <h4 className="font-medium">Payroll Summary</h4>

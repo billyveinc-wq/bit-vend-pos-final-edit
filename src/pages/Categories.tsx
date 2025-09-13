@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import {
   Palette
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Category {
   id: string;
@@ -43,35 +44,89 @@ const Categories = () => {
 
   const [categories, setCategories] = useState<Category[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          const mapped: Category[] = data.map((row: any) => ({
+            id: String(row.id),
+            name: row.name,
+            description: row.description || '',
+            color: '#3b82f6',
+            parentId: '',
+            isActive: !!row.is_active,
+            productCount: 0,
+            createdAt: row.created_at,
+          }));
+          setCategories(mapped);
+        }
+      } catch (e) {
+        console.warn('Failed to load categories');
+      }
+    };
+    load();
+  }, []);
+
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name) {
       toast.error('Please enter a category name');
       return;
     }
-    
-    if (editingCategory) {
-      setCategories(prev => prev.map(category =>
-        category.id === editingCategory.id
-          ? { ...category, ...formData }
-          : category
-      ));
-      toast.success('Category updated successfully!');
-    } else {
-      const newCategory: Category = {
-        id: Date.now().toString(),
-        ...formData,
-        productCount: 0,
-        createdAt: new Date().toISOString()
-      };
-      setCategories(prev => [...prev, newCategory]);
-      toast.success('Category created successfully!');
+
+    try {
+      if (editingCategory) {
+        const { error } = await supabase
+          .from('categories')
+          .update({
+            name: formData.name,
+            description: formData.description || null,
+            is_active: formData.isActive,
+          })
+          .eq('id', editingCategory.id);
+        if (error) { toast.error(error.message); return; }
+        setCategories(prev => prev.map(category =>
+          category.id === editingCategory.id
+            ? { ...category, ...formData }
+            : category
+        ));
+        toast.success('Category updated successfully!');
+      } else {
+        const { data, error } = await supabase
+          .from('categories')
+          .insert({
+            name: formData.name,
+            description: formData.description || null,
+            is_active: formData.isActive,
+          })
+          .select('*')
+          .single();
+        if (error) { toast.error(error.message); return; }
+        const newCategory: Category = {
+          id: String(data.id),
+          name: data.name,
+          description: data.description || '',
+          color: data.color || '#3b82f6',
+          parentId: data.parent_id ? String(data.parent_id) : '',
+          isActive: !!data.is_active,
+          productCount: Number(data.product_count) || 0,
+          createdAt: data.created_at,
+        };
+        setCategories(prev => [newCategory, ...prev]);
+        toast.success('Category created successfully!');
+      }
+    } catch (err) {
+      toast.error('Failed to save category');
     }
 
     setIsDialogOpen(false);
@@ -90,10 +145,16 @@ const Categories = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this category?')) {
-      setCategories(prev => prev.filter(category => category.id !== id));
-      toast.success('Category deleted successfully!');
+      try {
+        const { error } = await supabase.from('categories').delete().eq('id', id);
+        if (error) { toast.error(error.message); return; }
+        setCategories(prev => prev.filter(category => category.id !== id));
+        toast.success('Category deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete category');
+      }
     }
   };
 

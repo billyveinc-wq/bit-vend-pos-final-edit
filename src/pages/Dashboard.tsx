@@ -27,7 +27,7 @@ import {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { products } = useProducts();
-  const { getTotalSales, getTodaysSales } = useSales();
+  const { getTotalSales, getTodaysSales, sales } = useSales();
   const { subscription, hasFeature } = useSubscription();
 
   const totalSalesAmount = getTotalSales();
@@ -74,28 +74,28 @@ const Dashboard: React.FC = () => {
     {
       title: 'Start POS Session',
       description: 'Begin a new point of sale session',
-      action: () => navigate('/checkout'),
+      action: () => navigate('/dashboard/checkout'),
       color: 'bg-primary hover:bg-primary/90',
       feature: 'basic_sales_tracking' as const,
     },
     {
       title: 'Add New Product',
       description: 'Add a new product to inventory',
-      action: () => navigate('/products/add'),
+      action: () => navigate('/dashboard/products/add'),
       color: 'bg-orange-500 hover:bg-orange-600',
       feature: 'basic_inventory' as const,
     },
     {
       title: 'Advanced Reports',
       description: 'View detailed business analytics',
-      action: () => navigate('/sales-report'),
+      action: () => navigate('/dashboard/sales-report'),
       color: 'bg-green-500 hover:bg-green-600',
       feature: 'advanced_reports' as const,
     },
     {
       title: 'Manage Staff',
       description: 'Add and manage staff accounts',
-      action: () => navigate('/employees'),
+      action: () => navigate('/dashboard/employees'),
       color: 'bg-blue-500 hover:bg-blue-600',
       feature: 'multi_user_accounts' as const,
     }
@@ -126,7 +126,7 @@ const Dashboard: React.FC = () => {
               variant="outline" 
               size="sm"
               className="gap-2"
-              onClick={() => navigate('/settings?section=business&subsection=subscription')}
+              onClick={() => navigate('/dashboard/settings?section=business&subsection=subscription')}
             >
               <Crown className="h-4 w-4" />
               Upgrade
@@ -151,7 +151,7 @@ const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => navigate('/settings?section=business&subsection=subscription')}
+              onClick={() => navigate('/dashboard/settings?section=business&subsection=subscription')}
               className="bg-amber-600 hover:bg-amber-700 text-white"
             >
               View Plans & Pricing
@@ -222,19 +222,39 @@ const Dashboard: React.FC = () => {
             <CardTitle className="text-foreground">Recent Sales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent sales to display</p>
-              <FeatureGate feature="basic_sales_tracking" showUpgrade={false}>
-                <Button
-                  variant="outline"
-                  className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-                  onClick={() => navigate('/checkout')}
-                >
-                  Start Your First Sale
+            {sales && sales.length > 0 ? (
+              <div className="space-y-3">
+                {sales.slice(0, 5).map((s) => (
+                  <div key={s.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div>
+                      <div className="font-medium">{s.invoiceNo}</div>
+                      <div className="text-xs text-muted-foreground">{s.date} • {s.time} • {s.paymentMethod}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold">${s.total.toFixed(2)}</div>
+                      <div className="text-xs text-muted-foreground capitalize">{s.status}</div>
+                    </div>
+                  </div>
+                ))}
+                <Button variant="outline" className="mt-2" onClick={() => navigate('/dashboard/sales')}>
+                  View All Sales
                 </Button>
-              </FeatureGate>
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No recent sales to display</p>
+                <FeatureGate feature="basic_sales_tracking" showUpgrade={false}>
+                  <Button
+                    variant="outline"
+                    className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
+                    onClick={() => navigate('/dashboard/checkout')}
+                  >
+                    Start Your First Sale
+                  </Button>
+                </FeatureGate>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -252,7 +272,7 @@ const Dashboard: React.FC = () => {
                   <Button
                     variant="outline"
                     className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-                    onClick={() => navigate('/products')}
+                    onClick={() => navigate('/dashboard/products')}
                   >
                     View Products
                   </Button>
@@ -272,7 +292,7 @@ const Dashboard: React.FC = () => {
                 <Button
                   variant="outline"
                   className="mt-4 bg-secondary hover:bg-secondary-hover text-secondary-foreground"
-                  onClick={() => navigate('/products')}
+                  onClick={() => navigate('/dashboard/products')}
                 >
                   Manage Products
                 </Button>
@@ -296,7 +316,7 @@ const Dashboard: React.FC = () => {
                 Customer and supplier insights available in Pro plan
               </p>
               <Button 
-                onClick={() => navigate('/settings?section=business&subsection=subscription')}
+                onClick={() => navigate('/dashboard/settings?section=business&subsection=subscription')}
                 className="gap-2"
               >
                 <Crown className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import {
   FileText
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Expense {
   id: string;
@@ -54,36 +55,104 @@ const Expenses = () => {
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('expenses')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          const mapped: Expense[] = data.map((row: any) => ({
+            id: String(row.id),
+            title: row.title,
+            amount: Number(row.amount) || 0,
+            category: '',
+            date: row.expense_date,
+            description: row.description || '',
+            receiptNumber: '',
+            vendor: '',
+            paymentMethod: row.payment_method || '',
+            status: (row.is_approved ? 'approved' : 'pending') as Expense['status'],
+            approvedBy: '',
+            createdAt: row.created_at,
+          }));
+          setExpenses(mapped);
+        }
+      } catch (e) {
+        console.warn('Failed to load expenses from Supabase');
+      }
+    };
+    load();
+  }, []);
+
   const filteredExpenses = expenses.filter(expense =>
     expense.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (expense.vendor && expense.vendor.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title || !formData.amount || !formData.category) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    if (editingExpense) {
-      setExpenses(prev => prev.map(expense =>
-        expense.id === editingExpense.id
-          ? { ...expense, ...formData, amount: parseFloat(formData.amount) }
-          : expense
-      ));
-      toast.success('Expense updated successfully!');
-    } else {
-      const newExpense: Expense = {
-        id: Date.now().toString(),
-        ...formData,
-        amount: parseFloat(formData.amount),
-        createdAt: new Date().toISOString()
-      };
-      setExpenses(prev => [...prev, newExpense]);
-      toast.success('Expense created successfully!');
+    try {
+      if (editingExpense) {
+        const { error } = await supabase
+          .from('expenses')
+          .update({
+            title: formData.title,
+            amount: parseFloat(formData.amount) || 0,
+            expense_date: formData.date,
+            description: formData.description || null,
+            payment_method: formData.paymentMethod || null,
+            is_approved: formData.status === 'approved',
+          })
+          .eq('id', editingExpense.id);
+        if (error) { toast.error(error.message); return; }
+        setExpenses(prev => prev.map(expense =>
+          expense.id === editingExpense.id
+            ? { ...expense, ...formData, amount: parseFloat(formData.amount) }
+            : expense
+        ));
+        toast.success('Expense updated successfully!');
+      } else {
+        const { data, error } = await supabase
+          .from('expenses')
+          .insert({
+            title: formData.title,
+            amount: parseFloat(formData.amount) || 0,
+            expense_date: formData.date,
+            description: formData.description || null,
+            payment_method: formData.paymentMethod || null,
+            is_approved: formData.status === 'approved',
+          })
+          .select('*')
+          .single();
+        if (error) { toast.error(error.message); return; }
+        const newExpense: Expense = {
+          id: String(data.id),
+          title: data.title,
+          amount: Number(data.amount) || 0,
+          category: data.category,
+          date: data.date,
+          description: data.description || '',
+          receiptNumber: data.receipt_number || '',
+          vendor: data.vendor || '',
+          paymentMethod: data.payment_method || '',
+          status: (data.status || 'pending') as Expense['status'],
+          approvedBy: data.approved_by || '',
+          createdAt: data.created_at,
+        };
+        setExpenses(prev => [newExpense, ...prev]);
+        toast.success('Expense created successfully!');
+      }
+    } catch (err) {
+      toast.error('Failed to save expense');
     }
 
     setIsDialogOpen(false);
@@ -106,10 +175,16 @@ const Expenses = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this expense?')) {
-      setExpenses(prev => prev.filter(expense => expense.id !== id));
-      toast.success('Expense deleted successfully!');
+      try {
+        const { error } = await supabase.from('expenses').delete().eq('id', id);
+        if (error) { toast.error(error.message); return; }
+        setExpenses(prev => prev.filter(expense => expense.id !== id));
+        toast.success('Expense deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete expense');
+      }
     }
   };
 

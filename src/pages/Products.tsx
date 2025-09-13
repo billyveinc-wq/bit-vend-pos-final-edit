@@ -27,6 +27,7 @@ import {
 import { Search, Package, Plus, Edit, Trash2, Filter, Eye, FileDown, Upload as LucideUpload, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
+import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -92,8 +93,16 @@ const Products = () => {
   }, [searchTerm, selectedCategory]);
 
   // Handle delete product
-  const handleDeleteProduct = (productId: number, productName: string) => {
+  const handleDeleteProduct = async (productId: number, productName: string) => {
     if (window.confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+      try {
+        const prod = products.find(p => p.id === productId);
+        if (prod?.sku) {
+          await supabase.from('products').delete().eq('sku', prod.sku);
+        }
+      } catch (e) {
+        // ignore DB delete errors for now; local delete still proceeds
+      }
       deleteProduct(productId);
       toast({
         title: "Product Deleted",
@@ -397,7 +406,7 @@ const Products = () => {
         </div>
         <div className="flex items-center gap-3">
           <Button 
-            onClick={() => navigate('/products/add')}
+            onClick={() => navigate('/dashboard/products/add')}
             className="bg-orange-500 hover:bg-orange-600 text-white gap-2 transition-all duration-200 hover:scale-95 active:scale-90"
           >
             <Plus className="h-4 w-4" />

@@ -11,10 +11,9 @@ const SubscriptionManage = () => {
     <div className="space-y-6 p-6 animate-fadeInUp">
       {/* Header */}
       <div className="flex items-center gap-4 animate-slideInLeft">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="sm"
-          onClick={() => navigate('/subscription')}
           onClick={() => navigate('/dashboard/subscription')}
           className="gap-2"
         >

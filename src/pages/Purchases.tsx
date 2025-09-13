@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,59 @@ import {
   Eye,
   Edit
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+interface PurchaseItem { name: string; quantity: number; unitCost: number; total: number; }
+interface Purchase { id: string; supplier: string; orderDate: string; expectedDelivery?: string; subtotal: number; shipping: number; total: number; status: string; paymentStatus: string; items: PurchaseItem[]; notes?: string; }
 
 const Purchases = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [supplierFilter, setSupplierFilter] = useState('all');
 
-  const [purchases] = useState([]);
+  const navigate = useNavigate();
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const totalOrders = React.useMemo(() => purchases.length, [purchases]);
+  const pendingCount = React.useMemo(() => purchases.filter(p => p.status === 'pending').length, [purchases]);
+  const inTransitCount = React.useMemo(() => purchases.filter(p => p.status === 'shipped').length, [purchases]);
+  const totalValue = React.useMemo(() => purchases.reduce((sum, p) => sum + (p.total || 0), 0), [purchases]);
+  const supplierOptions = React.useMemo(() => Array.from(new Set(purchases.map(p => p.supplier).filter(Boolean))), [purchases]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('purchases')
+          .select('id, supplier, order_date, expected_delivery, subtotal, shipping, total, status, payment_status, notes, purchase_items(id, name, quantity, unit_cost, total)')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: Purchase[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          supplier: row.supplier || '-',
+          orderDate: row.order_date,
+          expectedDelivery: row.expected_delivery || undefined,
+          subtotal: Number(row.subtotal) || 0,
+          shipping: Number(row.shipping) || 0,
+          total: Number(row.total) || 0,
+          status: row.status || 'pending',
+          paymentStatus: row.payment_status || 'pending',
+          notes: row.notes || undefined,
+          items: (row.purchase_items || []).map((it: any) => ({
+            name: it.name,
+            quantity: it.quantity,
+            unitCost: Number(it.unit_cost) || 0,
+            total: Number(it.total) || 0,
+          })),
+        }));
+        setPurchases(mapped);
+      } catch (e) {
+        console.warn('Purchases not available in DB yet');
+      }
+    };
+    load();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -86,14 +132,14 @@ const Purchases = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards (DB-driven) */}
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Package className="w-8 h-8 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">127</p>
+                <p className="text-2xl font-bold">{totalOrders}</p>
                 <p className="text-sm text-muted-foreground">Total Orders</p>
               </div>
             </div>
@@ -104,7 +150,7 @@ const Purchases = () => {
             <div className="flex items-center gap-2">
               <Clock className="w-8 h-8 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">23</p>
+                <p className="text-2xl font-bold">{pendingCount}</p>
                 <p className="text-sm text-muted-foreground">Pending</p>
               </div>
             </div>
@@ -115,7 +161,7 @@ const Purchases = () => {
             <div className="flex items-center gap-2">
               <Truck className="w-8 h-8 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">15</p>
+                <p className="text-2xl font-bold">{inTransitCount}</p>
                 <p className="text-sm text-muted-foreground">In Transit</p>
               </div>
             </div>
@@ -126,7 +172,7 @@ const Purchases = () => {
             <div className="flex items-center gap-2">
               <DollarSign className="w-8 h-8 text-purple-500" />
               <div>
-                <p className="text-2xl font-bold">$1.2M</p>
+                <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Value</p>
               </div>
             </div>
@@ -163,14 +209,14 @@ const Purchases = () => {
               </SelectContent>
             </Select>
             <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Supplier" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Suppliers</SelectItem>
-                <SelectItem value="Apple Inc.">Apple Inc.</SelectItem>
-                <SelectItem value="Samsung Electronics">Samsung</SelectItem>
-                <SelectItem value="Dell Technologies">Dell</SelectItem>
+                {supplierOptions.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

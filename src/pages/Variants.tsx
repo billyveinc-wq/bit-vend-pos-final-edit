@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +19,11 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 import { useProducts } from '@/contexts/ProductContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProductVariant {
   id: string;
-  productId: number;
+  productId: string;
   productName: string;
   variantType: 'size' | 'color' | 'material' | 'style' | 'other';
   variantName: string;
@@ -52,6 +53,35 @@ const Variants = () => {
 
   const [variants, setVariants] = useState<ProductVariant[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('product_variants')
+          .select('id, product_id, variant_name, sku, selling_price, stock_quantity, is_active, created_at, products:product_id ( name )')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const mapped: ProductVariant[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          productId: row.product_id,
+          productName: row.products?.name || '',
+          variantType: 'other',
+          variantName: row.variant_name,
+          variantValue: row.variant_name,
+          sku: row.sku || '',
+          price: row.selling_price ? Number(row.selling_price) : undefined,
+          stock: typeof row.stock_quantity === 'number' ? row.stock_quantity : undefined,
+          isActive: !!row.is_active,
+          createdAt: row.created_at,
+        }));
+        setVariants(mapped);
+      } catch (e) {
+        console.warn('Failed to load variants');
+      }
+    };
+    load();
+  }, []);
+
   const filteredVariants = variants.filter(variant =>
     variant.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     variant.variantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,49 +89,74 @@ const Variants = () => {
     (variant.sku && variant.sku.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
 
-    if (!formData.productId || !formData.variantName || !formData.variantValue) {
+    if (!formData.productId || !formData.variantName) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     const product = products.find(p => p.id.toString() === formData.productId);
-    if (!product) {
-      toast.error('Product not found');
-      return;
-    }
+    if (!product) { toast.error('Product not found'); return; }
+
     if (editingVariant) {
+      const { error } = await supabase
+        .from('product_variants')
+        .update({
+          product_id: formData.productId,
+          variant_name: formData.variantName,
+          sku: formData.sku || null,
+          selling_price: formData.price ? parseFloat(formData.price) : null,
+          stock_quantity: formData.stock ? parseInt(formData.stock) : null,
+          is_active: formData.isActive,
+        })
+        .eq('id', editingVariant.id);
+      if (error) { toast.error(error.message); return; }
       setVariants(prev => prev.map(variant =>
         variant.id === editingVariant.id
-          ? { 
-            ...variant, 
-            ...formData,
-            productId: parseInt(formData.productId),
+          ? {
+            ...variant,
+            productId: formData.productId,
             productName: product.name,
-            price: parseFloat(formData.price) || undefined,
-            stock: parseInt(formData.stock) || undefined
+            variantName: formData.variantName,
+            variantValue: formData.variantName,
+            sku: formData.sku,
+            price: formData.price ? parseFloat(formData.price) : undefined,
+            stock: formData.stock ? parseInt(formData.stock) : undefined,
+            isActive: formData.isActive,
           }
           : variant
       ));
       toast.success('Product variant updated successfully!');
     } else {
+      const { data, error } = await supabase
+        .from('product_variants')
+        .insert({
+          product_id: formData.productId,
+          variant_name: formData.variantName,
+          sku: formData.sku || null,
+          selling_price: formData.price ? parseFloat(formData.price) : null,
+          stock_quantity: formData.stock ? parseInt(formData.stock) : null,
+          is_active: formData.isActive,
+        })
+        .select('id')
+        .single();
+      if (error) { toast.error(error.message); return; }
       const newVariant: ProductVariant = {
-        id: Date.now().toString(),
-        productId: parseInt(formData.productId),
+        id: String((data as any).id),
+        productId: formData.productId,
         productName: product.name,
         variantType: formData.variantType,
         variantName: formData.variantName,
-        variantValue: formData.variantValue,
+        variantValue: formData.variantName,
         sku: formData.sku,
-        price: parseFloat(formData.price) || undefined,
-        stock: parseInt(formData.stock) || undefined,
+        price: formData.price ? parseFloat(formData.price) : undefined,
+        stock: formData.stock ? parseInt(formData.stock) : undefined,
         isActive: formData.isActive,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
-      setVariants(prev => [...prev, newVariant]);
+      setVariants(prev => [newVariant, ...prev]);
       toast.success('Product variant created successfully!');
     }
 
@@ -112,7 +167,7 @@ const Variants = () => {
   const handleEdit = (variant: ProductVariant) => {
     setEditingVariant(variant);
     setFormData({
-      productId: variant.productId.toString(),
+      productId: variant.productId,
       variantType: variant.variantType,
       variantName: variant.variantName,
       variantValue: variant.variantValue,
@@ -124,8 +179,10 @@ const Variants = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this variant?')) {
+      const { error } = await supabase.from('product_variants').delete().eq('id', id);
+      if (error) { toast.error(error.message); return; }
       setVariants(prev => prev.filter(variant => variant.id !== id));
       toast.success('Product variant deleted successfully!');
     }

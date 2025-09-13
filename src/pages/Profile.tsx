@@ -1,0 +1,269 @@
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { safeGetSession } from '@/integrations/supabase/safeAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { Pencil } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+interface FormData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  phone: string;
+  bio: string;
+  role: string;
+}
+
+const Profile: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
+  const [form, setForm] = useState<FormData>({ email: '', firstName: '', lastName: '', username: '', phone: '', bio: '', role: '' });
+
+  // Self-delete helpers
+  const [isFirstUser, setIsFirstUser] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+
+  const checkIfFirstUser = async (uid: string | null) => {
+    try {
+      if (!uid) return;
+      const { data: row } = await supabase.from('system_users').select('is_first_user').eq('id', uid).maybeSingle();
+      if (row && row.is_first_user) setIsFirstUser(true);
+      else {
+        // Fallback: check earliest user
+        const { data: first } = await supabase.from('system_users').select('id').order('created_at').limit(1).maybeSingle();
+        if (first && first.id === uid) setIsFirstUser(true);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: { session } } = await safeGetSession();
+        const user = session?.user || null;
+        if (!user) { setLoading(false); return; }
+
+        const { data: row } = await supabase.from('system_users').select('*').eq('id', user.id).maybeSingle();
+        const meta = (row as any)?.user_metadata || {};
+
+        let roleName = meta.role || '';
+        try {
+          const { data: urs } = await supabase.from('user_roles').select('role_id').eq('user_id', user.id);
+          const roleIds = (urs || []).map((r: any) => r.role_id);
+          if (roleIds.length) {
+            const { data: roles } = await supabase.from('roles').select('id, name').in('id', roleIds);
+            if (roles && roles.length) roleName = roles[0].name || roleName;
+          }
+        } catch {}
+
+        setForm({
+          email: user.email || '',
+          firstName: meta.first_name || meta.firstName || '',
+          lastName: meta.last_name || meta.lastName || '',
+          username: meta.username || meta.full_name || (user.email ? user.email.split('@')[0] : ''),
+          phone: meta.phone || '',
+          bio: meta.bio || '',
+          role: roleName || 'member'
+        });
+        // check if this user is the first user
+        await checkIfFirstUser(user.id);
+      } catch (e: any) {
+        console.warn('Load profile error', e);
+        toast.error('Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  // Handlers for deletion
+  const handleSoftDelete = async () => {
+    try {
+      const { data: s } = await safeGetSession();
+      const token = s?.session?.access_token;
+      if (!token) { toast.error('Not authenticated'); return; }
+      const res = await fetch('/admin/self-delete', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ immediate: false }) });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json?.error || 'Failed to request deletion'); return; }
+      toast.success('Account scheduled for deletion (30 days)');
+      setDeleteOpen(false);
+    } catch (e: any) { console.error(e); toast.error('Failed to request deletion'); }
+  };
+
+  const handleHardDelete = async () => {
+    try {
+      const { data: s } = await safeGetSession();
+      const token = s?.session?.access_token;
+      if (!token) { toast.error('Not authenticated'); return; }
+      const res = await fetch('/admin/self-delete', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ immediate: true }) });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json?.error || 'Failed to delete'); return; }
+      toast.success('Account deleted');
+      // Sign out client and redirect
+      try { await supabase.auth.signOut(); } catch {}
+      window.location.href = '/';
+    } catch (e: any) { console.error(e); toast.error('Failed to delete'); }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { data: { session } } = await safeGetSession();
+      const user = session?.user || null;
+      if (!user) { toast.error('Not signed in'); return; }
+
+      const user_metadata = {
+        username: form.username,
+        first_name: form.firstName,
+        last_name: form.lastName,
+        phone: form.phone,
+        bio: form.bio,
+        role: form.role
+      };
+
+      const { error } = await supabase.from('system_users').upsert({
+        id: user.id,
+        email: form.email,
+        user_metadata
+      }, { onConflict: 'id' });
+      if (error) throw error;
+
+      toast.success('Profile saved');
+      setIsEditing(false);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-6">
+      <Card className="max-w-3xl mx-auto">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Profile</CardTitle>
+          {!loading && !isEditing && (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
+              <Pencil className="h-4 w-4" /> Edit
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : isEditing ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" value={form.email} disabled />
+                </div>
+                <div>
+                  <Label htmlFor="username">Username</Label>
+                  <Input id="username" value={form.username} onChange={(e) => setForm(f => ({ ...f, username: e.target.value }))} placeholder="johndoe" />
+                </div>
+                <div>
+                  <Label htmlFor="first">First Name</Label>
+                  <Input id="first" value={form.firstName} onChange={(e) => setForm(f => ({ ...f, firstName: e.target.value }))} placeholder="John" />
+                </div>
+                <div>
+                  <Label htmlFor="last">Last Name</Label>
+                  <Input id="last" value={form.lastName} onChange={(e) => setForm(f => ({ ...f, lastName: e.target.value }))} placeholder="Doe" />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+123456789" />
+                </div>
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Input id="role" value={form.role} disabled />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea id="bio" value={form.bio} onChange={(e) => setForm(f => ({ ...f, bio: e.target.value }))} placeholder="Tell us about yourself" />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Email</Label>
+                  <div className="font-medium">{form.email || '-'}</div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Username</Label>
+                  <div className="font-medium">{form.username || '-'}</div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">First Name</Label>
+                  <div className="font-medium">{form.firstName || '-'}</div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Last Name</Label>
+                  <div className="font-medium">{form.lastName || '-'}</div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Phone</Label>
+                  <div className="font-medium">{form.phone || '-'}</div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Role</Label>
+                  <div className="font-medium capitalize">{form.role || '-'}</div>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Bio</Label>
+                <div className="font-medium whitespace-pre-wrap">{form.bio || '-'}</div>
+              </div>
+
+              {/* Self-delete section for first user */}
+              {isFirstUser && (
+                <div className="mt-6 border-t pt-4">
+                  <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Delete your account and all associated companies and users you created. This action is irreversible.</p>
+                  <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                    <div className="flex items-center gap-2">
+                      <Button variant="destructive" onClick={() => setDeleteOpen(true)}>Delete Account</Button>
+                    </div>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Confirm Account Deletion</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <p className="text-sm">Type <strong>DELETE</strong> to confirm permanent deletion of your account and all its data, or choose soft-delete to mark for removal in 30 days.</p>
+                        <Input placeholder="Type DELETE to confirm" value={confirmText} onChange={(e)=>setConfirmText(e.target.value)} />
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                          <Button variant="destructive" onClick={handleHardDelete} disabled={confirmText !== 'DELETE'}>Delete Now</Button>
+                          <Button onClick={handleSoftDelete}>Soft Delete (30 days)</Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
+
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default Profile;

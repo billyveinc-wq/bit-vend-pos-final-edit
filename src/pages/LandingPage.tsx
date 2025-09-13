@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,47 @@ import { useTheme } from 'next-themes';
 
 const LandingPage = () => {
   const { theme, setTheme } = useTheme();
-  
+  const [selectedPlan, setSelectedPlan] = useState<string>(() => {
+    try { return localStorage.getItem('selected-plan') || 'starter'; } catch { return 'starter'; }
+  });
+  const choosePlan = (plan: string) => {
+    setSelectedPlan(plan);
+    try { localStorage.setItem('selected-plan', plan); } catch {}
+  };
+
+  // Typewriter for provider integrations
+  const providerPhrases = useMemo(() => ([
+    { name: 'M-Pesa', color: 'text-green-700 dark:text-green-300', glow: 'from-green-500/30', dot: 'bg-green-500' },
+    { name: 'PayPal', color: 'text-blue-700 dark:text-blue-300', glow: 'from-blue-500/30', dot: 'bg-blue-500' },
+    { name: 'Flutterwave', color: 'text-orange-700 dark:text-orange-300', glow: 'from-orange-500/30', dot: 'bg-orange-500' }
+  ]), []);
+  const [pIndex, setPIndex] = useState(0);
+  const [typed, setTyped] = useState('');
+  const [phase, setPhase] = useState<'typing' | 'pausing' | 'deleting'>('typing');
+
+  useEffect(() => {
+    const phrase = providerPhrases[pIndex].name;
+    let t: any;
+    if (phase === 'typing') {
+      if (typed.length < phrase.length) {
+        t = setTimeout(() => setTyped(phrase.slice(0, typed.length + 1)), 90);
+      } else {
+        setPhase('pausing');
+        t = setTimeout(() => setPhase('deleting'), 1100);
+      }
+    } else if (phase === 'deleting') {
+      if (typed.length > 0) {
+        t = setTimeout(() => setTyped(phrase.slice(0, typed.length - 1)), 50);
+      } else {
+        setPhase('typing');
+        setPIndex((i) => (i + 1) % providerPhrases.length);
+      }
+    } else {
+      t = setTimeout(() => setPhase('deleting'), 600);
+    }
+    return () => clearTimeout(t);
+  }, [typed, phase, pIndex, providerPhrases]);
+
   const features = [
     {
       icon: BarChart3,
@@ -105,6 +145,27 @@ const LandingPage = () => {
     { name: 'Mobile', icon: Phone }
   ];
 
+  // Smooth scroll-reveal for sections
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll('[data-animate]')) as HTMLElement[];
+    els.forEach((el) => {
+      el.classList.add('opacity-0', 'translate-y-6');
+    });
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          el.classList.add('opacity-100', 'translate-y-0');
+          el.classList.remove('opacity-0', 'translate-y-6');
+          el.classList.add('transition-all', 'duration-700', 'ease-out');
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background marketing-page" data-page="landing">
       {/* Header Navigation */}
@@ -149,7 +210,7 @@ const LandingPage = () => {
                 </Link>
               </Button>
               <Button asChild size="sm" className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white">
-                <Link to="/auth?mode=signup">
+                <Link to={`/auth?mode=signup&plan=${selectedPlan}`}>
                   Sign Up
                 </Link>
               </Button>
@@ -159,7 +220,7 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-orange-500/10 via-background to-blue-600/10 py-16 lg:py-24">
+      <section className="relative bg-gradient-to-br from-orange-500/10 via-background to-blue-600/10 py-16 lg:py-24" data-animate>
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-blue-600/5" />
         
@@ -172,6 +233,16 @@ const LandingPage = () => {
                 <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
                   #1 Rated POS System
                 </span>
+              </div>
+
+              {/* Typewriter: Integrated with ... */}
+              <div className="relative inline-flex items-center mt-4">
+                <div className={`absolute -inset-1 rounded-lg blur-lg bg-gradient-to-r ${providerPhrases[pIndex].glow} to-transparent transition-all duration-700`} aria-hidden="true" />
+                <div className="relative z-10 text-base md:text-lg font-semibold drop-shadow-sm">
+                  <span className="text-muted-foreground">Integrated with </span>
+                  <span className={`${providerPhrases[pIndex].color}`}>{typed}</span>
+                  <span className="inline-block w-[2px] h-4 ml-0.5 align-middle bg-foreground animate-pulse" />
+                </div>
               </div>
               
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
@@ -284,8 +355,70 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Payment Integrations Spotlight */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Accept Payments Your Customers Love</h2>
+            <p className="text-muted-foreground">Built-in integrations with leading providers</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto" data-animate>
+            <Card className="relative overflow-hidden border-2 border-green-500/30">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/10 rounded-full blur-2xl" />
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Smartphone className="h-5 w-5 text-green-600" />
+                  <CardTitle className="text-lg">M-Pesa (Daraja)</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>Native mobile money payments for East Africa with STK Push and Paybill/Till support.</p>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">Popular</Badge>
+                  <Badge variant="outline">STK Push</Badge>
+                  <Badge variant="outline">Paybill</Badge>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="relative overflow-hidden border-2 border-blue-500/30">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl" />
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-blue-600" />
+                  <CardTitle className="text-lg">PayPal</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>Trusted global payments with one of the world’s most recognized digital wallets.</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Checkout</Badge>
+                  <Badge variant="outline">Subscriptions</Badge>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="relative overflow-hidden border-2 border-orange-500/30">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-500/10 rounded-full blur-2xl" />
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-5 w-5 text-orange-600" />
+                  <CardTitle className="text-lg">Flutterwave</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <p>Card, bank, and mobile money payments across Africa with robust developer tools.</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Cards</Badge>
+                  <Badge variant="outline">Bank</Badge>
+                  <Badge variant="outline">Mobile Money</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 border-y border-border/50">
+      <section className="py-20 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 border-y border-border/50" data-animate>
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
@@ -296,7 +429,7 @@ const LandingPage = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto" data-animate>
             {[
               {
                 name: 'Starter Plan',
@@ -364,17 +497,21 @@ const LandingPage = () => {
                   </CardHeader>
                   
                   <CardContent className="space-y-4">
-                    <Button 
-                      asChild 
+                    <Button
+                      asChild
                       className={`w-full ${
-                        plan.popular 
-                          ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white' 
+                        plan.popular
+                          ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white'
                           : ''
                       }`}
                       variant={plan.popular ? 'default' : 'outline'}
                       size="sm"
                     >
-                      <Link to="/auth">
+                      <Link to={`/auth?mode=signup&plan=${
+                        plan.name === 'Starter Plan' ? 'starter' : plan.name === 'Standard Plan' ? 'standard' : plan.name === 'Pro Plan' ? 'pro' : 'enterprise'
+                      }`} onClick={() => choosePlan(
+                        plan.name === 'Starter Plan' ? 'starter' : plan.name === 'Standard Plan' ? 'standard' : plan.name === 'Pro Plan' ? 'pro' : 'enterprise'
+                      )}>
                         {plan.name === 'Starter Plan' ? 'Start Free Trial' : `Choose ${plan.name}`}
                       </Link>
                     </Button>
@@ -459,7 +596,7 @@ const LandingPage = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto" data-animate>
             {features.map((feature, index) => {
               const IconComponent = feature.icon;
               return (
@@ -497,7 +634,7 @@ const LandingPage = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto" data-animate>
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="hover:shadow-lg transition-all duration-300">
                 <CardHeader>
@@ -523,7 +660,7 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-24">
+      <section className="relative py-24" data-animate>
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-orange-600 to-blue-700"></div>
         <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,.1)_50%,transparent_75%,transparent_100%)]"></div>
         <div className="absolute top-0 left-0 w-full h-full">
@@ -548,7 +685,7 @@ const LandingPage = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button asChild size="lg" className="bg-white text-orange-600 hover:bg-orange-50 px-10 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                <Link to="/auth">
+                <Link to={`/auth?mode=signup&plan=${selectedPlan}`} onClick={() => choosePlan(selectedPlan)}>
                   Start Free Trial Today
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>

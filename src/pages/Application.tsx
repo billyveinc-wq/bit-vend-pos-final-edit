@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,8 +25,22 @@ import {
   Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+
+const saveAppSetting = async (key: string, value: any) => {
+  try {
+    const mod = await import('@/integrations/supabase/client');
+    const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+    if (comp?.id) {
+      await mod.supabase.from('app_settings').upsert({ company_id: comp.id, key, value }, { onConflict: 'company_id,key' });
+    }
+  } catch {}
+};
 
 const Application = () => {
+  const { isAdmin } = useAdminAuth();
+
+  // Hooks must be called unconditionally in the same order every render
   const [appSettings, setAppSettings] = useState({
     appName: 'POS System',
     appVersion: '2.1.0',
@@ -52,7 +66,7 @@ const Application = () => {
     supportPhone: '+1-555-0123'
   });
 
-  const [applicationStats] = useState([
+  const [applicationStats, setApplicationStats] = useState([
     { name: 'Total Users', value: '0', icon: Monitor, status: 'healthy' },
     { name: 'Active Sessions', value: '0', icon: Activity, status: 'healthy' },
     { name: 'Database Size', value: '0 MB', icon: Database, status: 'healthy' },
@@ -63,7 +77,77 @@ const Application = () => {
 
   const [systemLogs] = useState([]);
 
-  const handleSaveSettings = () => {
+  useEffect(() => {
+    const loadSettingsAndStats = async () => {
+      // Load settings
+      try {
+        const mod = await import('@/integrations/supabase/client');
+        const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+        const companyId = comp?.id;
+        if (companyId) {
+          const { data } = await mod.supabase
+            .from('app_settings')
+            .select('value')
+            .eq('company_id', companyId)
+            .eq('key', 'application_settings')
+            .maybeSingle();
+          if ((data as any)?.value) {
+            setAppSettings((prev) => ({ ...prev, ...(data as any).value }));
+          }
+          // Also load standalone support_email for Topbar compatibility
+          const { data: se } = await mod.supabase
+            .from('app_settings')
+            .select('value')
+            .eq('company_id', comp.id)
+            .eq('key', 'support_email')
+            .maybeSingle();
+          if (se && typeof (se as any).value === 'string') {
+            setAppSettings((prev) => ({ ...prev, supportEmail: (se as any).value }));
+          }
+        }
+      } catch {}
+      // Fallback to local
+      try {
+        const local = localStorage.getItem('pos-application-settings');
+        if (local) setAppSettings((prev) => ({ ...prev, ...JSON.parse(local) }));
+      } catch {}
+
+      // Load stats from DB (users count)
+      try {
+        const mod = await import('@/integrations/supabase/client');
+        const { count } = await mod.supabase.from('system_users').select('*', { count: 'exact', head: true });
+        if (typeof count === 'number') {
+          setApplicationStats((prev) => prev.map(s => s.name === 'Total Users' ? { ...s, value: String(count) } : s));
+        }
+      } catch {}
+    };
+    loadSettingsAndStats();
+  }, []);
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>You do not have permission to access Application settings.</CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const handleSaveSettings = async () => {
+    await saveAppSetting('application_settings', appSettings);
+    try {
+      const mod = await import('@/integrations/supabase/client');
+      const { data: comp } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
+      const companyId = comp?.id;
+      if (companyId) {
+        await mod.supabase.from('app_settings').upsert({ company_id: companyId, key: 'support_email', value: appSettings.supportEmail }, { onConflict: 'company_id,key' });
+      }
+    } catch {}
+    localStorage.setItem('pos-application-settings', JSON.stringify(appSettings));
     toast.success('Application settings saved successfully!');
   };
 

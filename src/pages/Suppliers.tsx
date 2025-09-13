@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Supplier {
   id: string;
@@ -60,36 +61,120 @@ const Suppliers = () => {
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('suppliers')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          const mapped: Supplier[] = data.map((row: any) => ({
+            id: String(row.id),
+            name: row.name,
+            contactPerson: row.contact_person || '',
+            email: row.email || '',
+            phone: row.phone || '',
+            address: row.address || '',
+            city: row.city || '',
+            country: row.country || '',
+            taxId: row.tax_id || '',
+            paymentTerms: row.payment_terms || '',
+            totalPurchases: Number(row.total_purchases) || 0,
+            lastPurchase: row.last_purchase || undefined,
+            isActive: !!row.is_active,
+            notes: row.notes || '',
+            createdAt: row.created_at,
+          }));
+          setSuppliers(mapped);
+        }
+      } catch (e) {
+        console.warn('Failed to load suppliers');
+      }
+    };
+    load();
+  }, []);
+
   const filteredSuppliers = suppliers.filter(supplier =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (supplier.contactPerson && supplier.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name) {
       toast.error('Please enter a supplier name');
       return;
     }
-    
-    if (editingSupplier) {
-      setSuppliers(prev => prev.map(supplier =>
-        supplier.id === editingSupplier.id
-          ? { ...supplier, ...formData }
-          : supplier
-      ));
-      toast.success('Supplier updated successfully!');
-    } else {
-      const newSupplier: Supplier = {
-        id: Date.now().toString(),
-        ...formData,
-        totalPurchases: 0,
-        createdAt: new Date().toISOString()
-      };
-      setSuppliers(prev => [...prev, newSupplier]);
-      toast.success('Supplier created successfully!');
+
+    try {
+      if (editingSupplier) {
+        const { error } = await supabase
+          .from('suppliers')
+          .update({
+            name: formData.name,
+            contact_person: formData.contactPerson || null,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            address: formData.address || null,
+            city: formData.city || null,
+            country: formData.country || null,
+            tax_number: formData.taxId || null,
+            payment_terms: formData.paymentTerms || null,
+            notes: formData.notes || null,
+            is_active: formData.isActive,
+          })
+          .eq('id', editingSupplier.id);
+        if (error) { toast.error(error.message); return; }
+        setSuppliers(prev => prev.map(supplier =>
+          supplier.id === editingSupplier.id
+            ? { ...supplier, ...formData }
+            : supplier
+        ));
+        toast.success('Supplier updated successfully!');
+      } else {
+        const { data, error } = await supabase
+          .from('suppliers')
+          .insert({
+            name: formData.name,
+            contact_person: formData.contactPerson || null,
+            email: formData.email || null,
+            phone: formData.phone || null,
+            address: formData.address || null,
+            city: formData.city || null,
+            country: formData.country || null,
+            tax_number: formData.taxId || null,
+            payment_terms: formData.paymentTerms || null,
+            notes: formData.notes || null,
+            is_active: formData.isActive,
+          })
+          .select('*')
+          .single();
+        if (error) { toast.error(error.message); return; }
+        const newSupplier: Supplier = {
+          id: String(data.id),
+          name: data.name,
+          contactPerson: data.contact_person || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          city: data.city || '',
+          country: data.country || '',
+          taxId: data.tax_id || '',
+          paymentTerms: data.payment_terms || '',
+          totalPurchases: Number(data.total_purchases) || 0,
+          lastPurchase: data.last_purchase || undefined,
+          isActive: !!data.is_active,
+          notes: data.notes || '',
+          createdAt: data.created_at,
+        };
+        setSuppliers(prev => [newSupplier, ...prev]);
+        toast.success('Supplier created successfully!');
+      }
+    } catch (err) {
+      toast.error('Failed to save supplier');
     }
 
     setIsDialogOpen(false);
@@ -114,10 +199,16 @@ const Suppliers = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this supplier?')) {
-      setSuppliers(prev => prev.filter(supplier => supplier.id !== id));
-      toast.success('Supplier deleted successfully!');
+      try {
+        const { error } = await supabase.from('suppliers').delete().eq('id', id);
+        if (error) { toast.error(error.message); return; }
+        setSuppliers(prev => prev.filter(supplier => supplier.id !== id));
+        toast.success('Supplier deleted successfully!');
+      } catch (e) {
+        toast.error('Failed to delete supplier');
+      }
     }
   };
 

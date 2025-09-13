@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface AttendanceRecord {
   id: string;
@@ -35,6 +36,27 @@ const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('attendance').select('*').order('attendance_date', { ascending: false });
+        const mapped: AttendanceRecord[] = (data || []).map((row: any) => ({
+          id: String(row.id),
+          employeeId: row.employee_id || '',
+          employeeName: row.employee_id ? row.employee_id : 'Employee',
+          date: row.attendance_date,
+          checkIn: row.check_in_time || '',
+          checkOut: row.check_out_time || undefined,
+          status: (row.status || 'present') as AttendanceRecord['status'],
+          totalHours: row.total_hours ? Number(row.total_hours) : undefined,
+          notes: row.notes || '',
+        }));
+        setAttendanceRecords(mapped);
+      } catch (e) { console.warn('attendance not available'); }
+    };
+    load();
+  }, []);
   const [formData, setFormData] = useState({
     employee: '',
     status: 'present' as AttendanceRecord['status'],
@@ -66,7 +88,7 @@ const Attendance = () => {
     }
   };
 
-  const handleMarkAttendance = () => {
+  const handleMarkAttendance = async () => {
     if (!formData.employee) {
       toast.error('Please select an employee');
       return;
@@ -75,14 +97,25 @@ const Attendance = () => {
     const newRecord: AttendanceRecord = {
       id: Date.now().toString(),
       employeeId: formData.employee,
-      employeeName: 'Selected Employee',
+      employeeName: formData.employee || 'Employee',
       date: new Date().toISOString().split('T')[0],
-      checkIn: new Date().toLocaleTimeString(),
+      checkIn: new Date().toTimeString().slice(0,8),
       status: 'present',
-      createdAt: new Date().toISOString()
+      totalHours: undefined,
+      notes: ''
     };
-    
-    setAttendanceRecords(prev => [...prev, newRecord]);
+
+    try {
+      await supabase.from('attendance').insert({
+        employee_id: null,
+        attendance_date: newRecord.date,
+        check_in_time: newRecord.checkIn,
+        status: newRecord.status,
+        notes: newRecord.notes || null,
+      });
+    } catch {}
+
+    setAttendanceRecords(prev => [newRecord, ...prev]);
     toast.success('Attendance marked successfully!');
     setIsDialogOpen(false);
   };

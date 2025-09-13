@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  FileText, 
-  Download, 
+import {
+  FileText,
+  Download,
   Calendar,
   DollarSign,
   TrendingUp,
@@ -15,13 +15,14 @@ import {
   Eye,
   Archive
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const CashFlow = () => {
   const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('current-month');
   const [showModal, setShowModal] = useState(false);
 
-  const [cashFlowData] = useState({
+  const [cashFlowData, setCashFlowData] = useState({
     period: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
     operatingActivities: [],
     investingActivities: [],
@@ -36,6 +37,67 @@ const CashFlow = () => {
   const investingCashFlow = calculateTotal(cashFlowData.investingActivities);
   const financingCashFlow = calculateTotal(cashFlowData.financingActivities);
   const netCashFlow = operatingCashFlow + investingCashFlow + financingCashFlow;
+
+  const getRange = (period: string) => {
+    const now = new Date();
+    const start = new Date(now);
+    const end = new Date(now);
+    if (period === 'current-month') {
+      start.setDate(1);
+    } else if (period === 'last-month') {
+      start.setMonth(now.getMonth() - 1, 1);
+      end.setMonth(now.getMonth(), 0);
+    } else if (period === 'current-quarter') {
+      const q = Math.floor(now.getMonth() / 3);
+      start.setMonth(q * 3, 1);
+    } else if (period === 'last-quarter') {
+      const q = Math.floor(now.getMonth() / 3) - 1;
+      const month = ((q + 4) % 4) * 3;
+      start.setMonth(month, 1);
+      end.setMonth(month + 3, 0);
+    } else if (period === 'current-year') {
+      start.setMonth(0, 1);
+    } else if (period === 'last-year') {
+      start.setFullYear(now.getFullYear() - 1, 0, 1);
+      end.setFullYear(now.getFullYear() - 1, 11, 31);
+    }
+    const s = start.toISOString().split('T')[0];
+    const e = end.toISOString().split('T')[0];
+    return { start: s, end: e };
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      const { start, end } = getRange(selectedPeriod);
+      try {
+        const [salesRes, expensesRes, incomeRes] = await Promise.all([
+          supabase.from('sales').select('total, date').gte('date', start).lte('date', end),
+          supabase.from('expenses').select('amount, date, description').gte('date', start).lte('date', end),
+          supabase.from('income').select('amount, date, description').gte('date', start).lte('date', end),
+        ]);
+        if (salesRes.error) throw salesRes.error;
+        if (expensesRes.error) throw expensesRes.error;
+        if (incomeRes.error) throw incomeRes.error;
+        const salesTotal = (salesRes.data || []).reduce((s: number, r: any) => s + Number(r.total || 0), 0);
+        const expensesTotal = (expensesRes.data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+        const incomeTotal = (incomeRes.data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+        const operatingActivities = [
+          { description: 'Customer receipts (sales)', amount: salesTotal },
+          { description: 'Operating expenses paid', amount: -expensesTotal },
+          { description: 'Other operating income', amount: incomeTotal },
+        ];
+        setCashFlowData(prev => ({
+          ...prev,
+          operatingActivities,
+          investingActivities: [],
+          financingActivities: [],
+        }));
+      } catch (err) {
+        console.warn('Failed to load cash flow data');
+      }
+    };
+    load();
+  }, [selectedPeriod]);
 
   const handleExportPDF = () => {
     console.log('Exporting Cash Flow as PDF...');

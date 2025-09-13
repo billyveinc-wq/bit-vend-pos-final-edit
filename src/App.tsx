@@ -3,12 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { BusinessProvider } from "@/contexts/BusinessContext";
 import { ProductProvider } from "@/contexts/ProductContext";
 import { SalesProvider } from "@/contexts/SalesContext";
 import Layout from "./components/layout/Layout";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import Index from "./pages/Index";
 import SuperAdmin from "./pages/SuperAdmin";
 import Application from "./pages/Application";
@@ -65,6 +66,7 @@ import InvoiceSettings from "./pages/InvoiceSettings";
 import TaxSettings from "./pages/TaxSettings";
 import Backup from "./pages/Backup";
 import Subscription from "./pages/Subscription";
+import PaymentSettings from "./pages/PaymentSettings";
 import SubscriptionManage from "./pages/SubscriptionManage";
 import AdminSettings from "./pages/AdminSettings";
 import LandingPage from "./pages/LandingPage";
@@ -72,7 +74,12 @@ import AuthPage from "./pages/AuthPage";
 import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import ContactPage from "./pages/ContactPage";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import SystemUpdates from "./pages/SystemUpdates";
+import Profile from "./pages/Profile";
 import { ArrowLeft, Save } from "lucide-react";
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,9 +89,28 @@ import { Badge } from "@/components/ui/badge";
 
 const queryClient = new QueryClient();
 
+const RouteTracker = () => {
+  const location = useLocation();
+  useEffect(() => {
+    try {
+      if (location.pathname.startsWith('/dashboard')) {
+        const path = location.pathname + (location.search || '') + (location.hash || '');
+        localStorage.setItem('last-route', path);
+      }
+    } catch {}
+  }, [location]);
+  return null;
+};
+
+const AdminRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const { isAdmin, isChecking } = useAdminAuth();
+  if (isChecking) return null;
+  return isAdmin ? children : <Navigate to="/dashboard" replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <BusinessProvider>
         <ProductProvider>
           <SalesProvider>
@@ -92,13 +118,18 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+              <RouteTracker />
               <Routes>
                 {/* Marketing Website Routes */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/features" element={<FeaturesPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/auth" element={<AuthPage />} />
+                {/* Legacy direct links redirects */}
+                <Route path="/checkout" element={<Navigate to="/dashboard/checkout" replace />} />
                 
                 {/* POS Application Routes */}
                 <Route path="/dashboard" element={<Layout />}>
@@ -145,6 +176,7 @@ const App = () => (
                   <Route path="general-settings" element={<GeneralSettings />} />
                   <Route path="invoice-settings" element={<InvoiceSettings />} />
                   <Route path="tax-settings" element={<TaxSettings />} />
+                  <Route path="payment-settings" element={<PaymentSettings />} />
                   <Route path="backup" element={<Backup />} />
                   <Route path="attendance" element={<Attendance />} />
                   <Route path="users" element={<Users />} />
@@ -156,10 +188,12 @@ const App = () => (
                   <Route path="subscription" element={<Subscription />} />
                   <Route path="subscription/manage" element={<SubscriptionManage />} />
                   <Route path="settings" element={<Settings />} />
-                  <Route path="admin-settings" element={<AdminSettings />} />
-                  <Route path="superadmin" element={<SuperAdmin />} />
-                  <Route path="application" element={<Application />} />
-                  <Route path="layout" element={<LayoutPage />} />
+                  <Route path="admin-settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+                  <Route path="superadmin" element={<AdminRoute><SuperAdmin /></AdminRoute>} />
+                  <Route path="application" element={<AdminRoute><Application /></AdminRoute>} />
+                  <Route path="layout" element={<AdminRoute><LayoutPage /></AdminRoute>} />
+                  <Route path="system-updates" element={<SystemUpdates />} />
+                  <Route path="profile" element={<Profile />} />
                 </Route>
                 
                 <Route path="*" element={<NotFound />} />

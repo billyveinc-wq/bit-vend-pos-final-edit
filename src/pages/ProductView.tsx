@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -141,11 +141,11 @@ const ProductView = () => {
   }, [productId]);
 
   const handleGoBack = () => {
-    navigate('/products');
+    navigate('/dashboard/products');
   };
 
   const handleEditProduct = () => {
-    navigate(`/products/edit/${productId}`);
+    navigate(`/dashboard/products/edit/${productId}`);
   };
 
   return (

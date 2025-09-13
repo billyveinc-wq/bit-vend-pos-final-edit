@@ -53,25 +53,25 @@ const Index: React.FC = () => {
     {
       title: 'Start POS Session',
       description: 'Begin a new point of sale session',
-      action: () => navigate('/checkout'),
+      action: () => navigate('/dashboard/checkout'),
       color: 'bg-primary hover:bg-primary/90'
     },
     {
       title: 'Add New Product',
       description: 'Add a new product to inventory',
-      action: () => navigate('/products/add'),
+      action: () => navigate('/dashboard/products/add'),
       color: 'bg-orange-500 hover:bg-orange-600'
     },
     {
       title: 'View Sales Report',
       description: 'Check today\'s sales performance',
-      action: () => navigate('/sales-report'),
+      action: () => navigate('/dashboard/sales-report'),
       color: 'bg-green-500 hover:bg-green-600'
     },
     {
       title: 'Manage Inventory',
       description: 'Update stock levels and products',
-      action: () => navigate('/products'),
+      action: () => navigate('/dashboard/products'),
       color: 'bg-blue-500 hover:bg-blue-600'
     }
   ];
@@ -156,7 +156,7 @@ const Index: React.FC = () => {
               <Button
                 variant="outline"
                 className="mt-4"
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate('/dashboard/checkout')}
               >
                 Start Your First Sale
               </Button>
