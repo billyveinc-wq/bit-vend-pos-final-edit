@@ -260,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
           <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
             <span className="text-xl flex items-center">
               <span className="inline-block logo-gradient animate-gradient-fast logo-glow">
-                Bit Vend
+                Bit vend
               </span>
               <span className="inline-block ml-1 text-white">
                 POS
