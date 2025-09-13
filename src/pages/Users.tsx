@@ -156,6 +156,11 @@ const Users = () => {
           .or(filter)
           .order('created_at', { ascending: false });
         if (error) throw error;
+        // also fetch companies for the admin to choose from
+        try {
+          const { data: comps } = await supabase.from('companies').select('id, name').order('id');
+          if (comps) setCompanies((comps as any[]).map(c => ({ id: String(c.id), name: c.name })));
+        } catch {}
         const filtered = (data || []).filter((row: any) => Boolean(row.user_metadata?.created_by_admin) || row.id === uid);
         const mapped: User[] = filtered.map((row: any) => {
           const meta = row.user_metadata || {};
@@ -171,9 +176,10 @@ const Users = () => {
             lastLogin: row.last_sign_in_at,
             createdAt: row.created_at,
             permissions: Array.isArray(meta.permissions) ? meta.permissions : (meta.restrictions?.actions || []),
-          };
+            companyId: row.company_id || null
+          } as any;
         });
-        setUsers(mapped);
+        setUsers(mapped as any);
       } catch (e) {
         console.warn('Failed to load system users');
       }
