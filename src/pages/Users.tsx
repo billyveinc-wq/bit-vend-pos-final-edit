@@ -163,6 +163,12 @@ const Users = () => {
           .or(filter)
           .order('created_at', { ascending: false });
         if (error) throw error;
+
+        // Load current user's active subscription (used to enforce starter plan user limit)
+        try {
+          const { data: subData } = await supabase.from('user_subscriptions').select('plan_id, status').eq('user_id', uid).eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle();
+          setCurrentUserPlan((subData as any)?.plan_id || null);
+        } catch (e) { console.warn('Failed to load user subscription', e); }
         // fetch companies owned/linked to the current admin user for selection (deduped)
         try {
           const { data: comps } = await supabase.from('company_users').select('company_id, companies (id, name, created_at)').eq('user_id', uid);
