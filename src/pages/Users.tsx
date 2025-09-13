@@ -513,6 +513,32 @@ const Users = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div>
+                  <Label htmlFor="company">Company</Label>
+                  <Select value={String(formData.companyId || '')} onValueChange={(v) => setFormData(prev => ({ ...prev, companyId: v ? Number(v) : null }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={companyId ? companies.find(c=>c.id===String(companyId))?.name || 'Select company' : 'Select company'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {companies.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+1 555-0123"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="phone">Phone</Label>
