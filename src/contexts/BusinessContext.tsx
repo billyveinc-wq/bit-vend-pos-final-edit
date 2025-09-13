@@ -429,30 +429,36 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const deleteBusiness = async (id: string) => {
-    // Try to delete from Supabase first
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { safeGetSession } = await import('@/integrations/supabase/safeAuth');
-      const cid = parseInt(id);
-      // Delete company (cascade removes company_users via FK)
-      await supabase.from('companies').delete().eq('id', cid);
-      // If current user pointed to this company, clear it
-      const { data: session } = await safeGetSession();
-      const uid = session?.session?.user?.id;
-      if (uid && currentBusiness?.id === id) {
-        await supabase.from('system_users').update({ company_id: null }).eq('id', uid);
-        try { localStorage.removeItem('pos-company-name'); } catch {}
-      }
-    } catch (e) {
-      console.warn('Failed deleting company in Supabase (continuing local removal):', e);
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { safeGetSession } = await import('@/integrations/supabase/safeAuth');
+    const cid = parseInt(id);
+
+    // Delete from DB first; if this fails, do NOT change local state
+    const { error: delErr } = await supabase.from('companies').delete().eq('id', cid);
+    if (delErr) {
+      throw new Error(delErr.message || 'Failed to delete company');
     }
 
-    // Update local state
-    setBusinesses(prev => prev.filter(b => b.id !== id));
-    if (currentBusiness?.id === id) {
-      const remaining = businesses.filter(b => b.id !== id);
-      setCurrentBusinessState(remaining[0] || null);
+    // Clear current user's company_id if it pointed to the deleted company
+    const { data: session } = await safeGetSession();
+    const uid = session?.session?.user?.id;
+    if (uid && currentBusiness?.id === id) {
+      await supabase.from('system_users').update({ company_id: null }).eq('id', uid);
+      try { localStorage.removeItem('pos-company-name'); } catch {}
+      try { localStorage.removeItem('pos-current-business-id'); } catch {}
     }
+
+    // Update local state atomically and adjust current selection
+    setBusinesses(prev => {
+      const next = prev.filter(b => b.id !== id);
+      if (currentBusiness?.id === id) {
+        setCurrentBusinessState(next[0] || null);
+      }
+      return next;
+    });
+
+    // Ensure fresh state from DB
+    try { await refreshBusinesses(); } catch {}
 
     // Notify listeners (Topbar) to refresh
     try { window.dispatchEvent(new CustomEvent('companies:changed')); } catch {}
