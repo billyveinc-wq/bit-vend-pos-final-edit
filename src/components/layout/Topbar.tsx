@@ -496,20 +496,27 @@ const Topbar: React.FC<TopbarProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-2">
-                <div className="mb-2 text-sm font-medium">App Releases</div>
-                {releases.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No releases available</div>
-                ) : (
-                  releases.map((r: any) => (
-                    <DropdownMenuItem key={r.id} onClick={() => { setPreviewRelease(r); setShowReleaseDialog(true); }}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{r.title}</span>
-                        <span className="text-xs text-muted-foreground">{new Date(r.published_at).toLocaleString()}</span>
-                      </div>
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </DropdownMenuContent>
+        <div className="bg-popover border rounded-md shadow-sm">
+          <div className="px-3 py-2 border-b text-sm font-medium">App Releases</div>
+          <div className="max-h-64 overflow-y-auto">
+            {releases.length === 0 ? (
+              <div className="p-4 text-sm text-muted-foreground">No releases available</div>
+            ) : (
+              releases.map((r: any) => (
+                <div key={r.id} className="px-1">
+                  <DropdownMenuItem onClick={() => { setPreviewRelease(r); setShowReleaseDialog(true); }} className="group">
+                    <div className="flex flex-col">
+                      <span className="font-medium truncate">{r.title}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(r.published_at).toLocaleString()}</span>
+                    </div>
+                  </DropdownMenuItem>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="px-2 py-1 border-t text-xs text-muted-foreground text-center">Recent releases appear here. Open to read.</div>
+        </div>
+      </DropdownMenuContent>
             </DropdownMenu>
 
             <TooltipContent>
