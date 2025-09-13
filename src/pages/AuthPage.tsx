@@ -451,10 +451,7 @@ const AuthPage = () => {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex h-16 items-center justify-between">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-br from-orange-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">BV</span>
-              </div>
-              <span className="font-bold text-xl logo-gradient animate-gradient-fast bg-clip-text text-transparent">BitVend</span>
+              <img src="https://cdn.builder.io/api/v1/image/assets%2Ffad27f5289d04c7e9d2c26738928ace8%2F43cdde396f7f4921a8876d42332d35cc?format=webp&width=800" alt="BitVend" className="h-8 w-auto object-contain" />
             </Link>
             <div className="flex items-center space-x-4">
               <Button
