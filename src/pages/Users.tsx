@@ -525,12 +525,12 @@ const Users = () => {
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <div>
                   <Label htmlFor="company">Company</Label>
-                  <Select value={String(formData.companyId || '')} onValueChange={(v) => setFormData(prev => ({ ...prev, companyId: v ? Number(v) : null }))}>
+                  <Select value={String(formData.companyId ?? '')} onValueChange={(v) => setFormData(prev => ({ ...prev, companyId: (v === 'none' || v === '') ? null : Number(v) }))}>
                     <SelectTrigger>
                       <SelectValue placeholder={companyId ? companies.find(c=>c.id===String(companyId))?.name || 'Select company' : 'Select company'} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {companies.map(c => (
                         <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}
