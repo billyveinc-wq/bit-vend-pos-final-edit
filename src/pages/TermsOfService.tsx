@@ -19,18 +19,18 @@ const TermsOfService = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-500/5 via-background to-blue-600/5" data-page="terms">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-orange-200/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
         <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex h-16 items-center justify-between">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-br from-orange-500 to-blue-600 rounded-lg flex items-center justify-center">
+          <div className={`flex h-16 items-center justify-between transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <Link to="/" className="flex items-center space-x-2 group">
+              <div className="h-8 w-8 bg-gradient-to-br from-orange-500 to-blue-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                 <span className="text-white font-bold text-sm">BV</span>
               </div>
               <span className="font-bold text-xl logo-gradient animate-gradient-fast bg-clip-text text-transparent">BitVend</span>
             </Link>
-            <Button asChild variant="ghost">
+            <Button asChild variant="ghost" className="hover:bg-gradient-to-r hover:from-orange-500/10 hover:to-blue-600/10 transition-all duration-300">
               <Link to="/auth">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
                 Back to Sign Up
               </Link>
             </Button>
