@@ -1187,25 +1187,7 @@ const Settings = () => {
             </Card>
           );
         case 'subscription':
-          return (
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription & Billing</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Crown className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">Manage Your Subscription</h3>
-                  <p className="text-muted-foreground mb-4">
-                    View and manage your subscription plan, billing, and payment methods
-                  </p>
-                  <Button onClick={() => navigate('/dashboard/subscription')}>
-                    Go to Subscription
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
+          return <Subscription />;
         default:
           return <div>Business settings content for {subsection}</div>;
       }
