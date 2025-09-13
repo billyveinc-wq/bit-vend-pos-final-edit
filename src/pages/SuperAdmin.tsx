@@ -1407,21 +1407,9 @@ const SuperAdmin = () => {
                                 toast.success('Admin role removed');
                               } catch (err) { toast.error('Failed to remove admin'); }
                             }}>Remove Admin</Button>
-                            <Button variant="destructive" size="sm" onClick={async () => {
-                              if (!confirm('Delete this system user and related data?')) return;
-                              try {
-                                await supabase.from('system_users').delete().eq('id', su.id);
-                                await supabase.from('company_users').delete().eq('user_id', su.id);
-                                await supabase.from('user_subscriptions').delete().eq('user_id', su.id);
-                                await supabase.from('user_promotions').delete().eq('user_id', su.id);
-                                await supabase.from('user_roles').delete().eq('user_id', su.id);
-                                setSystemUsersList(prev => prev.filter(x => x.id !== su.id));
-                                toast.success('System user and related public data removed (auth user may still exist)');
-                              } catch (err) {
-                                console.error('Delete system user error', err);
-                                toast.error('Failed to delete system user');
-                              }
-                            }}>Delete</Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleSoftDeleteUser(su.id, su.email)}>
+                              Soft Delete (30 days)
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
