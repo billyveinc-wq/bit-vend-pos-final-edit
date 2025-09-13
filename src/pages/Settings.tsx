@@ -389,17 +389,6 @@ const Settings = () => {
             <CardTitle className="flex items-center justify-between">
               <span>{editId ? 'Edit Business' : 'Add New Business'}</span>
               <div className="flex gap-2">
-                {editId && isInactive && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDeleteBusiness}
-                    className="gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete Business
-                  </Button>
-                )}
                 <Button variant="outline" size="sm" onClick={handleCancelEdit}>
                   Cancel
                 </Button>
@@ -423,7 +412,7 @@ const Settings = () => {
                     type="file"
                     accept="image/*"
                     onChange={handleLogoUpload}
-                    className="mb-2 h-9 w-auto max-w-xs text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-secondary file:text-secondary-foreground"
+                    className="mb-2 h-auto w-auto max-w-xs text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-secondary file:text-secondary-foreground"
                   />
                   {businessForm.logoUrl && (
                     <Button
@@ -558,10 +547,10 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
                 <Select value={businessForm.country} onValueChange={(value) => setBusinessForm(prev => ({ ...prev, country: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="max-h-64 overflow-auto">
+                  <SelectContent className="w-40 max-h-64 overflow-auto">
                     {uniqueCountries.map((country) => (
                       <SelectItem key={`${country.code}-${country.name}`} value={country.code}>
                         {country.name}
@@ -654,6 +643,26 @@ const Settings = () => {
                     >
                       <Edit className="h-4 w-4" />
                       Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={async () => {
+                        if (confirm('Are you sure you want to delete this business? This action cannot be undone.')) {
+                          try {
+                            await deleteBusiness(business.id);
+                            await refreshBusinesses();
+                            toast.success('Business deleted successfully!');
+                            setSearchParams({ section: 'business', subsection: 'business-info' });
+                          } catch (e) {
+                            toast.error('Failed to delete business. Please try again.');
+                          }
+                        }
+                      }}
+                      className="gap-1"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
                     </Button>
                   </div>
                 </div>
