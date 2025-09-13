@@ -331,17 +331,26 @@ const TermsOfService = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-12 pt-8 border-t">
-          <p className="text-muted-foreground mb-4">
-            By using BitVend, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Button asChild>
-              <Link to="/auth">Return to Sign Up</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/privacy">Privacy Policy</Link>
-            </Button>
+        <div className={`text-center mt-16 pt-8 border-t border-gradient-to-r from-orange-200/50 via-blue-200/50 to-orange-200/50 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '1200ms'}}>
+          <div className="bg-gradient-to-r from-orange-50/50 to-blue-50/50 dark:from-orange-950/20 dark:to-blue-950/20 rounded-2xl p-8 mb-8 shadow-lg">
+            <p className="text-lg text-muted-foreground mb-6 font-medium">
+              By using BitVend, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button asChild className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                <Link to="/auth">Return to Sign Up</Link>
+              </Button>
+              <Button variant="outline" asChild className="border-blue-500/50 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-orange-500/10 transition-all duration-300 transform hover:scale-105">
+                <Link to="/privacy">Privacy Policy</Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            <p className="mb-2">Need help understanding our terms?</p>
+            <Link to="/contact" className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors duration-300">
+              Contact our legal team →
+            </Link>
           </div>
         </div>
       </div>
