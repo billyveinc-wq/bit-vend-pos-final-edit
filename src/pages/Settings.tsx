@@ -412,6 +412,20 @@ const Settings = () => {
               try { await refreshBusinesses(); } catch {}
             } catch (e) { console.warn('Failed to persist fallback logo', e); }
           }
+          // persist to current user's metadata too
+          try {
+            const { safeGetSession } = await import('@/integrations/supabase/safeAuth');
+            const { data: session } = await safeGetSession();
+            const uid = session?.session?.user?.id;
+            if (uid) {
+              try {
+                const { data: existing } = await (await import('@/integrations/supabase/client')).supabase.from('system_users').select('user_metadata').eq('id', uid).maybeSingle();
+                const meta = (existing as any)?.user_metadata || {};
+                meta.logoUrl = result;
+                await (await import('@/integrations/supabase/client')).supabase.from('system_users').update({ user_metadata: meta }).eq('id', uid);
+              } catch (e) { console.warn('Failed to persist fallback logo to system_users', e); }
+            }
+          } catch (e) { console.warn('Failed to persist fallback logo to system_users', e); }
         };
         reader.readAsDataURL(file);
       } catch (e) {}
