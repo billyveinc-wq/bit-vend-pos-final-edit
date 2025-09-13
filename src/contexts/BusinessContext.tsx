@@ -204,6 +204,31 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [currentBusiness]);
 
   const addBusiness = async (businessData: Omit<Business, 'id' | 'createdAt'>) => {
+    // Enforce plan limits: if user has no active subscription, treat as starter and prevent creating >1 business
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { safeGetSession } = await import('@/integrations/supabase/safeAuth');
+      const { data: session } = await safeGetSession();
+      const user = session?.session?.user;
+      if (user) {
+        // count existing businesses for this user
+        const { data: userCompanies } = await supabase.from('company_users').select('company_id').eq('user_id', user.id);
+        const existingCount = (userCompanies || []).length;
+        // check active subscription
+        const { data: userSub } = await supabase.from('user_subscriptions').select('*').eq('user_id', user.id).eq('status', 'active').maybeSingle();
+        const hasActive = !!userSub;
+        if (!hasActive && existingCount >= 1) {
+          throw new Error('Your plan allows only one company. Upgrade to add more.');
+        }
+      }
+    } catch (planErr: any) {
+      // If plan check threw an error, propagate to caller
+      if (planErr && planErr.message && planErr.message.includes('Your plan allows only one company')) {
+        throw planErr;
+      }
+      // Otherwise continue creation attempt (best effort)
+    }
+
     let newBusinessId = Date.now().toString();
 
     // Try to create in Supabase first
