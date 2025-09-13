@@ -80,7 +80,12 @@ const AuthPage = () => {
         const isAdminUser = isAllowedAdminEmail(session.user.email || null);
         const adminOnly = ['/dashboard/superadmin', '/dashboard/application', '/dashboard/layout', '/dashboard/admin-settings'];
         const storedIsAdminOnly = stored ? adminOnly.some(p => stored.startsWith(p)) : false;
-        const candidate = (redirect && redirect.startsWith('/dashboard')) ? redirect : (stored && stored.startsWith('/dashboard') ? stored : '/dashboard');
+
+        // Don't redirect to subscription checkout routes on regular login
+        const isSubscriptionCheckout = stored && stored.includes('/dashboard/subscription') && stored.includes('startCheckout=1');
+
+        const candidate = (redirect && redirect.startsWith('/dashboard')) ? redirect :
+                         (stored && stored.startsWith('/dashboard') && !isSubscriptionCheckout ? stored : '/dashboard');
         const target = (!isAdminUser && storedIsAdminOnly) ? '/dashboard' : candidate;
         navigate(target, { replace: true });
       }
@@ -416,6 +421,10 @@ const AuthPage = () => {
       let storedPlan2 = '';
       try { storedPlan2 = localStorage.getItem('selected-plan') || ''; } catch {}
       const selectedPlanNav = (urlPlan2 && urlPlan2.trim()) || (storedPlan2 && storedPlan2.trim()) || '';
+
+      // Clear the selected plan from localStorage to prevent future login redirects
+      try { localStorage.removeItem('selected-plan'); } catch {}
+
       if (!selectedPlanNav) {
         toast.success('Account created! 14-day trial activated.');
         navigate('/dashboard');

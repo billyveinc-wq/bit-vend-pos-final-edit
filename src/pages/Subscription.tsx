@@ -111,6 +111,7 @@ const Subscription = () => {
   const [currentPlan, setCurrentPlan] = useState<string>('starter');
   const [showCvv, setShowCvv] = useState<boolean>(false);
   const [plans, setPlans] = useState<typeof subscriptionPlans>(subscriptionPlans);
+  const [promoDetails, setPromoDetails] = useState<{code: string, percent: number, expired: boolean} | null>(null);
 
   useEffect(() => {
     setCurrentPlan(subscription?.plan_id || 'starter');
@@ -249,27 +250,88 @@ const Subscription = () => {
     const plan = plans.find(p => p.id === selectedPlan);
     const payment = paymentMethods.find(p => p.id === selectedPayment);
     
-    // Check for referral code discount
+    // Check for referral code discount from multiple sources
     const urlParams = new URLSearchParams(window.location.search);
-    const referralCode = urlParams.get('ref') || localStorage.getItem('applied-referral-code');
+    let referralCode = urlParams.get('ref') || localStorage.getItem('applied-referral-code');
     let finalPrice = plan?.price || 0;
     let discountAmount = 0;
-    
+    let promoDetails = null;
+
+    // If no referral code in URL or localStorage, check user_promotions for this user
+    if (!referralCode) {
+      try {
+        const { data: { session } } = await safeGetSession();
+        if (session?.user) {
+          const { data: userPromo } = await supabase
+            .from('user_promotions')
+            .select('promo_codes!inner(*)')
+            .eq('user_id', session.user.id)
+            .order('applied_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (userPromo && userPromo.promo_codes) {
+            referralCode = (userPromo.promo_codes as any).code;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to check user promotions:', err);
+      }
+    }
+
     if (referralCode) {
       try {
-        const { data: promo } = await supabase.from('promo_codes').select('*').eq('code', referralCode).maybeSingle();
+        // Check both promo_codes and promos tables for compatibility
+        let promo = null;
+
+        const { data: promoCodesData } = await supabase
+          .from('promo_codes')
+          .select('*')
+          .eq('code', referralCode)
+          .maybeSingle();
+
+        if (promoCodesData) {
+          promo = promoCodesData;
+        } else {
+          // Fallback to promos table
+          const { data: promosData } = await supabase
+            .from('promos')
+            .select('*')
+            .eq('code', referralCode)
+            .maybeSingle();
+          promo = promosData;
+        }
+
         if (promo) {
           const now = Date.now();
           const expiresAt = (promo as any).expires_at ? new Date((promo as any).expires_at).getTime() : null;
           const notExpired = !expiresAt || expiresAt > now;
           const pctRaw = (promo as any).discount_percent ?? (promo as any).discount;
           const pct = typeof pctRaw === 'number' ? pctRaw : parseFloat(pctRaw || '0');
-          if (notExpired && isFinite(pct) && pct > 0) {
-            discountAmount = Math.round(finalPrice * (pct / 100));
+
+          if (notExpired && isFinite(pct) && pct > 0 && pct <= 100) {
+            discountAmount = Math.round(finalPrice * (pct / 100) * 100) / 100; // Round to 2 decimal places
             finalPrice = Math.max(0, finalPrice - discountAmount);
+            const details = { code: referralCode, percent: pct, expired: false };
+            setPromoDetails(details);
+
+            toast.success(`Promo code applied: ${pct}% discount ($${discountAmount.toFixed(2)} off)`, {
+              duration: 5000
+            });
+          } else if (!notExpired) {
+            toast.error('Promo code has expired');
+            setPromoDetails({ code: referralCode, percent: pct, expired: true });
+          } else {
+            toast.error('Invalid promo code discount value');
           }
+        } else {
+          toast.error('Promo code not found');
+          setPromoDetails(null);
         }
-      } catch {}
+      } catch (err) {
+        console.error('Error applying promo code:', err);
+        toast.error('Failed to apply promo code');
+      }
     }
     
     // Validate payment data based on selected method
@@ -651,9 +713,21 @@ const Subscription = () => {
             {/* Subscribe Button */}
             <div className="flex items-center justify-between pt-4 border-t">
               <div className="text-sm text-muted-foreground">
-                {selectedPlan && (() => { const sel = plans.find(p => p.id === selectedPlan); return sel ? <>Selected: {formatWords(sel.name)} - ${sel.price}/month</> : null; })() }
+                {selectedPlan && (() => {
+                  const sel = plans.find(p => p.id === selectedPlan);
+                  return sel ? (
+                    <div className="space-y-1">
+                      <div>Selected: {formatWords(sel.name)} - ${sel.price}/month</div>
+                      {(promoDetails && !promoDetails.expired) && (
+                        <div className="text-green-600 font-medium">
+                          🎉 {promoDetails.percent}% discount applied with code "{promoDetails.code}"
+                        </div>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
               </div>
-              <Button 
+              <Button
                 onClick={handleSubscribe}
                 disabled={selectedPlan === currentPlan}
                 size="lg"
