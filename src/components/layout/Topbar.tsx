@@ -128,6 +128,11 @@ const Topbar: React.FC<TopbarProps> = ({
   const editorRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fontFamilyKey, setFontFamilyKey] = useState<'sans' | 'serif' | 'mono'>('sans');
+
+  // App releases loaded for notifications
+  const [releases, setReleases] = useState<any[]>([]);
+  const [previewRelease, setPreviewRelease] = useState<any | null>(null);
+  const [showReleaseDialog, setShowReleaseDialog] = useState(false);
   const fontMap: Record<typeof fontFamilyKey, string> = {
     sans: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif',
     serif: 'Times New Roman, Times, Georgia, serif',
@@ -151,6 +156,18 @@ const Topbar: React.FC<TopbarProps> = ({
     };
     loadSupportEmail();
   }, [companyId]);
+
+  // Load published releases for bell notifications (global key, company_id null)
+  useEffect(() => {
+    const loadReleases = async () => {
+      try {
+        const { data } = await supabase.from('app_settings').select('value').is('company_id', null).eq('key', 'published_releases').maybeSingle();
+        const val = (data as any)?.value;
+        if (Array.isArray(val)) setReleases(val.reverse());
+      } catch (e) {}
+    };
+    loadReleases();
+  }, []);
   
   // Load current company name and user's companies; expose as reload function
   const reloadCompanyData = React.useCallback(async () => {
@@ -430,20 +447,49 @@ const Topbar: React.FC<TopbarProps> = ({
           </Tooltip>
 
           <Tooltip open={notificationTooltip.isOpen} onOpenChange={notificationTooltip.handleOpenChange}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-2 relative transition-all duration-200 hover:scale-90 active:scale-75"
-                onClick={() => navigate('/dashboard/system-updates')}
-              >
-                <Bell size={18} />
-              </Button>
-            </TooltipTrigger>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2 relative transition-all duration-200 hover:scale-90 active:scale-75"
+                  title="Notifications"
+                >
+                  <Bell size={18} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 p-2">
+                <div className="mb-2 text-sm font-medium">App Releases</div>
+                {releases.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No releases available</div>
+                ) : (
+                  releases.map((r: any) => (
+                    <DropdownMenuItem key={r.id} onClick={() => { setPreviewRelease(r); setShowReleaseDialog(true); }}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{r.title}</span>
+                        <span className="text-xs text-muted-foreground">{new Date(r.published_at).toLocaleString()}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <TooltipContent>
               System Updates
             </TooltipContent>
           </Tooltip>
+
+          <Dialog open={showReleaseDialog} onOpenChange={setShowReleaseDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{previewRelease?.title || 'Release Preview'}</DialogTitle>
+              </DialogHeader>
+              <div className="prose max-w-none">
+                <div dangerouslySetInnerHTML={{ __html: previewRelease?.notes || '<p>No preview available</p>' }} />
+              </div>
+            </DialogContent>
+          </Dialog>
           
           <Tooltip open={settingsTooltip.isOpen} onOpenChange={settingsTooltip.handleOpenChange}>
             <TooltipTrigger asChild>
