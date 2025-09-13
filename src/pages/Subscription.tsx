@@ -26,7 +26,8 @@ const subscriptionPlans = [
       'Basic inventory & sales tracking',
       'Mpesa payments enabled',
       'Simple reports',
-      'Email support'
+      'Email support',
+      'Add one extra user (cashier)'
     ]
   },
   {
