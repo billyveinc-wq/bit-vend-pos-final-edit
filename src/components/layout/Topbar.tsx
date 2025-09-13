@@ -167,6 +167,9 @@ const Topbar: React.FC<TopbarProps> = ({
       } catch (e) {}
     };
     loadReleases();
+    const handler = () => loadReleases();
+    window.addEventListener('releases:changed', handler);
+    return () => window.removeEventListener('releases:changed', handler);
   }, []);
   
   // Load current company name and user's companies; expose as reload function
