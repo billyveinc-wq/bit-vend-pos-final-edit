@@ -27,10 +27,12 @@ export interface Business {
 interface BusinessContextType {
   businesses: Business[];
   currentBusiness: Business | null;
-  addBusiness: (business: Omit<Business, 'id' | 'createdAt'>) => void;
-  updateBusiness: (id: string, business: Partial<Business>) => void;
+  isLoaded: boolean;
+  addBusiness: (business: Omit<Business, 'id' | 'createdAt'>) => Promise<string>;
+  updateBusiness: (id: string, business: Partial<Business>) => Promise<void>;
   setCurrentBusiness: (id: string) => void;
   deleteBusiness: (id: string) => void;
+  refreshBusinesses: () => Promise<void>;
 }
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
