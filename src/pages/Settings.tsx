@@ -240,6 +240,8 @@ const Settings = () => {
     }
   }, [currentBusiness, editId, subsection]);
 
+  const [isSavingBusiness, setIsSavingBusiness] = useState(false);
+
   const handleSaveBusiness = async () => {
     if (!businessForm.businessName) {
       toast.error('Business name is required');
@@ -259,6 +261,7 @@ const Settings = () => {
       operatingHours
     };
 
+    setIsSavingBusiness(true);
     try {
       const targetId = editId || (currentBusiness ? currentBusiness.id : undefined);
       if (targetId) {
@@ -267,12 +270,27 @@ const Settings = () => {
         await addBusiness(businessData);
       }
       // Ensure businesses refreshed from DB to persist URL across sessions
-      try { await refreshBusinesses(); } catch {}
+      try { await refreshBusinesses(); } catch (e) { console.warn('refreshBusinesses failed', e); }
+
+      // After refresh, ensure the form logoUrl matches persisted company record
+      try {
+        const latest = (currentBusiness && currentBusiness.id === (editId || (currentBusiness ? currentBusiness.id : undefined))) ? currentBusiness : undefined;
+        if (latest) {
+          setBusinessForm(prev => ({ ...prev, logoUrl: latest.logoUrl || prev.logoUrl }));
+        } else {
+          // attempt to find updated company in businesses
+          const found = businesses.find(b => b.id === (editId || (currentBusiness ? currentBusiness.id : undefined)));
+          if (found) setBusinessForm(prev => ({ ...prev, logoUrl: found.logoUrl || prev.logoUrl }));
+        }
+      } catch (e) { console.warn('Failed to reconcile logo after save', e); }
+
       toast.success('Business saved');
     } catch (error) {
       console.error('Failed to save business:', error);
       toast.error('Failed to save business. Please try again.');
       return;
+    } finally {
+      setIsSavingBusiness(false);
     }
 
     // Navigate back to business list
