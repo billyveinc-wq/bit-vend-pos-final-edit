@@ -597,8 +597,30 @@ const Settings = () => {
           </Button>
         </div>
         
-        <div className="grid gap-4">
-          {businesses.map((business) => (
+        {!isLoaded ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-muted-foreground">Loading business information...</div>
+          </div>
+        ) : businesses.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No Business Information</h3>
+              <p className="text-muted-foreground mb-4">
+                Add your business information to get started
+              </p>
+              <Button
+                onClick={() => setSearchParams({ section: 'business', subsection: 'business-info', mode: 'add' })}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Your First Business
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {businesses.map((business) => (
             <Card key={business.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -641,8 +663,9 @@ const Settings = () => {
                 )}
               </CardContent>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
