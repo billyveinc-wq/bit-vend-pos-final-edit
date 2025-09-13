@@ -73,10 +73,12 @@ const TermsOfService = () => {
           </Card>
 
           {/* Service Description */}
-          <Card>
+          <Card className={`border-l-4 border-l-blue-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-blue-50/50 to-orange-50/50 dark:from-blue-950/20 dark:to-orange-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '200ms'}}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                  <Shield className="h-5 w-5" />
+                </div>
                 2. Service Description
               </CardTitle>
             </CardHeader>
