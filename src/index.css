@@ -425,6 +425,14 @@ All colors MUST be HSL.
   .animate-fadeInUp {
     animation: fadeInUp 0.5s ease-out;
   }
+
+  @keyframes fadeSimple {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .animate-fade {
+    animation: fadeSimple 0.35s ease-in-out;
+  }
   
   .animate-slideInLeft {
     animation: slideInLeft 0.3s ease-out;
