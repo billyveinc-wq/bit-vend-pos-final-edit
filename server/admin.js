@@ -34,24 +34,197 @@ const adminAuth = (req, res, next) => {
 // ===== Admin endpoints =====
 const adminRouter = express.Router();
 adminRouter.post('/delete-user', async (req, res) => {
+  const { userId, email, immediate = false } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    if (immediate) {
+      // Immediate hard delete (for emergency/admin use)
+      await supabase.from('user_subscriptions').delete().eq('user_id', userId);
+      await supabase.from('user_promotions').delete().eq('user_id', userId);
+      await supabase.from('company_users').delete().eq('user_id', userId);
+      await supabase.from('system_users').delete().eq('id', userId);
+
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+      if (error) {
+        console.error('Failed deleting auth user:', error);
+        return res.status(500).json({ error: 'Failed deleting auth user', details: error });
+      }
+
+      return res.json({ ok: true, type: 'immediate' });
+    } else {
+      // Soft delete with 30-day retention
+      const { data, error } = await supabase.rpc('soft_delete_user_account', {
+        target_user_id: userId,
+        target_email: email || null
+      });
+
+      if (error) {
+        console.error('Failed soft deleting user:', error);
+        return res.status(500).json({ error: 'Failed soft deleting user', details: error });
+      }
+
+      return res.json({
+        ok: true,
+        type: 'soft_delete',
+        deletion_id: data,
+        retention_days: 30,
+        message: 'Account marked for deletion. Data will be permanently removed after 30 days.'
+      });
+    }
+  } catch (err) {
+    console.error('Delete user error', err);
+    return res.status(500).json({ error: 'Internal error', details: err });
+  }
+});
+
+// New endpoint to check account deletion status
+adminRouter.get('/deletion-status/:userId', async (req, res) => {
+  const { userId } = req.params;
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    const { data, error } = await supabase.rpc('get_account_deletion_status', {
+      target_user_id: userId
+    });
+
+    if (error) {
+      console.error('Failed getting deletion status:', error);
+      return res.status(500).json({ error: 'Failed getting deletion status', details: error });
+    }
+
+    return res.json({ status: data });
+  } catch (err) {
+    console.error('Get deletion status error', err);
+    return res.status(500).json({ error: 'Internal error', details: err });
+  }
+});
+
+// New endpoint to cleanup expired account deletions
+adminRouter.post('/cleanup-expired-deletions', async (req, res) => {
+  try {
+    // First, run the database cleanup function
+    const { data: cleanupCount, error: dbError } = await supabase.rpc('cleanup_expired_account_deletions');
+
+    if (dbError) {
+      console.error('Database cleanup error:', dbError);
+      return res.status(500).json({ error: 'Database cleanup failed', details: dbError });
+    }
+
+    // Get all completed deletions that still need auth user cleanup
+    const { data: completedDeletions, error: fetchError } = await supabase
+      .from('account_deletions')
+      .select('id, user_id, email')
+      .eq('cleanup_completed', true)
+      .is('cleanup_completed_at', null);
+
+    if (fetchError) {
+      console.error('Failed fetching completed deletions:', fetchError);
+      return res.status(500).json({ error: 'Failed fetching completed deletions', details: fetchError });
+    }
+
+    let authCleanupCount = 0;
+    const authCleanupErrors = [];
+
+    // Clean up auth users for completed deletions
+    for (const deletion of completedDeletions || []) {
+      try {
+        const { error: authError } = await supabase.auth.admin.deleteUser(deletion.user_id);
+        if (authError) {
+          console.error(`Failed deleting auth user ${deletion.user_id}:`, authError);
+          authCleanupErrors.push({ user_id: deletion.user_id, error: authError.message });
+        } else {
+          // Mark auth cleanup as completed
+          await supabase
+            .from('account_deletions')
+            .update({ cleanup_completed_at: new Date().toISOString() })
+            .eq('id', deletion.id);
+          authCleanupCount++;
+        }
+      } catch (err) {
+        console.error(`Error processing auth cleanup for ${deletion.user_id}:`, err);
+        authCleanupErrors.push({ user_id: deletion.user_id, error: err.message });
+      }
+    }
+
+    return res.json({
+      ok: true,
+      database_cleanup_count: cleanupCount,
+      auth_cleanup_count: authCleanupCount,
+      auth_cleanup_errors: authCleanupErrors,
+      total_processed: cleanupCount + authCleanupCount
+    });
+  } catch (err) {
+    console.error('Cleanup expired deletions error', err);
+    return res.status(500).json({ error: 'Internal error', details: err });
+  }
+});
+
+// New endpoint to restore a soft-deleted account (within 30 days)
+adminRouter.post('/restore-user', async (req, res) => {
   const { userId } = req.body;
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
-    await supabase.from('user_subscriptions').delete().eq('user_id', userId);
-    await supabase.from('user_promotions').delete().eq('user_id', userId);
-    await supabase.from('company_users').delete().eq('user_id', userId);
-    await supabase.from('system_users').delete().eq('id', userId);
+    // Check if account is soft-deleted and within restoration period
+    const { data: deletionStatus, error: statusError } = await supabase.rpc('get_account_deletion_status', {
+      target_user_id: userId
+    });
 
-    const { error } = await supabase.auth.admin.deleteUser(userId);
-    if (error) {
-      console.error('Failed deleting auth user:', error);
-      return res.status(500).json({ error: 'Failed deleting auth user', details: error });
+    if (statusError) {
+      return res.status(500).json({ error: 'Failed checking deletion status', details: statusError });
     }
 
-    return res.json({ ok: true });
+    if (!deletionStatus.is_deleted) {
+      return res.status(400).json({ error: 'Account is not deleted' });
+    }
+
+    if (deletionStatus.cleanup_completed) {
+      return res.status(400).json({ error: 'Account has been permanently deleted and cannot be restored' });
+    }
+
+    if (deletionStatus.days_remaining <= 0) {
+      return res.status(400).json({ error: 'Restoration period has expired' });
+    }
+
+    // Restore the account by removing deletion markers
+    const { error: restoreError } = await supabase.from('system_users')
+      .update({ status: 'active', deleted_at: null })
+      .eq('id', userId);
+
+    if (restoreError) {
+      return res.status(500).json({ error: 'Failed restoring system user', details: restoreError });
+    }
+
+    // Restore related data
+    await supabase.from('user_subscriptions')
+      .update({ deleted_at: null, deletion_id: null })
+      .eq('user_id', userId);
+
+    await supabase.from('user_promotions')
+      .update({ deleted_at: null, deletion_id: null })
+      .eq('user_id', userId);
+
+    await supabase.from('company_users')
+      .update({ deleted_at: null, deletion_id: null })
+      .eq('user_id', userId);
+
+    // Mark the deletion record as cancelled
+    await supabase.from('account_deletions')
+      .update({
+        cleanup_completed: true,
+        cleanup_completed_at: new Date().toISOString(),
+        metadata: { ...deletionStatus.metadata, restoration_date: new Date().toISOString(), status: 'restored' }
+      })
+      .eq('id', deletionStatus.deletion_id);
+
+    return res.json({
+      ok: true,
+      message: 'Account successfully restored',
+      days_remaining_before_restore: deletionStatus.days_remaining
+    });
   } catch (err) {
-    console.error('Delete user error', err);
+    console.error('Restore user error', err);
     return res.status(500).json({ error: 'Internal error', details: err });
   }
 });
