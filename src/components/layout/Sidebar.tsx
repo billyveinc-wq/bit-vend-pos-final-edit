@@ -278,6 +278,13 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         >
           {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
+        {collapsed && (
+          <div className="absolute left-4 top-6">
+            {currentBusiness && currentBusiness.logoUrl ? (
+              <img src={currentBusiness.logoUrl} alt={currentBusiness.businessName || 'Business logo'} className="w-8 h-8 rounded-md object-cover border" />
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
