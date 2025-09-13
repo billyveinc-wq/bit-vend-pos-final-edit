@@ -145,17 +145,18 @@ const Subscription = () => {
         if (userSub) {
           // Prefer explicit expires_at (billing date)
           if (userSub.expires_at) {
-            setNextBillingDate(new Date(userSub.expires_at));
+            const dt = parseDateSafe(userSub.expires_at) || new Date(userSub.expires_at);
+            setNextBillingDate(dt);
           } else if (userSub.started_at && (String(userSub.status || '').toLowerCase().includes('trial') || userSub.trial_ends_at)) {
             // Trial based
-            const trialEnd = userSub.trial_ends_at ? new Date(userSub.trial_ends_at) : (() => { const d = new Date(userSub.started_at); d.setDate(d.getDate()+14); return d; })();
+            const trialEnd = userSub.trial_ends_at ? (parseDateSafe(userSub.trial_ends_at) || new Date(userSub.trial_ends_at)) : (() => { const d = parseDateSafe(userSub.started_at) || new Date(userSub.started_at); d.setDate(d.getDate()+14); return d; })();
             setTrialExpiresAt(trialEnd);
             setIsOnTrial(trialEnd.getTime() > now);
             setTrialRemainingMs(Math.max(0, trialEnd.getTime() - now));
             setNextBillingDate(trialEnd);
           } else if (userSub.started_at) {
             // Fallback: assume billing will be after 14 days from started_at
-            const d = new Date(userSub.started_at); d.setDate(d.getDate()+14);
+            const d = parseDateSafe(userSub.started_at) || new Date(userSub.started_at); d.setDate(d.getDate()+14);
             setNextBillingDate(d);
           }
         } else {
