@@ -3,8 +3,8 @@
  * Handles automatic cleanup of expired account deletions
  */
 
-const ADMIN_SERVER_URL = process.env.VITE_ADMIN_SERVER_URL || 'http://localhost:8787';
-const ADMIN_API_KEY = process.env.VITE_ADMIN_API_KEY || 'change-me';
+const ADMIN_SERVER_URL = import.meta.env.VITE_ADMIN_SERVER_URL || 'http://localhost:8787';
+const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY || 'change-me';
 
 export interface CleanupResult {
   ok: boolean;
