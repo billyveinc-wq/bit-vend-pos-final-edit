@@ -1279,7 +1279,18 @@ const SuperAdmin = () => {
                             return r.planName;
                           })()
                         }</TableCell>
-                        <TableCell className="text-foreground">{r.planExpires ? new Date(r.planExpires).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' }) : '-'}</TableCell>
+                        <TableCell className="text-foreground">{
+                          r.planExpires ? (() => {
+                            try {
+                              const endTs = new Date(r.planExpires).getTime();
+                              const daysLeft = Math.ceil((endTs - Date.now()) / (1000 * 60 * 60 * 24));
+                              if (isFinite(daysLeft)) {
+                                return daysLeft > 0 ? `${daysLeft} day${daysLeft>1? 's':''} left` : 'Expired';
+                              }
+                            } catch {}
+                            return new Date(r.planExpires).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
+                          })() : '-'
+                        }</TableCell>
                         <TableCell className="text-foreground">{r.promoCode || '-'}</TableCell>
                         <TableCell className="text-foreground">{r.influencerName || '-'}</TableCell>
                         <TableCell className="text-foreground">{r.lastLogin && r.lastLogin !== '-' ? new Date(r.lastLogin).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' }) : '-'}</TableCell>
