@@ -268,9 +268,14 @@ const TermsOfService = () => {
           </Card>
 
           {/* Termination */}
-          <Card>
+          <Card className={`border-l-4 border-l-pink-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-pink-50/50 to-orange-50/50 dark:from-pink-950/20 dark:to-orange-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '900ms'}}>
             <CardHeader>
-              <CardTitle>9. Termination</CardTitle>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-pink-500 to-pink-600 text-white">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                9. Termination
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
@@ -286,9 +291,14 @@ const TermsOfService = () => {
           </Card>
 
           {/* Governing Law */}
-          <Card>
+          <Card className={`border-l-4 border-l-violet-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-violet-50/50 to-blue-50/50 dark:from-violet-950/20 dark:to-blue-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '1000ms'}}>
             <CardHeader>
-              <CardTitle>10. Governing Law and Dispute Resolution</CardTitle>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 text-white">
+                  <Shield className="h-5 w-5" />
+                </div>
+                10. Governing Law and Dispute Resolution
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
@@ -298,9 +308,14 @@ const TermsOfService = () => {
           </Card>
 
           {/* Contact Information */}
-          <Card>
+          <Card className={`border-l-4 border-l-cyan-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-cyan-50/50 to-blue-50/50 dark:from-cyan-950/20 dark:to-blue-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '1100ms'}}>
             <CardHeader>
-              <CardTitle>11. Contact Information</CardTitle>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 text-white">
+                  <Users className="h-5 w-5" />
+                </div>
+                11. Contact Information
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
