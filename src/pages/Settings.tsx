@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useTheme } from 'next-themes';
 
 const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
