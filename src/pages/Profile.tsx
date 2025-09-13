@@ -74,6 +74,8 @@ const Profile: React.FC = () => {
           bio: meta.bio || '',
           role: roleName || 'member'
         });
+        // check if this user is the first user
+        await checkIfFirstUser(user.id);
       } catch (e: any) {
         console.warn('Load profile error', e);
         toast.error('Failed to load profile');
