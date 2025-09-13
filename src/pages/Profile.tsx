@@ -27,6 +27,24 @@ const Profile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(true);
   const [form, setForm] = useState<FormData>({ email: '', firstName: '', lastName: '', username: '', phone: '', bio: '', role: '' });
 
+  // Self-delete helpers
+  const [isFirstUser, setIsFirstUser] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+
+  const checkIfFirstUser = async (uid: string | null) => {
+    try {
+      if (!uid) return;
+      const { data: row } = await supabase.from('system_users').select('is_first_user').eq('id', uid).maybeSingle();
+      if (row && row.is_first_user) setIsFirstUser(true);
+      else {
+        // Fallback: check earliest user
+        const { data: first } = await supabase.from('system_users').select('id').order('created_at').limit(1).maybeSingle();
+        if (first && first.id === uid) setIsFirstUser(true);
+      }
+    } catch (e) {}
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
