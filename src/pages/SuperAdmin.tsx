@@ -591,22 +591,40 @@ const SuperAdmin = () => {
           const up = (ups || []).find((p: any) => p.user_id === u.id);
           const userCount = companyId ? (userCountByCompany.get(companyId) || 0) : '';
 
-          return {
-            id: u.id,
-            email: u.email || u.user_email || '-',
-            fullName: u.user_metadata?.full_name || u.user_metadata?.fullName || '-',
-            companyId,
-            companyName,
-            userCount,
-            planId: plan?.id || sub?.plan_id || 'starter',
-            planName: plan?.name || (sub?.plan_id || 'starter'),
-            planExpires: sub?.expires_at || null,
-            subscriptionStatus: sub?.status || 'free',
-            promoCode: up?.promo_code?.code || up?.promo_code_id || (u.user_metadata?.referral_code || '-'),
-            influencerName: up?.promo_code?.influencer_name || up?.influencer_name || (u.user_metadata?.referral_name || '-'),
-            createdAt: u.created_at || u.createdAt || '-',
-            lastLogin: u.last_sign_in_at || '-',
-          };
+          // Determine expiry: prefer explicit expires_at, then trial_ends_at, otherwise fallback to created_at + 14 days for trial/free users
+        const createdAtDate = u.created_at ? new Date(u.created_at) : null;
+        let computedExpiry: string | null = null;
+        if (sub?.expires_at) {
+          computedExpiry = sub.expires_at;
+        } else if (sub?.trial_ends_at) {
+          computedExpiry = sub.trial_ends_at;
+        } else if (!sub) {
+          // No subscription record: use account creation + 14 days
+          if (createdAtDate) computedExpiry = new Date(createdAtDate.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+        } else if (sub?.started_at && String(sub.status || '').toLowerCase().includes('trial')) {
+          const started = new Date(sub.started_at);
+          computedExpiry = new Date(started.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+        } else if (u.created_at) {
+          // Fallback: created_at + 14 days
+          computedExpiry = new Date(createdAtDate!.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+        }
+
+        return {
+          id: u.id,
+          email: u.email || u.user_email || '-',
+          fullName: u.user_metadata?.full_name || u.user_metadata?.fullName || '-',
+          companyId,
+          companyName,
+          userCount,
+          planId: plan?.id || sub?.plan_id || 'starter',
+          planName: plan?.name || (sub?.plan_id || 'starter'),
+          planExpires: computedExpiry,
+          subscriptionStatus: sub?.status || 'free',
+          promoCode: up?.promo_code?.code || up?.promo_code_id || (u.user_metadata?.referral_code || '-'),
+          influencerName: up?.promo_code?.influencer_name || up?.influencer_name || (u.user_metadata?.referral_name || '-'),
+          createdAt: u.created_at || u.createdAt || '-',
+          lastLogin: u.last_sign_in_at || '-',
+        };
         });
 
         setRegistrations(regs);
