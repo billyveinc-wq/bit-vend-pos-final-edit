@@ -1955,8 +1955,19 @@ const Settings = () => {
           </DialogHeader>
           <div className="pt-2">
             <div className="flex justify-end">
-              <Button variant="outline" onClick={()=> setShowUpgradeModal(false)} className="mr-2">Cancel</Button>
-              <Button onClick={() => { setShowUpgradeModal(false); setSearchParams({ section: 'business', subsection: 'subscription' }); }}>Upgrade Plan</Button>
+              <Button variant="outline" onClick={()=> { setShowUpgradeModal(false); setPendingFeature(null); }} className="mr-2">Cancel</Button>
+              <Button onClick={() => {
+                const featurePlanMap: Record<string,string> = {
+                  multi_branch_support: 'pro',
+                  multi_user_accounts: 'standard',
+                  unlimited_branches: 'enterprise',
+                  unlimited_users: 'enterprise'
+                };
+                const planId = pendingFeature ? (featurePlanMap[pendingFeature] || 'standard') : 'standard';
+                setShowUpgradeModal(false);
+                setPendingFeature(null);
+                setSearchParams({ section: 'business', subsection: 'subscription', select: planId });
+              }}>Upgrade Plan</Button>
             </div>
           </div>
         </DialogContent>
