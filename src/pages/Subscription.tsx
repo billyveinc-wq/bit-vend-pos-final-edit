@@ -264,7 +264,27 @@ const Subscription = () => {
   });
 
   const formatWords = (s: string) => String(s || '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const parseDateSafe = (val: any) => {
+    if (!val) return null;
+    try {
+      const s = String(val);
+      // If string lacks timezone info, assume UTC by appending Z
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(s)) {
+        return new Date(s + 'Z');
+      }
+      return new Date(s);
+    } catch {
+      return null;
+    }
+  };
+
+  const [animatingPlan, setAnimatingPlan] = useState<string | null>(null);
+
   const handlePlanSelect = (planId: string) => {
+    // animate select button briefly
+    setAnimatingPlan(planId);
+    setTimeout(() => setAnimatingPlan(null), 700);
     setSelectedPlan(planId);
   };
 
