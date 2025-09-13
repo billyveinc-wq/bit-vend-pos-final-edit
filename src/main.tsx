@@ -9,6 +9,7 @@ import './index.css'
 startUptimeMonitor();
 
 // Initialize automatic account cleanup (30-day retention)
+// Note: Requires admin server to be running at VITE_ADMIN_SERVER_URL
 try {
   setupAutomaticCleanup();
 } catch (error) {
