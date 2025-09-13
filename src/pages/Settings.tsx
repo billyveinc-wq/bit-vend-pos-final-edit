@@ -861,7 +861,8 @@ const Settings = () => {
         if (map.has('security')) setSecurityGeneral((p)=>({ ...p, ...(map.get('security')||{}) }));
       } catch {}
     };
-    loadAllSettings();
+    await loadAllSettings();
+    try { await checkIfFirstUser(); } catch {}
   }, []);
 
   // Apply theme and accent when appTheme changes
