@@ -649,6 +649,29 @@ const Users = () => {
               </div>
             </form>
           </DialogContent>
+
+          {/* Upgrade modal */}
+          <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Upgrade your plan</DialogTitle>
+              </DialogHeader>
+              <div className="pt-2">
+                <div className="text-sm text-muted-foreground mb-4">Your current plan does not allow adding multiple users. Upgrade to a plan that supports multiple users.</div>
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={()=> { setShowUpgradeModal(false); setPendingFeature(null); }} className="mr-2">Cancel</Button>
+                  <Button onClick={() => {
+                    const featurePlanMap: Record<string,string> = { multi_user_accounts: 'standard', unlimited_users: 'enterprise' };
+                    const planId = pendingFeature ? (featurePlanMap[pendingFeature] || 'standard') : 'standard';
+                    setShowUpgradeModal(false);
+                    setPendingFeature(null);
+                    setSearchParams({ select: planId });
+                    navigate('/dashboard/subscription');
+                  }}>Upgrade Plan</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </Dialog>
       </div>
 
