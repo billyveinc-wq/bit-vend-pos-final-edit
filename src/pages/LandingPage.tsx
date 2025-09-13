@@ -438,7 +438,7 @@ const LandingPage = () => {
                 description: 'Best for small shops',
                 icon: Building2,
                 popular: false,
-                features: ['Basic inventory & sales tracking', 'M-Pesa payments enabled', 'Simple reports', 'Email support']
+                features: ['Basic inventory & sales tracking', 'M-Pesa payments enabled', 'Simple reports', 'Email support', 'Add one extra user (cashier)']
               },
               {
                 name: 'Standard Plan',
