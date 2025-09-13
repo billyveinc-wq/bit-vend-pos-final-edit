@@ -1,6 +1,16 @@
 /**
  * Account Cleanup Service
  * Handles automatic cleanup of expired account deletions
+ *
+ * SETUP REQUIRED:
+ * To enable account cleanup, you need to:
+ * 1. Start the admin server: `node server/admin.js`
+ * 2. Set environment variables:
+ *    - VITE_ADMIN_SERVER_URL (e.g., http://localhost:8787)
+ *    - VITE_ADMIN_API_KEY (secure API key for admin operations)
+ *    - SUPABASE_SERVICE_ROLE (for the admin server)
+ *
+ * Without these, the cleanup service will be disabled.
  */
 
 const ADMIN_SERVER_URL = import.meta.env.VITE_ADMIN_SERVER_URL || 'http://localhost:8787';
