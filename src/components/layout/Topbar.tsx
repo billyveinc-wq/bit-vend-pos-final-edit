@@ -118,7 +118,7 @@ const Topbar: React.FC<TopbarProps> = ({
   const { companyId } = useCompany();
   const [isScrolled, setIsScrolled] = useState(false);
   const { businesses, currentBusiness, setCurrentBusiness } = useBusiness();
-  const [companyName, setCompanyName] = useState<string>('');
+  const [companyName, setCompanyName] = useState<string>(() => localStorage.getItem('pos-company-name') || '');
   const [userCompanies, setUserCompanies] = useState<{ id: number; name: string }[]>([]);
   const [supportEmail, setSupportEmail] = useState<string | null>(null);
   const [emailWebhookUrl, setEmailWebhookUrl] = useState<string | null>(null);
