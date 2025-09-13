@@ -126,8 +126,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
           } else if (isMounted) {
             setAllowedPages(null);
           }
-          // load user-specific logo if present
-          if (meta.logoUrl) setUserLogo(meta.logoUrl);
         } else if (isMounted) {
           setAllowedPages(null);
         }
