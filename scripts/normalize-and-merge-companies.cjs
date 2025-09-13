@@ -16,9 +16,13 @@ function normalizeName(s) {
   name = name.replace(/[\u2019`‘’]+/g, "'");
   name = name.replace(/[_.]+/g, ' ');
   name = name.replace(/\s+/g, ' ').trim();
-  // remove trailing pos, pos's, company's, company
-  name = name.replace(/(?:\bpos\b|'s|’s)\s*$/i, '').trim();
+  // remove trailing words like "pos", "pos's", "company", "company's" (handle attached pos)
+  name = name.replace(/(?:pos(?:'s|’s)?|(?:\bpos\b))\s*$/i, '').trim();
   name = name.replace(/\bcompany\b\s*$/i, '').trim();
+  // remove trailing possessive if exists
+  name = name.replace(/('s|’s)\s*$/i, '').trim();
+  // remove trailing 'pos' again if still present
+  name = name.replace(/pos\s*$/i, '').trim();
   name = name.replace(/\s+/g, ' ').trim();
   // title case
   name = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
