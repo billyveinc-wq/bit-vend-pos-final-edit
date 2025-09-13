@@ -163,11 +163,21 @@ const Users = () => {
           .or(filter)
           .order('created_at', { ascending: false });
         if (error) throw error;
-        // also fetch companies for the admin to choose from
+        // fetch companies owned/linked to the current admin user for selection (deduped)
         try {
-          const { data: comps } = await supabase.from('companies').select('id, name').order('id');
-          if (comps) setCompanies((comps as any[]).map(c => ({ id: String(c.id), name: c.name })));
-        } catch {}
+          const { data: comps } = await supabase.from('company_users').select('company_id, companies (id, name, created_at)').eq('user_id', uid);
+          if (comps && Array.isArray(comps)) {
+            const map = new Map<string,string>();
+            (comps as any[]).forEach((row) => {
+              const comp = row.companies;
+              if (comp && comp.id) map.set(String(comp.id), comp.name || '');
+            });
+            const list = Array.from(map.entries()).map(([id,name]) => ({ id, name }));
+            setCompanies(list);
+          }
+        } catch (e) {
+          console.warn('Failed to fetch companies for admin', e);
+        }
         const filtered = (data || []).filter((row: any) => Boolean(row.user_metadata?.created_by_admin) || row.id === uid);
         const mapped: User[] = filtered.map((row: any) => {
           const meta = row.user_metadata || {};
