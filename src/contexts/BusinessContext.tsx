@@ -270,9 +270,11 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const user = session?.session?.user;
 
       if (user) {
-        // avoid duplicate by checking existing company name (case-insensitive)
+        // normalize company name and avoid duplicate by checking existing company name (case-insensitive)
         try {
-          const { data: existing } = await supabase.from('companies').select('id').ilike('name', businessData.businessName).maybeSingle();
+          const { sanitizeCompanyName } = await import('@/lib/utils');
+          const normalized = sanitizeCompanyName(businessData.businessName) || businessData.businessName;
+          const { data: existing } = await supabase.from('companies').select('id').ilike('name', normalized).maybeSingle();
           if (existing?.id) {
             newBusinessId = String(existing.id);
             // ensure linkage exists
@@ -282,7 +284,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             const { data: created, error } = await supabase
               .from('companies')
               .insert({
-                name: businessData.businessName,
+                name: normalized,
                 business_type: businessData.businessType,
                 tax_id: businessData.taxId || null,
                 business_license: businessData.businessLicense || null,
