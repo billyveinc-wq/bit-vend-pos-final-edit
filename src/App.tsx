@@ -74,6 +74,7 @@ import AuthPage from "./pages/AuthPage";
 import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import ContactPage from "./pages/ContactPage";
+import TermsOfService from "./pages/TermsOfService";
 import SystemUpdates from "./pages/SystemUpdates";
 import Profile from "./pages/Profile";
 import { ArrowLeft, Save } from "lucide-react";
