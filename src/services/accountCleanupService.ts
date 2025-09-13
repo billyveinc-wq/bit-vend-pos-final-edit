@@ -58,7 +58,7 @@ export async function runAccountCleanup(): Promise<CleanupResult> {
     }
 
     const result: CleanupResult = await response.json();
-    
+
     // Log the cleanup results
     console.log('Account cleanup completed:', {
       database_records_cleaned: result.database_cleanup_count,
@@ -69,6 +69,9 @@ export async function runAccountCleanup(): Promise<CleanupResult> {
 
     return result;
   } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Admin server unavailable at ${ADMIN_SERVER_URL}. Please ensure the admin server is running.`);
+    }
     console.error('Account cleanup failed:', error);
     throw error;
   }
