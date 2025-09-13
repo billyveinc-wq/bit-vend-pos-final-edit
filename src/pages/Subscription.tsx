@@ -426,23 +426,22 @@ const Subscription = () => {
       </Card>
 
       {/* Subscription Plans */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
-        {plans.map((plan, index) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fade">
+        {plans.map((plan) => {
           const IconComponent = plan.icon;
           const isCurrentPlan = plan.id === currentPlan;
           const isSelected = plan.id === selectedPlan;
-          
+
           return (
-            <Card 
+            <Card
               key={plan.id}
               className={cn(
-                "relative cursor-pointer transition-all duration-300 hover:shadow-lg animate-fadeInUp",
+                "relative cursor-pointer transition-all duration-300 hover:shadow-lg animate-fade",
                 isCurrentPlan && "border-success bg-success/5",
                 isSelected && !isCurrentPlan && "border-primary bg-primary/5",
                 plan.popular && "ring-2 ring-orange-500 shadow-xl scale-105"
               )}
               onClick={() => !isCurrentPlan && handlePlanSelect(plan.id)}
-              style={{ animationDelay: `${index * 0.1 + 0.3}s` }}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
