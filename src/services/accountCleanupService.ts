@@ -184,16 +184,22 @@ export async function restoreUserAccount(userId: string): Promise<{
  * This should be called when the application starts
  */
 export function setupAutomaticCleanup(): void {
+  // Check if admin server is configured
+  if (!ADMIN_SERVER_URL || ADMIN_SERVER_URL === 'http://localhost:8787') {
+    console.warn('Admin server not configured - account cleanup disabled');
+    return;
+  }
+
   // Run cleanup every 24 hours
   const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-  
+
   // Run initial cleanup after 1 minute (to allow app to fully start)
   setTimeout(async () => {
     try {
       const result = await runAccountCleanup();
       console.log('Initial account cleanup completed:', result);
     } catch (error) {
-      console.error('Initial account cleanup failed:', error);
+      console.warn('Initial account cleanup failed (admin server unavailable):', error.message);
     }
   }, 60 * 1000);
 
@@ -203,7 +209,7 @@ export function setupAutomaticCleanup(): void {
       const result = await runAccountCleanup();
       console.log('Scheduled account cleanup completed:', result);
     } catch (error) {
-      console.error('Scheduled account cleanup failed:', error);
+      console.warn('Scheduled account cleanup failed (admin server unavailable):', error.message);
     }
   }, CLEANUP_INTERVAL);
 
