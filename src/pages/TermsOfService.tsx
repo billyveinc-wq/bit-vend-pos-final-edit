@@ -134,10 +134,12 @@ const TermsOfService = () => {
           </Card>
 
           {/* Payment Terms */}
-          <Card>
+          <Card className={`border-l-4 border-l-purple-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-purple-50/50 to-orange-50/50 dark:from-purple-950/20 dark:to-orange-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '400ms'}}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                  <CreditCard className="h-5 w-5" />
+                </div>
                 4. Payment Terms and Billing
               </CardTitle>
             </CardHeader>
