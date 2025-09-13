@@ -3,7 +3,11 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, value, defaultValue, ...props }, ref) => {
+    // Preserve controlled vs uncontrolled behavior: only set value prop if it was provided
+    const hasValueProp = Object.prototype.hasOwnProperty.call(props, 'value') || typeof value !== 'undefined';
+    const controlledValue = hasValueProp ? (value ?? '') : undefined;
+
     return (
       <input
         type={type}
@@ -12,6 +16,8 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className
         )}
         ref={ref}
+        value={controlledValue}
+        defaultValue={defaultValue}
         {...props}
       />
     )
