@@ -152,45 +152,53 @@ const Topbar: React.FC<TopbarProps> = ({
     loadSupportEmail();
   }, [companyId]);
   
-  // Load current company name and list the current user's companies only
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        let cid = companyId;
-        const { data: s } = await safeGetSession();
-        const uid = s?.session?.user?.id;
-        if (!cid && uid) {
-          const { data: su } = await supabase.from('system_users').select('company_id').eq('id', uid).maybeSingle();
-          cid = (su as any)?.company_id || null;
-        }
-        if (cid && active) {
-          const { data } = await supabase.from('companies').select('name').eq('id', cid).maybeSingle();
-          if (data?.name) setCompanyName(data.name);
-        } else if (active) {
-          setCompanyName('');
-        }
-        if (uid) {
-          const { data: links } = await supabase.from('company_users').select('company_id').eq('user_id', uid);
-          const ids = (links || []).map((r: any) => r.company_id).filter(Boolean);
-          if (ids.length > 0) {
-            const { data: comps } = await supabase.from('companies').select('id, name').in('id', ids);
-            if (active && Array.isArray(comps)) setUserCompanies(comps as any);
-          } else if (cid) {
-            const { data: comp2 } = await supabase.from('companies').select('id, name').eq('id', cid).maybeSingle();
-            if (active && comp2) setUserCompanies([comp2 as any]);
-          } else {
-            if (active) setUserCompanies([]);
-          }
-        } else {
-          if (active) setUserCompanies([]);
-        }
-      } catch (e) {
-        // ignore
+  // Load current company name and user's companies; expose as reload function
+  const reloadCompanyData = React.useCallback(async () => {
+    try {
+      let cid = companyId;
+      const { data: s } = await safeGetSession();
+      const uid = s?.session?.user?.id;
+      if (!cid && uid) {
+        const { data: su } = await supabase.from('system_users').select('company_id').eq('id', uid).maybeSingle();
+        cid = (su as any)?.company_id || null;
       }
-    })();
-    return () => { active = false; };
+      if (cid) {
+        const { data } = await supabase.from('companies').select('name').eq('id', cid).maybeSingle();
+        if (data?.name) setCompanyName(data.name); else setCompanyName('');
+      } else {
+        setCompanyName('');
+      }
+      if (uid) {
+        const { data: links } = await supabase.from('company_users').select('company_id').eq('user_id', uid);
+        const ids = (links || []).map((r: any) => r.company_id).filter(Boolean);
+        if (ids.length > 0) {
+          const { data: comps } = await supabase.from('companies').select('id, name').in('id', ids);
+          setUserCompanies(Array.isArray(comps) ? (comps as any) : []);
+        } else if (cid) {
+          const { data: comp2 } = await supabase.from('companies').select('id, name').eq('id', cid).maybeSingle();
+          setUserCompanies(comp2 ? [comp2 as any] : []);
+        } else {
+          setUserCompanies([]);
+        }
+      } else {
+        setUserCompanies([]);
+      }
+    } catch {}
   }, [companyId]);
+
+  useEffect(() => {
+    reloadCompanyData();
+  }, [reloadCompanyData]);
+
+  useEffect(() => {
+    const onChanged = () => {
+      reloadCompanyData();
+    };
+    window.addEventListener('companies:changed', onChanged);
+    return () => {
+      window.removeEventListener('companies:changed', onChanged);
+    };
+  }, [reloadCompanyData]);
 
   const {
     query,
