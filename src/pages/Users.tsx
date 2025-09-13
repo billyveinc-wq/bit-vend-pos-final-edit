@@ -46,6 +46,11 @@ const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [pendingFeature, setPendingFeature] = useState<string | null>(null);
+  const { canUseFeature } = useSubscription();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
