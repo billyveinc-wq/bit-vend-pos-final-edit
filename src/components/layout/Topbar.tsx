@@ -466,18 +466,36 @@ const Topbar: React.FC<TopbarProps> = ({
           </Tooltip>
 
           <Tooltip open={notificationTooltip.isOpen} onOpenChange={notificationTooltip.handleOpenChange}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2 relative transition-all duration-200 hover:scale-90 active:scale-75"
-                  title="Notifications"
-                >
-                  <Bell size={18} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2">
+    <DropdownMenu open={notiOpen} onOpenChange={(open:boolean)=>{
+      setNotiOpen(open);
+      // when opening, mark releases as seen
+      if (open && releases.length) {
+        (async () => {
+          try {
+            const { data: s } = await safeGetSession();
+            const uid = s?.session?.user?.id || 'anon';
+            const key = `releases:lastSeen:${uid}`;
+            const latest = releases[0]?.published_at || new Date().toISOString();
+            localStorage.setItem(key, new Date(latest).toISOString());
+            setUnreadCount(0);
+          } catch (e) {}
+        })();
+      }
+    }}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-2 relative transition-all duration-200 hover:scale-90 active:scale-75"
+          title="Notifications"
+        >
+          <Bell size={18} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs bg-red-600 text-white">{unreadCount}</span>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 p-2">
                 <div className="mb-2 text-sm font-medium">App Releases</div>
                 {releases.length === 0 ? (
                   <div className="text-sm text-muted-foreground">No releases available</div>
