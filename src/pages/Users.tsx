@@ -222,14 +222,15 @@ const Users = () => {
         // Persist to DB (system_users mirror)
         const { error } = await supabase.from('system_users').update({
           email: formData.email,
-          user_metadata: updatedMeta
+          user_metadata: updatedMeta,
+          company_id: formData.companyId || null
         }).eq('id', editingUser.id);
         if (error) { toast.error(error.message); return; }
 
         // Ensure company linkage exists
         try {
-          if (companyId) {
-            await supabase.from('company_users').upsert({ company_id: companyId, user_id: editingUser.id, role: formData.role || 'member' }, { onConflict: 'company_id,user_id' });
+          if (formData.companyId) {
+            await supabase.from('company_users').upsert({ company_id: formData.companyId, user_id: editingUser.id, role: formData.role || 'member' }, { onConflict: 'company_id,user_id' });
           }
         } catch {}
 
