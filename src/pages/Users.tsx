@@ -124,7 +124,7 @@ const Users = () => {
     if (companyId && formData.companyId == null) {
       setFormData(prev => ({ ...prev, companyId }));
     }
-  }, [companyId]);
+  }, [companyId, formData.companyId]);
 
   useEffect(() => {
     const load = async () => {
@@ -262,8 +262,9 @@ const Users = () => {
         }).eq('id', editingUser.id);
         if (error) { toast.error(error.message); return; }
 
-        // Ensure company linkage exists
+        // Ensure company linkage matches selection (single-company link)
         try {
+          await supabase.from('company_users').delete().eq('user_id', editingUser.id);
           if (formData.companyId) {
             await supabase.from('company_users').upsert({ company_id: formData.companyId, user_id: editingUser.id, role: formData.role || 'member' }, { onConflict: 'company_id,user_id' });
           }
@@ -453,7 +454,8 @@ const Users = () => {
       role: '',
       status: 'active',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      companyId: companyId || null
     });
     setEditingUser(null);
     setShowPassword(false);
@@ -565,7 +567,7 @@ const Users = () => {
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <div>
                   <Label htmlFor="company">Company</Label>
-                  <Select value={String(formData.companyId ?? '')} onValueChange={(v) => setFormData(prev => ({ ...prev, companyId: (v === 'none' || v === '') ? null : Number(v) }))}>
+                  <Select value={formData.companyId == null ? 'none' : String(formData.companyId)} onValueChange={(v) => setFormData(prev => ({ ...prev, companyId: (v === 'none') ? null : Number(v) }))}>
                     <SelectTrigger>
                       <SelectValue placeholder={companyId ? companies.find(c=>c.id===String(companyId))?.name || 'Select company' : 'Select company'} />
                     </SelectTrigger>
