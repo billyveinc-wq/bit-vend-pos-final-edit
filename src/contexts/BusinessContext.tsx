@@ -436,10 +436,12 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <BusinessContext.Provider value={{
       businesses,
       currentBusiness,
+      isLoaded,
       addBusiness,
       updateBusiness,
       setCurrentBusiness,
-      deleteBusiness
+      deleteBusiness,
+      refreshBusinesses
     }}>
       {children}
     </BusinessContext.Provider>
