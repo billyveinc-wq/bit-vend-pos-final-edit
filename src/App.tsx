@@ -124,6 +124,7 @@ const App = () => (
                 <Route path="/features" element={<FeaturesPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/auth" element={<AuthPage />} />
                 {/* Legacy direct links redirects */}
                 <Route path="/checkout" element={<Navigate to="/dashboard/checkout" replace />} />
