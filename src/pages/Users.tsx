@@ -348,7 +348,7 @@ const Users = () => {
     resetForm();
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: any) => {
     setEditingUser(user);
     setFormData({
       username: user.username,
@@ -359,7 +359,8 @@ const Users = () => {
       role: user.role,
       status: user.status,
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      companyId: user.companyId || companyId || null
     });
     setIsDialogOpen(true);
   };
