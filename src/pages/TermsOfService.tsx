@@ -100,10 +100,12 @@ const TermsOfService = () => {
           </Card>
 
           {/* User Responsibilities */}
-          <Card>
+          <Card className={`border-l-4 border-l-green-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-green-50/50 to-blue-50/50 dark:from-green-950/20 dark:to-blue-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '300ms'}}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
+                  <Users className="h-5 w-5" />
+                </div>
                 3. User Responsibilities and Account Security
               </CardTitle>
             </CardHeader>
@@ -118,10 +120,12 @@ const TermsOfService = () => {
                 <li>Regular backup of your business data (while we provide backup services, you should maintain your own records)</li>
                 <li>Training your employees on proper system usage and security practices</li>
               </ul>
-              <div className="mt-4 p-4 border border-orange-200 rounded-lg bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
-                <div className="flex gap-2">
-                  <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-orange-800 dark:text-orange-200">
+              <div className="mt-4 p-4 border border-orange-200 rounded-lg bg-gradient-to-r from-orange-50 to-orange-100 dark:border-orange-800 dark:bg-gradient-to-r dark:from-orange-950/50 dark:to-orange-900/50 shadow-inner">
+                <div className="flex gap-3">
+                  <div className="p-1 rounded-full bg-orange-500/20">
+                    <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0" />
+                  </div>
+                  <p className="text-sm text-orange-800 dark:text-orange-200 font-medium">
                     You must immediately notify us of any unauthorized access or security breaches of your account.
                   </p>
                 </div>
