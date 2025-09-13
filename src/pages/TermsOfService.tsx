@@ -51,12 +51,14 @@ const TermsOfService = () => {
           <p className="text-xl text-muted-foreground">Last updated: {currentDate}</p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Introduction */}
-          <Card>
+          <Card className={`border-l-4 border-l-orange-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-orange-50/50 to-blue-50/50 dark:from-orange-950/20 dark:to-blue-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '100ms'}}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+                  <FileText className="h-5 w-5" />
+                </div>
                 1. Introduction and Acceptance
               </CardTitle>
             </CardHeader>
