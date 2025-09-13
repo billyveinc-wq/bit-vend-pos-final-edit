@@ -173,8 +173,16 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center space-x-8">
-              <Link to="/" className="flex items-center space-x-2">
-                <img src="https://cdn.builder.io/api/v1/image/assets%2Ffad27f5289d04c7e9d2c26738928ace8%2F43cdde396f7f4921a8876d42332d35cc?format=webp&width=800" alt="BitVend" className="h-8 w-auto object-contain" />
+              <Link to="/" className="flex items-center" aria-label="BitVend">
+                <span className="font-extrabold text-lg leading-none flex items-center">
+                  <span className="text-foreground">Bit</span>
+                  <svg className="inline-block mx-2 h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M3 3h2l1 9h11l2-6H7" stroke="#FF8A00" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="10" cy="19" r="1.6" fill="#FF8A00" />
+                    <circle cx="18" cy="19" r="1.6" fill="#FF8A00" />
+                  </svg>
+                  <span className="text-orange-500">vend</span>
+                </span>
               </Link>
               
               <nav className="hidden md:flex items-center space-x-6">
