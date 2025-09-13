@@ -165,7 +165,7 @@ const Subscription = () => {
             const { data } = await supabase.from('system_users').select('created_at').eq('id', uid).maybeSingle();
             const createdAt = (data as any)?.created_at;
             if (createdAt) {
-              const d = new Date(createdAt);
+              const d = parseDateSafe(createdAt) || new Date(createdAt);
               d.setDate(d.getDate() + 14);
               setTrialExpiresAt(d);
               setIsOnTrial(d.getTime() > now);
