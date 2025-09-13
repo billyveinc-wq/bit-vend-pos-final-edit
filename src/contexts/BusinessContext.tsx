@@ -310,13 +310,18 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (updates.country !== undefined) updateData.country = updates.country || null;
 
       if (Object.keys(updateData).length > 0) {
-        await supabase
+        const { error } = await supabase
           .from('companies')
           .update(updateData)
           .eq('id', parseInt(id));
+        if (error) {
+          console.warn('Failed to update company in Supabase:', error);
+          return false;
+        }
       }
     } catch (error) {
-      console.warn('Failed to update company in Supabase:', error);
+      console.warn('Failed to update company in Supabase (exception):', error);
+      return false;
     }
 
     setBusinesses(prev =>
@@ -329,6 +334,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (currentBusiness?.id === id) {
       setCurrentBusinessState(prev => prev ? { ...prev, ...updates } : null);
     }
+    return true;
   };
 
   const refreshBusinesses = async () => {
