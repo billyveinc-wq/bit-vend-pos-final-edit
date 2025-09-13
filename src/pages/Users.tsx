@@ -62,10 +62,17 @@ const Users = () => {
     status: 'active' as User['status'],
     password: '',
     confirmPassword: '',
-    companyId: companyId || null
+    companyId: null as number | null
   });
 
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+
+  // Ensure form defaults to current company when available
+  useEffect(() => {
+    if (companyId && formData.companyId == null) {
+      setFormData(prev => ({ ...prev, companyId }));
+    }
+  }, [companyId]);
 
   const AVAILABLE_PAGES = [
     { path: '/dashboard', label: 'Dashboard' },
