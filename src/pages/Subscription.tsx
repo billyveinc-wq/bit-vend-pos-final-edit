@@ -477,6 +477,15 @@ const Subscription = () => {
                     <span className="text-3xl font-bold text-foreground">${plan.price}</span>
                     <span className="text-sm text-muted-foreground">/{plan.period}</span>
                   </div>
+                  {promoDetails && !promoDetails.expired && plan.id === selectedPlan && (
+                    <div className="text-center">
+                      <div className="text-sm line-through text-muted-foreground">${plan.price}</div>
+                      <div className="text-lg font-bold text-green-600">
+                        ${(plan.price - Math.round(plan.price * (promoDetails.percent / 100) * 100) / 100).toFixed(2)}
+                        <span className="text-sm text-green-600 ml-1">after {promoDetails.percent}% off</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
 
