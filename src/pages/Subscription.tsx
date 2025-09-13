@@ -459,7 +459,7 @@ const Subscription = () => {
                 Current Plan: {currentPlan ? (formatWords(currentPlan).charAt(0).toUpperCase() + formatWords(currentPlan).slice(1)) : 'Starter'} Plan
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Next billing date: January 15, 2024
+                Next billing date: {nextBillingDate ? format(nextBillingDate, 'MMM dd, yyyy') : 'N/A'}
               </p>
             </div>
             <Badge variant="secondary" className="bg-success/10 text-success border-success/20">
