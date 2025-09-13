@@ -615,8 +615,8 @@ const Subscription = () => {
 
               <CardHeader className="text-center space-y-4">
                 <div className="flex justify-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500/10 to-blue-600/10 rounded-xl flex items-center justify-center mx-auto">
-                    <IconComponent className="h-6 w-6 text-orange-500" />
+                  <div className="w-12 h-12 bg-muted/10 rounded-xl flex items-center justify-center mx-auto">
+                    <IconComponent className="h-6 w-6 text-muted-foreground" />
                   </div>
                 </div>
 
