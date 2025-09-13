@@ -351,6 +351,9 @@ const Subscription = () => {
           payment_details: { phone: stkPushModal.phone }
         }, { onConflict: 'user_id' });
         await refreshSubscription();
+        // animate selected plan to indicate success
+        setAnimatingPlan(selectedPlan);
+        setTimeout(() => setAnimatingPlan(null), 1200);
       }
     } catch {}
 
