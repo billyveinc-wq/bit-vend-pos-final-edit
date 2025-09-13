@@ -538,14 +538,7 @@ const Subscription = () => {
                 <div className="text-sm text-muted-foreground">Free trial active</div>
                 <div className="text-lg font-semibold">Trial ends on {format(trialExpiresAt, 'MMM dd, yyyy HH:mm')}</div>
                 <div className="text-sm mt-1">
-                  <span className="font-mono">{(() => {
-                    const ms = trialRemainingMs || 0;
-                    const sec = Math.floor(ms/1000)%60;
-                    const min = Math.floor(ms/1000/60)%60;
-                    const hrs = Math.floor(ms/1000/60/60)%24;
-                    const days = Math.floor(ms/1000/60/60/24);
-                    return `${days}d ${hrs}h ${min}m ${sec}s`;
-                  })()}</span>
+                  <span className="font-mono"><Countdown expiryMs={expiryMs} /></span>
                 </div>
               </div>
               <div>
