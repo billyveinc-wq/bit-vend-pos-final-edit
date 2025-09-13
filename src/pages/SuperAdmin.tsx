@@ -505,6 +505,11 @@ const SuperAdmin = () => {
   const [promoInfluencer, setPromoInfluencer] = useState('');
   const [promoCode, setPromoCode] = useState('');
 
+  // App releases
+  const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
+  const [releaseDraft, setReleaseDraft] = useState<{ title: string; notes: string }>({ title: '', notes: '' });
+  const [publishedReleases, setPublishedReleases] = useState<any[]>([]);
+
   // Load promo codes from Supabase
   useEffect(() => {
     const load = async () => {
