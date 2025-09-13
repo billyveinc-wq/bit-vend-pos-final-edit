@@ -259,13 +259,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         {!collapsed && (
           <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
             <span className="text-xl flex items-center">
-              {currentBusiness && currentBusiness.logoUrl ? (
-                <img src={currentBusiness.logoUrl} alt={currentBusiness.businessName || 'Company logo'} className="w-10 h-10 rounded-md object-cover mr-2 border" />
-              ) : (
-                <span className="inline-block logo-gradient animate-gradient-fast logo-glow">
-                  Bit Vend
-                </span>
-              )}
+              <span className="inline-block logo-gradient animate-gradient-fast logo-glow">
+                Bit Vend
+              </span>
               <span className="inline-block ml-1 text-white">
                 POS
               </span>
