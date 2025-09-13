@@ -40,9 +40,15 @@ const TermsOfService = () => {
 
       {/* Content */}
       <div className="container mx-auto px-4 max-w-4xl py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
-          <p className="text-muted-foreground">Last updated: {currentDate}</p>
+        <div className={`text-center mb-12 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/10 to-blue-600/10 border border-orange-500/20 mb-6">
+            <Shield className="h-4 w-4 text-orange-600" />
+            <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Legal Document</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-orange-600 via-orange-500 to-blue-600 bg-clip-text text-transparent">
+            Terms of Service
+          </h1>
+          <p className="text-xl text-muted-foreground">Last updated: {currentDate}</p>
         </div>
 
         <div className="space-y-6">
