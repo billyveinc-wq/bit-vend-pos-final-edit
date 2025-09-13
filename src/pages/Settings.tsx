@@ -267,8 +267,9 @@ const Settings = () => {
         toast.success('Business deleted successfully!');
         setSearchParams({ section: 'business', subsection: 'business-info' });
         setIsEditingBusiness(false);
-      } catch (error) {
-        toast.error('Cannot delete the last business');
+      } catch (error: any) {
+        const msg = (error && (error.message || String(error))) || 'Failed to delete business';
+        toast.error(msg);
       }
     }
   };
