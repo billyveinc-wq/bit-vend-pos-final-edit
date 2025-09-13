@@ -1706,7 +1706,16 @@ const Settings = () => {
               <CardContent className="space-y-4">
                 <div>
                   <Label>Appearance</Label>
-                  <Select value={appTheme.theme} onValueChange={(v)=>{ setAppTheme({ theme:v }); localStorage.setItem('pos-theme', v); window.location.reload(); }}>
+                  <Select value={appTheme.theme} onValueChange={(v)=>{
+                    try {
+                      setAppTheme(p=>({ ...p, theme: v }));
+                      localStorage.setItem('pos-theme', v);
+                      // Use next-themes to switch without reload
+                      setTheme(v as any);
+                      // Persist to company app settings
+                      saveAppSetting('app_theme', { ...appTheme, theme: v });
+                    } catch {}
+                  }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -1718,7 +1727,20 @@ const Settings = () => {
                 </div>
                 <div className="mt-4">
                   <Label>Accent Color</Label>
-                  <Input type="color" value={appTheme.accentColor as string} onChange={(e)=>{ setAppTheme(p=>({ ...p, accentColor: e.target.value })); localStorage.setItem('pos-accent-color', e.target.value); }} />
+                  <Input type="color" value={appTheme.accentColor as string} onChange={(e)=>{
+                    const hex = e.target.value;
+                    setAppTheme(p=>({ ...p, accentColor: hex }));
+                    localStorage.setItem('pos-accent-color', hex);
+                    // Convert to H S% L% format used by CSS variables
+                    try {
+                      const hsl = hexToHsl(hex);
+                      document.documentElement.style.setProperty('--accent', `${hsl.h} ${hsl.s}% ${hsl.l}%`);
+                      // set a readable accent-foreground (black or white)
+                      const fg = hsl.l > 60 ? '0 0% 10%' : '0 0% 100%';
+                      document.documentElement.style.setProperty('--accent-foreground', fg);
+                      saveAppSetting('app_theme', { ...appTheme, accentColor: hex });
+                    } catch {}
+                  }} />
                 </div>
               </CardContent>
             </Card>
