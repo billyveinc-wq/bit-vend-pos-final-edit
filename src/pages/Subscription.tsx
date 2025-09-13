@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { safeGetSession } from '@/integrations/supabase/safeAuth';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { format } from 'date-fns';
 
 const subscriptionPlans = [
   {
