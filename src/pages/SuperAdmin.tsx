@@ -1304,23 +1304,16 @@ const SuperAdmin = () => {
                                         const resp = await fetch(`${adminUrl}/admin/delete-user`, {
                                           method: 'POST',
                                           headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-                                          body: JSON.stringify({ userId: r.id })
+                                          body: JSON.stringify({ userId: r.id, immediate: true })
                                         });
                                         if (!resp.ok) throw new Error('Admin delete failed');
                                       } else {
-                                        // Soft-delete: cancel subscription and mark user as deleted
-                                        try { await supabase.from('user_subscriptions').update({ status: 'canceled' }).eq('user_id', r.id); } catch {}
-                                        try {
-                                          // Prefer dedicated columns when available
-                                          await supabase.from('system_users').update({ status: 'deleted', deleted_at: new Date().toISOString() }).eq('id', r.id);
-                                        } catch {}
-                                        try {
-                                          // Also mirror in user_metadata for backward compatibility
-                                          const { data: su } = await supabase.from('system_users').select('user_metadata').eq('id', r.id).maybeSingle();
-                                          const meta = (su as any)?.user_metadata || {};
-                                          const next = { ...meta, status: 'deleted', deletedAt: new Date().toISOString() };
-                                          await supabase.from('system_users').update({ user_metadata: next }).eq('id', r.id);
-                                        } catch {}
+                                        // No admin endpoint configured: perform hard delete carefully
+                                        try { await supabase.from('user_subscriptions').delete().eq('user_id', r.id); } catch {}
+                                        try { await supabase.from('user_promotions').delete().eq('user_id', r.id); } catch {}
+                                        try { await supabase.from('company_users').delete().eq('user_id', r.id); } catch {}
+                                        try { await supabase.from('system_users').delete().eq('id', r.id); } catch {}
+                                        // Note: auth user deletion requires service role; admin server should handle auth cleanup
                                       }
                                       toast.success('User deleted');
                                       setRegistrations(prev => {
