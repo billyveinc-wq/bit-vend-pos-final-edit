@@ -123,8 +123,8 @@ const Subscription = () => {
   const [promoDetails, setPromoDetails] = useState<{code: string, percent: number, expired: boolean} | null>(null);
   const [nextBillingDate, setNextBillingDate] = useState<Date | null>(null);
   const [trialExpiresAt, setTrialExpiresAt] = useState<Date | null>(null);
+  const [expiryMs, setExpiryMs] = useState<number | null>(null);
   const [isOnTrial, setIsOnTrial] = useState(false);
-  const [trialRemainingMs, setTrialRemainingMs] = useState<number>(0);
   const [trialExpired, setTrialExpired] = useState(false);
 
   useEffect(() => {
@@ -142,36 +142,40 @@ const Subscription = () => {
         }
 
         const now = Date.now();
+        let computedExpiry: Date | null = null;
 
         if (userSub) {
           // Prefer explicit expires_at (billing date)
           if (userSub.expires_at) {
             const dt = parseDateSafe(userSub.expires_at) || new Date(userSub.expires_at);
             setNextBillingDate(dt);
+            computedExpiry = dt;
           } else if (userSub.started_at && (String(userSub.status || '').toLowerCase().includes('trial') || userSub.trial_ends_at)) {
             // Trial based
             const trialEnd = userSub.trial_ends_at ? (parseDateSafe(userSub.trial_ends_at) || new Date(userSub.trial_ends_at)) : (() => { const d = parseDateSafe(userSub.started_at) || new Date(userSub.started_at); d.setDate(d.getDate()+14); return d; })();
             setTrialExpiresAt(trialEnd);
             setIsOnTrial(trialEnd.getTime() > now);
-            setTrialRemainingMs(Math.max(0, trialEnd.getTime() - now));
             setNextBillingDate(trialEnd);
+            computedExpiry = trialEnd;
           } else if (userSub.started_at) {
             // Fallback: assume billing will be after 14 days from started_at
             const d = parseDateSafe(userSub.started_at) || new Date(userSub.started_at); d.setDate(d.getDate()+14);
             setNextBillingDate(d);
+            computedExpiry = d;
           }
         } else {
           // No subscription record: fallback to system_users.created_at + 14 (trial)
           if (uid) {
             const { data } = await supabase.from('system_users').select('created_at').eq('id', uid).maybeSingle();
-            const createdAt = (data as any)?.created_at;
+            const createdRow = data as any;
+            const createdAt = createdRow?.created_at || createdRow?.createdAt || null;
             if (createdAt) {
               const d = parseDateSafe(createdAt) || new Date(createdAt);
               d.setDate(d.getDate() + 14);
               setTrialExpiresAt(d);
               setIsOnTrial(d.getTime() > now);
-              setTrialRemainingMs(Math.max(0, d.getTime() - now));
               setNextBillingDate(d);
+              computedExpiry = d;
             } else {
               setNextBillingDate(null);
               setIsOnTrial(false);
@@ -179,23 +183,25 @@ const Subscription = () => {
           }
         }
 
-        // start countdown interval for trial remaining
-        if (interval) clearInterval(interval);
-        interval = setInterval(() => {
-          setTrialRemainingMs(prev => {
-            const newMs = Math.max(0, (trialExpiresAt ? trialExpiresAt.getTime() : 0) - Date.now());
-            if (newMs <= 0) {
+        if (computedExpiry) {
+          const ms = computedExpiry.getTime();
+          setExpiryMs(ms);
+          setTrialExpired(ms <= Date.now());
+
+          if (interval) clearInterval(interval);
+          interval = setInterval(() => {
+            const remaining = Math.max(0, ms - Date.now());
+            if (remaining <= 0) {
               setIsOnTrial(false);
               setTrialExpired(true);
               clearInterval(interval);
             }
-            return newMs;
-          });
-        }, 1000);
+          }, 1000);
+        }
       } catch (e) {
         setNextBillingDate(null);
         setIsOnTrial(false);
-        setTrialRemainingMs(0);
+        setExpiryMs(null);
       }
     };
     computeNextBilling();
