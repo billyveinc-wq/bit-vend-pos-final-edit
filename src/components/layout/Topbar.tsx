@@ -137,8 +137,6 @@ const Topbar: React.FC<TopbarProps> = ({
   useEffect(() => {
     const loadSupportEmail = async () => {
       try {
-        const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
-        const companyId = (comp as any)?.id;
         if (!companyId) return;
         const { data } = await supabase.from('app_settings').select('value').eq('company_id', companyId).eq('key', 'support_email').maybeSingle();
         const val = (data as any)?.value;
@@ -152,7 +150,7 @@ const Topbar: React.FC<TopbarProps> = ({
       } catch {}
     };
     loadSupportEmail();
-  }, []);
+  }, [companyId]);
   
   // Load current company name and list the user's companies
   useEffect(() => {
