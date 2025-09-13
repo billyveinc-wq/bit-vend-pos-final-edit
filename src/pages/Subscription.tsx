@@ -495,6 +495,50 @@ const Subscription = () => {
         <p className="text-muted-foreground">Choose the perfect plan for your business needs</p>
       </div>
 
+      {/* Trial banner */}
+      {isOnTrial && trialExpiresAt && (
+        <Card className="border-2 border-primary animate-slideInLeft" style={{ animationDelay: '0.05s' }}>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-muted-foreground">Free trial active</div>
+                <div className="text-lg font-semibold">Trial ends on {format(trialExpiresAt, 'MMM dd, yyyy HH:mm')}</div>
+                <div className="text-sm mt-1">
+                  <span className="font-mono">{(() => {
+                    const ms = trialRemainingMs || 0;
+                    const sec = Math.floor(ms/1000)%60;
+                    const min = Math.floor(ms/1000/60)%60;
+                    const hrs = Math.floor(ms/1000/60/60)%24;
+                    const days = Math.floor(ms/1000/60/60/24);
+                    return `${days}d ${hrs}h ${min}m ${sec}s`;
+                  })()}</span>
+                </div>
+              </div>
+              <div>
+                <Button onClick={() => navigate('/dashboard/subscription')}>Manage Subscription</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Expired trial notice */}
+      {trialExpired && (
+        <Card className="border-2 border-destructive animate-slideInLeft" style={{ animationDelay: '0.05s' }}>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-destructive">Free trial period expired</div>
+                <div className="text-sm text-muted-foreground">Please choose a plan to continue using premium features.</div>
+              </div>
+              <div>
+                <Button onClick={() => navigate('/dashboard/subscription')}>Choose a Plan</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Current Plan Status */}
       <Card className="border-2 border-primary animate-slideInLeft" style={{ animationDelay: '0.1s' }}>
         <CardHeader>
