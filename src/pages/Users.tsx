@@ -117,6 +117,7 @@ const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserPlan, setCurrentUserPlan] = useState<string | null>(null);
 
   // Ensure form defaults to current company when available
   useEffect(() => {
