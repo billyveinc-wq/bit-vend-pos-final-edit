@@ -219,6 +219,27 @@ const Settings = () => {
     }
   }, [editId, mode, subsection, businesses]);
 
+  // Also populate form when editing the current business (no editId param)
+  useEffect(() => {
+    if (!editId && subsection === 'business-info' && currentBusiness) {
+      setBusinessForm({
+        businessName: currentBusiness.businessName,
+        businessType: currentBusiness.businessType,
+        taxId: currentBusiness.taxId,
+        businessLicense: currentBusiness.businessLicense,
+        phone: currentBusiness.phone,
+        email: currentBusiness.email,
+        logoUrl: currentBusiness.logoUrl || '',
+        address: currentBusiness.address,
+        city: currentBusiness.city,
+        state: currentBusiness.state,
+        postalCode: currentBusiness.postalCode,
+        country: currentBusiness.country
+      });
+      setOperatingHours(currentBusiness.operatingHours || operatingHours);
+    }
+  }, [currentBusiness, editId, subsection]);
+
   const handleSaveBusiness = async () => {
     if (!businessForm.businessName) {
       toast.error('Business name is required');
