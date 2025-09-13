@@ -776,6 +776,25 @@ const Settings = () => {
     allowedIPs: '',
     requireDevicePIN: false
   });
+
+  // First-user delete helpers for Settings page
+  const [isFirstUser, setIsFirstUser] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+
+  const checkIfFirstUser = async () => {
+    try {
+      const { data: s } = await safeGetSession();
+      const uid = s?.session?.user?.id;
+      if (!uid) return;
+      const { data: row } = await supabase.from('system_users').select('is_first_user').eq('id', uid).maybeSingle();
+      if (row && row.is_first_user) setIsFirstUser(true);
+      else {
+        const { data: first } = await supabase.from('system_users').select('id').order('created_at').limit(1).maybeSingle();
+        if (first && first.id === uid) setIsFirstUser(true);
+      }
+    } catch (e) {}
+  };
   const [auditLogs] = useState<string[]>(() => {
     const saved = localStorage.getItem('pos-audit-log');
     return saved ? JSON.parse(saved) : [];
