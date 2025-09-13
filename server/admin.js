@@ -581,5 +581,34 @@ app.post('/api/payments/flutterwave/webhook', rawBody, async (req, res) => {
   }
 });
 
+// Optionally run validate-subscriptions at startup and schedule daily
+const ENABLE_VALIDATE_SUBS = process.env.ENABLE_VALIDATE_SUBS === '1' || process.env.ENABLE_VALIDATE_SUBS === 'true';
+if (ENABLE_VALIDATE_SUBS) {
+  (async () => {
+    try {
+      console.log('Running initial validate-subscriptions...');
+      const res = await fetch(`http://127.0.0.1:${process.env.PORT || 8787}/admin/validate-subscriptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': process.env.ADMIN_API_KEY || ADMIN_API_KEY }
+      });
+      if (res.ok) console.log('Initial validate-subscriptions ran successfully');
+      else console.warn('Initial validate-subscriptions failed to run');
+    } catch (e) { console.warn('Initial validate-subscriptions error', e); }
+
+    // Schedule daily run (24h)
+    setInterval(async () => {
+      try {
+        console.log('Scheduled validate-subscriptions running...');
+        const r = await fetch(`http://127.0.0.1:${process.env.PORT || 8787}/admin/validate-subscriptions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': process.env.ADMIN_API_KEY || ADMIN_API_KEY }
+        });
+        if (r.ok) console.log('Scheduled validate-subscriptions succeeded');
+        else console.warn('Scheduled validate-subscriptions failed');
+      } catch (err) { console.warn('Scheduled validate-subscriptions error', err); }
+    }, 24 * 60 * 60 * 1000);
+  })();
+}
+
 const port = process.env.PORT || 8787;
 app.listen(port, () => console.log(`Admin & Payments server running on port ${port}`));
