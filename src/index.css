@@ -211,7 +211,8 @@ All colors MUST be HSL.
   body:has([data-page="features"]),
   body:has([data-page="pricing"]),
   body:has([data-page="contact"]),
-  body:has([data-page="auth"]) {
+  body:has([data-page="auth"]),
+  body:has([data-page="terms"]) {
     @apply overflow-auto;
   }
 
