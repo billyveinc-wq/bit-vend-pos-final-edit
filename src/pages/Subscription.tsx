@@ -530,19 +530,19 @@ const Subscription = () => {
       </div>
 
       {/* Trial banner: show when we have an expiry timestamp and not expired */}
-      {(expiryMs && !trialExpired) && (
+      {(expiryMs !== null && !trialExpired) && (
         <Card className="animate-slideInLeft bg-muted/5" style={{ animationDelay: '0.05s' }}>
           <CardContent>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 min-w-0">
+              <div className="min-w-0">
                 <div className="text-sm text-muted-foreground">Free trial active</div>
                 <div className="text-lg font-semibold">Trial ends on {trialExpiresAt ? format(trialExpiresAt, 'MMM dd, yyyy HH:mm') : ''}</div>
                 <div className="text-sm mt-1">
-                  <span className="font-mono text-sm"><Countdown expiryMs={expiryMs} /></span>
+                  <span className="font-mono text-sm block overflow-hidden text-ellipsis whitespace-nowrap"><Countdown expiryMs={expiryMs} /></span>
                 </div>
               </div>
-              <div className="flex-shrink-0">
-                <Button className="whitespace-nowrap min-w-[140px]" onClick={() => navigate('/dashboard/subscription')}>Manage Subscription</Button>
+              <div className="mt-3 sm:mt-0 sm:flex-shrink-0">
+                <Button className="min-w-[140px] sm:min-w-[140px] w-full sm:w-auto" onClick={() => navigate('/dashboard/subscription')}>Manage Subscription</Button>
               </div>
             </div>
           </CardContent>
@@ -553,13 +553,13 @@ const Subscription = () => {
       {trialExpired && (
         <Card className="animate-slideInLeft" style={{ animationDelay: '0.05s' }}>
           <CardContent>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 min-w-0">
+              <div className="min-w-0">
                 <div className="text-sm font-medium text-foreground">Free trial period expired</div>
                 <div className="text-sm text-muted-foreground">Please choose a plan to continue using premium features.</div>
               </div>
-              <div className="flex-shrink-0">
-                <Button className="whitespace-nowrap min-w-[140px]" onClick={() => navigate('/dashboard/subscription')}>Choose a Plan</Button>
+              <div className="mt-3 sm:mt-0 sm:flex-shrink-0">
+                <Button className="min-w-[140px] w-full sm:w-auto" onClick={() => navigate('/dashboard/subscription')}>Choose a Plan</Button>
               </div>
             </div>
           </CardContent>
