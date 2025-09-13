@@ -322,6 +322,53 @@ adminRouter.post('/sync-users', async (req, res) => {
   }
 });
 
+// Admin endpoint to validate and repair subscription timestamps
+adminRouter.post('/validate-subscriptions', async (req, res) => {
+  try {
+    const { data: subs, error } = await supabase.from('user_subscriptions').select('*');
+    if (error) throw error;
+    const report = [];
+    for (const s of subs || []) {
+      const id = s.id;
+      const updates = {};
+      const started = s.started_at ? new Date(s.started_at) : null;
+      const trialEnd = s.trial_ends_at ? new Date(s.trial_ends_at) : null;
+      const expires = s.expires_at ? new Date(s.expires_at) : null;
+
+      // If status suggests trial but trial_ends_at missing, set trial_end = started + 14d
+      if (started && (!trialEnd) && String(s.status || '').toLowerCase().includes('trial')) {
+        const t = new Date(started);
+        t.setDate(t.getDate() + 14);
+        updates.trial_ends_at = t.toISOString();
+      }
+
+      // If expires_at is missing for active subscriptions, set expires = started + 1 month
+      if (started && (!expires) && String(s.status || '').toLowerCase() === 'active') {
+        const e = new Date(started);
+        e.setMonth(e.getMonth() + 1);
+        updates.expires_at = e.toISOString();
+      }
+
+      // Fix if expires_at is before started_at
+      if (started && expires && expires.getTime() < started.getTime()) {
+        const e = new Date(started);
+        e.setMonth(e.getMonth() + 1);
+        updates.expires_at = e.toISOString();
+      }
+
+      if (Object.keys(updates).length > 0) {
+        const { error: upErr } = await supabase.from('user_subscriptions').update(updates).eq('id', id);
+        report.push({ id, updates, error: upErr ? upErr.message : null });
+      }
+    }
+
+    return res.json({ ok: true, count: report.length, report });
+  } catch (err) {
+    console.error('validate-subscriptions error', err);
+    return res.status(500).json({ error: 'Internal error', details: String(err) });
+  }
+});
+
 app.use('/admin', adminAuth, adminRouter);
 
 // ===== Payments API & Webhooks =====
