@@ -239,11 +239,14 @@ const Settings = () => {
     };
 
     try {
-      if (editId) {
-        await updateBusiness(editId, businessData);
+      const targetId = editId || (currentBusiness ? currentBusiness.id : undefined);
+      if (targetId) {
+        await updateBusiness(targetId, businessData);
       } else {
         await addBusiness(businessData);
       }
+      // Ensure businesses refreshed from DB to persist URL across sessions
+      try { await refreshBusinesses(); } catch {}
       toast.success('Business saved');
     } catch (error) {
       console.error('Failed to save business:', error);
