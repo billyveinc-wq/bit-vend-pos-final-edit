@@ -118,6 +118,13 @@ const Users = () => {
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // Ensure form defaults to current company when available
+  useEffect(() => {
+    if (companyId && formData.companyId == null) {
+      setFormData(prev => ({ ...prev, companyId }));
+    }
+  }, [companyId]);
+
   useEffect(() => {
     const load = async () => {
       try {
