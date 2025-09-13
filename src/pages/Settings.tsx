@@ -264,13 +264,23 @@ const Settings = () => {
     setIsSavingBusiness(true);
     try {
       const targetId = editId || (currentBusiness ? currentBusiness.id : undefined);
+      let savedId: string | undefined = targetId;
       if (targetId) {
         await updateBusiness(targetId, businessData);
       } else {
-        await addBusiness(businessData);
+        savedId = await addBusiness(businessData);
       }
       // Ensure businesses refreshed from DB to persist URL across sessions
       try { await refreshBusinesses(); } catch (e) { console.warn('refreshBusinesses failed', e); }
+
+      // Persist as default company for all users (global)
+      try {
+        const mod = await import('@/integrations/supabase/client');
+        const cidNum = savedId ? parseInt(savedId) : (targetId ? parseInt(targetId) : undefined);
+        if (cidNum && !Number.isNaN(cidNum)) {
+          await mod.supabase.from('app_settings').upsert({ company_id: null, key: 'default_company_id', value: cidNum }, { onConflict: 'company_id,key' });
+        }
+      } catch (e) { console.warn('Failed to set default company id', e); }
 
       // After refresh, ensure the form logoUrl matches persisted company record
       try {
