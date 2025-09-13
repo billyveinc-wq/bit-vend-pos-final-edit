@@ -1961,6 +1961,22 @@ const Settings = () => {
       </div>
 
       {/* Top-level sections as tabs */}
+
+      <Dialog open={showUpgradeModal} onOpenChange={(open)=> setShowUpgradeModal(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade your plan</DialogTitle>
+            <DialogDescription>Your current plan allows only one company. Upgrade to add more companies and manage branches.</DialogDescription>
+          </DialogHeader>
+          <div className="pt-2">
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={()=> setShowUpgradeModal(false)} className="mr-2">Cancel</Button>
+              <Button onClick={() => { setShowUpgradeModal(false); setSearchParams({ section: 'business', subsection: 'subscription' }); }}>Upgrade Plan</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs
         value={section}
         onValueChange={(val) => updateSearchParams(val, getFirstSubsection(val))}
