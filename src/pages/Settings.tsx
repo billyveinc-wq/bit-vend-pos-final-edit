@@ -845,6 +845,22 @@ const Settings = () => {
     loadAllSettings();
   }, []);
 
+  // Apply theme and accent when appTheme changes
+  useEffect(() => {
+    try {
+      if (appTheme?.accentColor) {
+        const hsl = hexToHsl(appTheme.accentColor as string);
+        document.documentElement.style.setProperty('--accent', `${hsl.h} ${hsl.s}% ${hsl.l}%`);
+        const fg = hsl.l > 60 ? '0 0% 10%' : '0 0% 100%';
+        document.documentElement.style.setProperty('--accent-foreground', fg);
+      }
+      if (appTheme?.theme) {
+        setTheme(appTheme.theme as any);
+        localStorage.setItem('pos-theme', appTheme.theme as string);
+      }
+    } catch {}
+  }, [appTheme, setTheme]);
+
   const renderContent = () => {
     if (section === 'system' && subsection === 'payment-settings') {
       return <PaymentSettings />;
