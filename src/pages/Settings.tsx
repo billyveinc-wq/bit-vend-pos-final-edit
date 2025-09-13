@@ -173,6 +173,7 @@ const Settings = () => {
 
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [pendingFeature, setPendingFeature] = useState<string | null>(null);
 
   // Load business data when editing
   useEffect(() => {
