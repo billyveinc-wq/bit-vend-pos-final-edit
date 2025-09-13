@@ -224,7 +224,8 @@ const Settings = () => {
 
     // Plan restriction: Starter can only have 1 business
     if (!editId && businesses.length >= 1 && !canUseFeature('multi_branch_support')) {
-      toast.error('Your plan allows only one company. Upgrade to add more.');
+      // show upgrade modal instead of a simple toast
+      setShowUpgradeModal(true);
       return;
     }
 
