@@ -270,39 +270,52 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const user = session?.session?.user;
 
       if (user) {
-        const { data: created, error } = await supabase
-          .from('companies')
-          .insert({
-            name: businessData.businessName,
-            business_type: businessData.businessType,
-            tax_id: businessData.taxId || null,
-            business_license: businessData.businessLicense || null,
-            phone: businessData.phone || null,
-            email: businessData.email || null,
-            logo_url: businessData.logoUrl || null,
-            address: businessData.address || null,
-            city: businessData.city || null,
-            state: businessData.state || null,
-            postal_code: businessData.postalCode || null,
-            country: businessData.country || null,
-          })
-          .select('id')
-          .single();
+        // avoid duplicate by checking existing company name (case-insensitive)
+        try {
+          const { data: existing } = await supabase.from('companies').select('id').ilike('name', businessData.businessName).maybeSingle();
+          if (existing?.id) {
+            newBusinessId = String(existing.id);
+            // ensure linkage exists
+            await supabase.from('company_users').upsert({ company_id: existing.id, user_id: user.id, role: 'owner' }, { onConflict: 'company_id,user_id' });
+            await supabase.from('system_users').update({ company_id: existing.id }).eq('id', user.id);
+          } else {
+            const { data: created, error } = await supabase
+              .from('companies')
+              .insert({
+                name: businessData.businessName,
+                business_type: businessData.businessType,
+                tax_id: businessData.taxId || null,
+                business_license: businessData.businessLicense || null,
+                phone: businessData.phone || null,
+                email: businessData.email || null,
+                logo_url: businessData.logoUrl || null,
+                address: businessData.address || null,
+                city: businessData.city || null,
+                state: businessData.state || null,
+                postal_code: businessData.postalCode || null,
+                country: businessData.country || null,
+              })
+              .select('id')
+              .single();
 
-        if (!error && created) {
-          newBusinessId = String(created.id);
+            if (!error && created) {
+              newBusinessId = String(created.id);
 
-          // Link user to the company
-          await supabase.from('company_users').upsert({
-            company_id: created.id,
-            user_id: user.id,
-            role: 'owner'
-          }, { onConflict: 'company_id,user_id' });
+              // Link user to the company
+              await supabase.from('company_users').upsert({
+                company_id: created.id,
+                user_id: user.id,
+                role: 'owner'
+              }, { onConflict: 'company_id,user_id' });
 
-          // Update system_users
-          await supabase.from('system_users').update({
-            company_id: created.id
-          }).eq('id', user.id);
+              // Update system_users
+              await supabase.from('system_users').update({
+                company_id: created.id
+              }).eq('id', user.id);
+            }
+          }
+        } catch (err) {
+          console.warn('Error checking existing company before create', err);
         }
       }
     } catch (error) {
