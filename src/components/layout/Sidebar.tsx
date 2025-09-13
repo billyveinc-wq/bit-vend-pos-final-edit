@@ -58,8 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
+  const { currentBusiness } = useBusiness();
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
-  const [userLogo, setUserLogo] = useState<string | null>(null);
   const [canManagePayments, setCanManagePayments] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const SCROLL_KEY = 'sidebar-scroll-top';
