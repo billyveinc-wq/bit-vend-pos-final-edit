@@ -263,16 +263,157 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return newBusiness.id;
   };
 
-  const updateBusiness = (id: string, updates: Partial<Business>) => {
-    setBusinesses(prev => 
-      prev.map(business => 
+  const updateBusiness = async (id: string, updates: Partial<Business>) => {
+    // Try to update in Supabase first
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+
+      const updateData: any = {};
+      if (updates.businessName !== undefined) updateData.name = updates.businessName;
+      if (updates.businessType !== undefined) updateData.business_type = updates.businessType;
+      if (updates.taxId !== undefined) updateData.tax_id = updates.taxId || null;
+      if (updates.businessLicense !== undefined) updateData.business_license = updates.businessLicense || null;
+      if (updates.phone !== undefined) updateData.phone = updates.phone || null;
+      if (updates.email !== undefined) updateData.email = updates.email || null;
+      if (updates.logoUrl !== undefined) updateData.logo_url = updates.logoUrl || null;
+      if (updates.address !== undefined) updateData.address = updates.address || null;
+      if (updates.city !== undefined) updateData.city = updates.city || null;
+      if (updates.state !== undefined) updateData.state = updates.state || null;
+      if (updates.postalCode !== undefined) updateData.postal_code = updates.postalCode || null;
+      if (updates.country !== undefined) updateData.country = updates.country || null;
+
+      if (Object.keys(updateData).length > 0) {
+        await supabase
+          .from('companies')
+          .update(updateData)
+          .eq('id', parseInt(id));
+      }
+    } catch (error) {
+      console.warn('Failed to update company in Supabase:', error);
+    }
+
+    setBusinesses(prev =>
+      prev.map(business =>
         business.id === id ? { ...business, ...updates } : business
       )
     );
-    
+
     // Update current business if it's the one being updated
     if (currentBusiness?.id === id) {
       setCurrentBusinessState(prev => prev ? { ...prev, ...updates } : null);
+    }
+  };
+
+  const refreshBusinesses = async () => {
+    let loadedBusinesses: Business[] = [];
+
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { safeGetSession } = await import('@/integrations/supabase/safeAuth');
+
+      const { data: session } = await safeGetSession();
+      const user = session?.session?.user;
+
+      if (user) {
+        // Get user's companies from company_users table
+        const { data: userCompanies } = await supabase
+          .from('company_users')
+          .select(`
+            company_id,
+            role,
+            companies (
+              id,
+              name,
+              business_type,
+              tax_id,
+              business_license,
+              phone,
+              email,
+              logo_url,
+              address,
+              city,
+              state,
+              postal_code,
+              country,
+              created_at
+            )
+          `)
+          .eq('user_id', user.id);
+
+        if (userCompanies && userCompanies.length > 0) {
+          loadedBusinesses = userCompanies
+            .filter(uc => uc.companies)
+            .map(uc => {
+              const company = uc.companies as any;
+              return {
+                id: String(company.id),
+                businessName: company.name || '',
+                businessType: company.business_type || 'retail',
+                taxId: company.tax_id || '',
+                businessLicense: company.business_license || '',
+                phone: company.phone || '',
+                email: company.email || '',
+                logoUrl: company.logo_url || '',
+                address: company.address || '',
+                city: company.city || '',
+                state: company.state || '',
+                postalCode: company.postal_code || '',
+                country: company.country || 'US',
+                operatingHours: defaultOperatingHours,
+                createdAt: company.created_at || new Date().toISOString(),
+              } as Business;
+            });
+        }
+
+        // If no companies found, check if user has a company_id in system_users
+        if (loadedBusinesses.length === 0) {
+          const { data: systemUser } = await supabase
+            .from('system_users')
+            .select('company_id')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (systemUser?.company_id) {
+            const { data: company } = await supabase
+              .from('companies')
+              .select('*')
+              .eq('id', systemUser.company_id)
+              .maybeSingle();
+
+            if (company) {
+              loadedBusinesses = [{
+                id: String(company.id),
+                businessName: company.name || '',
+                businessType: company.business_type || 'retail',
+                taxId: company.tax_id || '',
+                businessLicense: company.business_license || '',
+                phone: company.phone || '',
+                email: company.email || '',
+                logoUrl: company.logo_url || '',
+                address: company.address || '',
+                city: company.city || '',
+                state: company.state || '',
+                postalCode: company.postal_code || '',
+                country: company.country || 'US',
+                operatingHours: defaultOperatingHours,
+                createdAt: company.created_at || new Date().toISOString(),
+              }];
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to refresh companies from Supabase:', error);
+    }
+
+    setBusinesses(loadedBusinesses);
+
+    // Update current business if it exists in the refreshed list
+    if (currentBusiness) {
+      const updatedCurrent = loadedBusinesses.find(b => b.id === currentBusiness.id);
+      setCurrentBusinessState(updatedCurrent || null);
+    } else if (loadedBusinesses.length > 0) {
+      setCurrentBusinessState(loadedBusinesses[0]);
     }
   };
 
