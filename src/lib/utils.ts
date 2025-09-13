@@ -14,7 +14,8 @@ export function sanitizeCompanyName(input?: string | null) {
   s = s.replace(/[_.]+/g, ' ');
   s = s.replace(/\s+/g, ' ').trim();
   // remove trailing words like "pos", "pos's", "company", "company's"
-  s = s.replace(/(?:\bpos\b|'s)?\s*$/i, '').trim();
+  // also handle cases where pos is attached without a space (e.g., "aviatrixpos's")
+  s = s.replace(/(?:pos(?:'s|’s)?|(?:\bpos\b))\s*$/i, '').trim();
   s = s.replace(/\bcompany\b\s*$/i, '').trim();
   // remove trailing possessive if exists
   s = s.replace(/('s|’s)\s*$/i, '').trim();
