@@ -152,22 +152,24 @@ const Topbar: React.FC<TopbarProps> = ({
     loadSupportEmail();
   }, [companyId]);
   
-  // Load current company name and list the user's companies
+  // Load current company name and list the current user's companies only
   useEffect(() => {
     let active = true;
     (async () => {
       try {
         let cid = companyId;
-        if (!cid) {
-          const { data: comp } = await supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
-          cid = (comp as any)?.id || null;
+        const { data: s } = await safeGetSession();
+        const uid = s?.session?.user?.id;
+        if (!cid && uid) {
+          const { data: su } = await supabase.from('system_users').select('company_id').eq('id', uid).maybeSingle();
+          cid = (su as any)?.company_id || null;
         }
         if (cid && active) {
           const { data } = await supabase.from('companies').select('name').eq('id', cid).maybeSingle();
           if (data?.name) setCompanyName(data.name);
+        } else if (active) {
+          setCompanyName('');
         }
-        const { data: s } = await safeGetSession();
-        const uid = s?.session?.user?.id;
         if (uid) {
           const { data: links } = await supabase.from('company_users').select('company_id').eq('user_id', uid);
           const ids = (links || []).map((r: any) => r.company_id).filter(Boolean);
@@ -177,12 +179,15 @@ const Topbar: React.FC<TopbarProps> = ({
           } else if (cid) {
             const { data: comp2 } = await supabase.from('companies').select('id, name').eq('id', cid).maybeSingle();
             if (active && comp2) setUserCompanies([comp2 as any]);
+          } else {
+            if (active) setUserCompanies([]);
           }
-        } else if (cid) {
-          const { data: comp2 } = await supabase.from('companies').select('id, name').eq('id', cid).maybeSingle();
-          if (active && comp2) setUserCompanies([comp2 as any]);
+        } else {
+          if (active) setUserCompanies([]);
         }
-      } catch {}
+      } catch (e) {
+        // ignore
+      }
     })();
     return () => { active = false; };
   }, [companyId]);
