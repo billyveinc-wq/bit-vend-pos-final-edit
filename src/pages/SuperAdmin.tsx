@@ -580,6 +580,7 @@ const SuperAdmin = () => {
             companyId,
             companyName,
             userCount,
+            planId: plan?.id || sub?.plan_id || 'starter',
             planName: plan?.name || (sub?.plan_id || 'starter'),
             planExpires: sub?.expires_at || null,
             subscriptionStatus: sub?.status || 'free',
