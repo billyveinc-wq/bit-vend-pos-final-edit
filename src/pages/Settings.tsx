@@ -1856,7 +1856,34 @@ const Settings = () => {
                   <Switch checked={securityGeneral.requireDevicePIN} onCheckedChange={(c)=>setSecurityGeneral(p=>({...p, requireDevicePIN:c}))} />
                   <Label>Require Device PIN</Label>
                 </div>
-                <Button onClick={async ()=>{ await saveAppSetting('security', securityGeneral); saveLocal('pos-security', securityGeneral); showSaveToast(); }}>Save</Button>
+                <div className="flex justify-between items-center mt-4">
+                  <Button onClick={async ()=>{ await saveAppSetting('security', securityGeneral); saveLocal('pos-security', securityGeneral); showSaveToast(); }}>Save</Button>
+                  {isFirstUser && (
+                    <div className="text-right">
+                      <h4 className="text-sm font-semibold text-destructive">Danger Zone</h4>
+                      <p className="text-xs text-muted-foreground">First user only: permanently delete this account and all companies and users.</p>
+                      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                        <div className="mt-2">
+                          <Button variant="destructive" onClick={() => setDeleteOpen(true)}>Delete Account</Button>
+                        </div>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Confirm Account Deletion</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <p className="text-sm">Type <strong>DELETE</strong> to permanently delete this account and all associated data, or choose soft-delete for a 30-day retention.</p>
+                            <Input placeholder="Type DELETE to confirm" value={confirmText} onChange={(e)=>setConfirmText(e.target.value)} />
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                              <Button variant="destructive" onClick={async ()=>{ if (confirmText!=='DELETE') return; try { const { data: s } = await safeGetSession(); const token = s?.session?.access_token; const res = await fetch('/admin/self-delete', { method: 'POST', headers: { 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json' }, body: JSON.stringify({ immediate: true }) }); const json = await res.json(); if (!res.ok) { toast.error(json?.error || 'Failed to delete'); } else { toast.success('Account deleted'); try { await supabase.auth.signOut(); } catch {} window.location.href='/'; } } catch (e){ toast.error('Failed to delete'); } }}>Delete Now</Button>
+                              <Button onClick={async ()=>{ try { const { data: s } = await safeGetSession(); const token = s?.session?.access_token; const res = await fetch('/admin/self-delete', { method: 'POST', headers: { 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json' }, body: JSON.stringify({ immediate: false }) }); const json = await res.json(); if (!res.ok) { toast.error(json?.error || 'Failed'); } else { toast.success('Account scheduled for deletion (30 days)'); setDeleteOpen(false); } } catch { toast.error('Failed'); } }}>Soft Delete (30 days)</Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           );
