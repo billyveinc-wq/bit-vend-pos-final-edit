@@ -321,6 +321,7 @@ const Topbar: React.FC<TopbarProps> = ({
                         await supabase.from('system_users').update({ company_id: c.id }).eq('id', uid);
                       }
                       setCompanyName(c.name);
+                      setCurrentBusiness(String(c.id));
                       localStorage.setItem('pos-company-name', c.name);
                     } catch {}
                   }}
