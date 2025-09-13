@@ -29,9 +29,9 @@ const Countdown: React.FC<Props> = ({ expiryMs, className }) => {
     return () => clearInterval(id);
   }, [expiryMs]);
 
-  if (remaining === null) return null;
-  if (remaining <= 0) return <span className={className}>Expired</span>;
-  return <span className={className}>{formatRemaining(remaining)}</span>;
+  if (remaining === null) return <span className={className} aria-live="polite">Calculating...</span>;
+  if (remaining <= 0) return <span className={className} aria-live="polite">Expired</span>;
+  return <span className={className} aria-live="polite">{formatRemaining(remaining)}</span>;
 };
 
 export default Countdown;
