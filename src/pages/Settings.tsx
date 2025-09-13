@@ -257,12 +257,13 @@ const Settings = () => {
     }
   }, [isLoaded]);
 
-  const handleDeleteBusiness = () => {
+  const handleDeleteBusiness = async () => {
     if (!editId) return;
-    
+
     if (confirm('Are you sure you want to delete this business? This action cannot be undone.')) {
       try {
-        deleteBusiness(editId);
+        await deleteBusiness(editId);
+        await refreshBusinesses();
         toast.success('Business deleted successfully!');
         setSearchParams({ section: 'business', subsection: 'business-info' });
         setIsEditingBusiness(false);
