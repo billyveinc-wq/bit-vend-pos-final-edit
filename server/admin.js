@@ -33,6 +33,58 @@ const adminAuth = (req, res, next) => {
 
 // ===== Admin endpoints =====
 const adminRouter = express.Router();
+
+// Endpoint for users to request deletion of their own account (soft delete by default).
+// This endpoint accepts Authorization: Bearer <access_token> and verifies the token, then
+// checks whether the requester is the first user (is_first_user) and performs a soft delete.
+adminRouter.post('/self-delete', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing bearer token' });
+    const token = authHeader.replace(/^Bearer\s+/, '').trim();
+
+    // Verify token and get user
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) return res.status(401).json({ error: 'Invalid token' });
+    const user = userData.user;
+
+    // Confirm this user is the first user
+    const { data: su } = await supabase.from('system_users').select('id, is_first_user, created_at').order('created_at').limit(1).maybeSingle();
+    const isFirst = (su && ((su.is_first_user === true) || (su.id === user.id))) || false;
+    if (!isFirst) return res.status(403).json({ error: 'Only the first (owner) user may request full account deletion via this endpoint' });
+
+    const { immediate = false } = req.body || {};
+
+    if (immediate) {
+      // Hard delete the user's related records and auth entry
+      await supabase.from('user_subscriptions').delete().eq('user_id', user.id);
+      await supabase.from('user_promotions').delete().eq('user_id', user.id);
+      await supabase.from('company_users').delete().eq('user_id', user.id);
+      await supabase.from('system_users').delete().eq('id', user.id);
+
+      const { error: delAuthErr } = await supabase.auth.admin.deleteUser(user.id);
+      if (delAuthErr) return res.status(500).json({ error: 'Failed deleting auth user', details: delAuthErr });
+
+      return res.json({ ok: true, type: 'immediate' });
+    }
+
+    // Soft delete using the database RPC (30-day retention)
+    const { data, error } = await supabase.rpc('soft_delete_user_account', {
+      target_user_id: user.id,
+      target_email: user.email || null
+    });
+
+    if (error) {
+      console.error('Soft delete RPC failed:', error);
+      return res.status(500).json({ error: 'Soft delete failed', details: error });
+    }
+
+    return res.json({ ok: true, type: 'soft_delete', deletion_id: data, retention_days: 30 });
+  } catch (err) {
+    console.error('Self-delete error:', err);
+    return res.status(500).json({ error: 'Internal error', details: err });
+  }
+});
 adminRouter.post('/delete-user', async (req, res) => {
   const { userId, email, immediate = false } = req.body;
   if (!userId) return res.status(400).json({ error: 'userId required' });
