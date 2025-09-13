@@ -931,6 +931,8 @@ const SuperAdmin = () => {
                       const { data: refreshed } = await supabase.from('app_settings').select('value').is('company_id', null).eq('key', 'published_releases').maybeSingle();
                       const val = (refreshed as any)?.value || [];
                       setPublishedReleases(Array.isArray(val) ? val.reverse() : []);
+                      // Notify other parts of app (Topbar) to reload releases
+                      try { window.dispatchEvent(new Event('releases:changed')); } catch (e) {}
                       toast.success('Release published');
                       setReleaseDialogOpen(false);
                     } catch (e) {
