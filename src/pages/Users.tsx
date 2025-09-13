@@ -292,6 +292,18 @@ const Users = () => {
         if (formData.password.length < 8) { toast.error('Password must be at least 8 characters'); return; }
         if (formData.password !== formData.confirmPassword) { toast.error('Passwords do not match'); return; }
         const restrictions = restrictAccess ? { enabled: true, pages: selectedPages, actions: selectedActions } : { enabled: false };
+
+        // Enforce starter subscription limit: allow only 1 additional user besides the admin
+        try {
+          const cid = formData.companyId || companyId;
+          if (cid && currentUserPlan === 'starter') {
+            const { count } = await supabase.from('company_users').select('user_id', { count: 'exact', head: true }).eq('company_id', cid);
+            const existingCount = (count || 0);
+            // existingCount includes current admin, allow max 2
+            if (existingCount >= 2) { toast.error('Starter plan allows only one additional user for this company'); return; }
+          }
+        } catch (e) { console.warn('Failed to enforce subscription limit', e); }
+
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
