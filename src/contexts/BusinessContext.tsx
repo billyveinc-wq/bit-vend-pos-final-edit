@@ -29,7 +29,7 @@ interface BusinessContextType {
   currentBusiness: Business | null;
   isLoaded: boolean;
   addBusiness: (business: Omit<Business, 'id' | 'createdAt'>) => Promise<string>;
-  updateBusiness: (id: string, business: Partial<Business>) => Promise<void>;
+  updateBusiness: (id: string, business: Partial<Business>) => Promise<boolean>;
   setCurrentBusiness: (id: string) => void;
   deleteBusiness: (id: string) => Promise<void>;
   refreshBusinesses: () => Promise<void>;
