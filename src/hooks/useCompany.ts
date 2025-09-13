@@ -49,7 +49,7 @@ export const useCompany = () => {
           if (cid) {
             const { count } = await supabase.from('company_users').select('id', { count: 'exact', head: true }).eq('company_id', cid);
             const isFirst = (count || 0) === 0;
-            await supabase.from('company_users').upsert({ company_id: cid, user_id: user.id, role: isFirst ? 'owner' : 'member' });
+            await supabase.from('company_users').upsert({ company_id: cid, user_id: user.id, role: isFirst ? 'owner' : 'member' }, { onConflict: 'company_id,user_id' });
             await supabase.from('system_users').update({ company_id: cid }).eq('id', user.id);
             if (active) { setCompanyId(Number(cid)); setRole(isFirst ? 'owner' : 'member'); }
           }
