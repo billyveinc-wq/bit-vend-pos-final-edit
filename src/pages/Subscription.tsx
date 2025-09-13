@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { safeGetSession } from '@/integrations/supabase/safeAuth';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { format } from 'date-fns';
+import Countdown from '@/components/Countdown';
 
 const subscriptionPlans = [
   {
