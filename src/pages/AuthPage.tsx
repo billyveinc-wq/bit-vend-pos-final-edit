@@ -340,12 +340,14 @@ const AuthPage = () => {
       // Link user to company (create if missing). Make first user admin by default.
       try {
         if (signUpData?.user && companyName) {
+          const { sanitizeCompanyName } = await import('@/lib/utils');
+          const normalizedName = sanitizeCompanyName(companyName) || companyName;
           const { id: newUserId } = signUpData.user;
           // Find or create company
-          const { data: existing } = await supabase.from('companies').select('id').eq('name', companyName).maybeSingle();
+          const { data: existing } = await supabase.from('companies').select('id').ilike('name', normalizedName).maybeSingle();
           let companyId = existing?.id as number | undefined;
           if (!companyId) {
-            const { data: created, error: cErr } = await supabase.from('companies').insert({ name: companyName }).select('id').single();
+            const { data: created, error: cErr } = await supabase.from('companies').insert({ name: normalizedName }).select('id').single();
             if (!cErr) companyId = created.id;
           }
           if (companyId) { createdCompanyId = Number(companyId);
