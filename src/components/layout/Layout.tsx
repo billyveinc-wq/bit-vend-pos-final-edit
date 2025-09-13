@@ -5,7 +5,8 @@ import { safeGetSession } from '@/integrations/supabase/safeAuth';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import { SubscriptionProvider, useSubscription } from '@/contexts/SubscriptionContext';
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
+import { Button } from '@/components/ui/button';
 
 type LayoutProps = { children?: React.ReactNode };
 
