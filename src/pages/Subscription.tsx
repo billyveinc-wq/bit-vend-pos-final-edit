@@ -553,13 +553,13 @@ const Subscription = () => {
       {trialExpired && (
         <Card className="animate-slideInLeft" style={{ animationDelay: '0.05s' }}>
           <CardContent>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <div className="text-sm font-medium text-foreground">Free trial period expired</div>
                 <div className="text-sm text-muted-foreground">Please choose a plan to continue using premium features.</div>
               </div>
-              <div>
-                <Button onClick={() => navigate('/dashboard/subscription')}>Choose a Plan</Button>
+              <div className="flex-shrink-0">
+                <Button className="whitespace-nowrap min-w-[140px]" onClick={() => navigate('/dashboard/subscription')}>Choose a Plan</Button>
               </div>
             </div>
           </CardContent>
