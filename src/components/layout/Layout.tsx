@@ -72,48 +72,86 @@ const Layout: React.FC<LayoutProps> = () => {
   }, []);
 
   const TrialBanner: React.FC = () => {
-    const { subscription } = useSubscription();
-    const [show, setShow] = useState(false);
-    const [daysLeft, setDaysLeft] = useState<number | null>(null);
+    const [remainingMs, setRemainingMs] = useState<number | null>(null);
+    const [expired, setExpired] = useState(false);
+    const [visible, setVisible] = useState(false);
+
+    const parseDateSafe = (val: any) => {
+      if (!val) return null;
+      try {
+        const s = String(val);
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(s)) return new Date(s + 'Z');
+        return new Date(s);
+      } catch {
+        return null;
+      }
+    };
 
     useEffect(() => {
-      const exp = subscription?.expires_at ? new Date(subscription.expires_at) : null;
-      if (!exp) return;
-      const now = new Date();
-      const msLeft = exp.getTime() - now.getTime();
-      const dl = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
-      setDaysLeft(dl);
-
-      // Reminder only for last 4 days
-      if (dl > 0 && dl <= 4) {
-        const key = `trial-reminder-shown-${now.toISOString().slice(0,10)}`;
-        if (!localStorage.getItem(key)) {
-          setShow(true);
-          localStorage.setItem(key, '1');
-        }
-      } else {
-        setShow(false);
-      }
-
-      // If expired, redirect to subscription/settings
-      if (dl <= 0) {
+      let interval: any = null;
+      const compute = async () => {
         try {
-          const url = '/dashboard/settings?section=business&subsection=subscription';
-          if (!window.location.href.includes('settings')) window.location.href = url;
-        } catch {}
-      }
-    }, [subscription?.expires_at]);
+          const { data: { session } } = await safeGetSession();
+          const uid = session?.session?.user?.id;
+          if (!uid) return;
+          const { data: subData } = await supabase.from('user_subscriptions').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle();
+          const userSub = subData || null;
+          let end: Date | null = null;
+          if (userSub) {
+            if (userSub.trial_ends_at) end = parseDateSafe(userSub.trial_ends_at) || new Date(userSub.trial_ends_at);
+            else if (userSub.expires_at) end = parseDateSafe(userSub.expires_at) || new Date(userSub.expires_at);
+            else if (userSub.started_at) { const d = parseDateSafe(userSub.started_at) || new Date(userSub.started_at); d.setDate(d.getDate()+14); end = d; }
+          } else {
+            const { data } = await supabase.from('system_users').select('created_at').eq('id', uid).maybeSingle();
+            const createdAt = (data as any)?.created_at;
+            if (createdAt) { const d = parseDateSafe(createdAt) || new Date(createdAt); d.setDate(d.getDate()+14); end = d; }
+          }
 
-    if (!show || daysLeft === null || daysLeft <= 0) return null;
+          if (!end) return;
+          const update = () => {
+            const ms = Math.max(0, end!.getTime() - Date.now());
+            setRemainingMs(ms);
+            setExpired(ms <= 0);
+            // show banner if within last 4 days or expired
+            const daysLeft = Math.ceil(ms / (1000*60*60*24));
+            setVisible(daysLeft <= 4 || ms <= 0);
+          };
+
+          update();
+          interval = setInterval(update, 1000);
+        } catch (e) {
+          console.warn('TrialBanner compute failed', e);
+        }
+      };
+      compute();
+      return () => { if (interval) clearInterval(interval); };
+    }, []);
+
+    if (!visible || remainingMs === null) return null;
+
+    const formatRemaining = (ms: number) => {
+      const sec = Math.floor(ms/1000)%60;
+      const min = Math.floor(ms/1000/60)%60;
+      const hrs = Math.floor(ms/1000/60/60)%24;
+      const days = Math.floor(ms/1000/60/60/24);
+      return `${days}d ${hrs}h ${min}m ${sec}s`;
+    };
 
     return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <div className="bg-amber-100 text-amber-900 border border-amber-300 rounded-lg shadow-lg p-4 max-w-xs">
-          <div className="font-semibold mb-1">Trial expires soon</div>
-          <div className="text-sm">Your trial period expires in {daysLeft} day{daysLeft === 1 ? '' : 's'}. Upgrade to keep access.</div>
-          <div className="mt-3 flex gap-2">
-            <button onClick={()=>window.location.href='/dashboard/settings?section=business&subsection=subscription'} className="px-3 py-1 rounded bg-amber-600 text-white text-sm">Upgrade</button>
-            <button onClick={()=>setShow(false)} className="px-3 py-1 rounded border text-sm">Dismiss</button>
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div className={`rounded-lg shadow-lg p-3 max-w-xl bg-background/90 border border-border` }>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              {expired ? (
+                <div className="text-sm font-medium text-foreground">Free trial period expired</div>
+              ) : (
+                <div className="text-sm font-medium text-foreground">Free trial active — ends in <span className="font-mono">{formatRemaining(remainingMs)}</span></div>
+              )}
+              <div className="text-xs text-muted-foreground mt-1">Your trial status is shown in your local time.</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={() => window.location.href = '/dashboard/subscription'}>{expired ? 'Choose a Plan' : 'Manage Subscription'}</Button>
+            </div>
           </div>
         </div>
       </div>
