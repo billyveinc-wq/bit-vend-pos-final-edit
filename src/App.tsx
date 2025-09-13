@@ -9,6 +9,7 @@ import { BusinessProvider } from "@/contexts/BusinessContext";
 import { ProductProvider } from "@/contexts/ProductContext";
 import { SalesProvider } from "@/contexts/SalesContext";
 import Layout from "./components/layout/Layout";
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import Index from "./pages/Index";
 import SuperAdmin from "./pages/SuperAdmin";
