@@ -545,11 +545,11 @@ const Subscription = () => {
 
       {/* Expired trial notice */}
       {trialExpired && (
-        <Card className="border-2 border-destructive animate-slideInLeft" style={{ animationDelay: '0.05s' }}>
+        <Card className="animate-slideInLeft" style={{ animationDelay: '0.05s' }}>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-destructive">Free trial period expired</div>
+                <div className="text-sm font-medium text-foreground">Free trial period expired</div>
                 <div className="text-sm text-muted-foreground">Please choose a plan to continue using premium features.</div>
               </div>
               <div>
