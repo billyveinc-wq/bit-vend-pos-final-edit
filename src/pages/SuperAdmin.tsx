@@ -528,6 +528,18 @@ const SuperAdmin = () => {
       }
     };
     load();
+
+    // Load published releases (global key)
+    const loadReleases = async () => {
+      try {
+        const { data } = await supabase.from('app_settings').select('value').is('company_id', null).eq('key', 'published_releases').maybeSingle();
+        const val = (data as any)?.value;
+        if (Array.isArray(val)) setPublishedReleases(val.reverse());
+      } catch (e) {
+        console.warn('Failed to load published releases', e);
+      }
+    };
+    loadReleases();
   }, []);
 
   // Load registrations: show all non-admin-created users; empty company for none; include user count per company
