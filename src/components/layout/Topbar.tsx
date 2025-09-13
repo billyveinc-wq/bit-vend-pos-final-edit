@@ -165,7 +165,21 @@ const Topbar: React.FC<TopbarProps> = ({
       try {
         const { data } = await supabase.from('app_settings').select('value').is('company_id', null).eq('key', 'published_releases').maybeSingle();
         const val = (data as any)?.value;
-        if (Array.isArray(val)) setReleases(val.reverse());
+        if (Array.isArray(val)) {
+          const rev = val.reverse();
+          setReleases(rev);
+          try {
+            const { data: s } = await safeGetSession();
+            const uid = s?.session?.user?.id || 'anon';
+            const key = `releases:lastSeen:${uid}`;
+            const lastSeen = localStorage.getItem(key);
+            const lastSeenTime = lastSeen ? new Date(lastSeen).getTime() : 0;
+            const unread = rev.filter((r:any) => new Date(r.published_at).getTime() > lastSeenTime).length;
+            setUnreadCount(unread);
+          } catch (e) {
+            setUnreadCount(0);
+          }
+        }
       } catch (e) {}
     };
     loadReleases();
