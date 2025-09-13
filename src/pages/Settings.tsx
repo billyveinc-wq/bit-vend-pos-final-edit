@@ -322,13 +322,28 @@ const Settings = () => {
       if (publicUrl) {
         setBusinessForm(prev => ({ ...prev, logoUrl: publicUrl }));
         showUploadToast();
+        // Persist immediately if editing an existing business
+        const targetId = editId || (currentBusiness ? currentBusiness.id : undefined);
+        if (targetId) {
+          try {
+            await updateBusiness(targetId, { logoUrl: publicUrl });
+            try { await refreshBusinesses(); } catch {}
+          } catch (e) { console.warn('Failed to persist logo to company record', e); }
+        }
       } else {
         // fallback to data URL preview if public URL not available
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           const result = e.target?.result as string;
           setBusinessForm(prev => ({ ...prev, logoUrl: result }));
           showUploadToast();
+          const targetId = editId || (currentBusiness ? currentBusiness.id : undefined);
+          if (targetId) {
+            try {
+              await updateBusiness(targetId, { logoUrl: result });
+              try { await refreshBusinesses(); } catch {}
+            } catch (e) { console.warn('Failed to persist data URL logo to company record', e); }
+          }
         };
         reader.readAsDataURL(file);
       }
@@ -336,10 +351,17 @@ const Settings = () => {
       // If anything fails, show preview using data URL
       try {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           const result = e.target?.result as string;
           setBusinessForm(prev => ({ ...prev, logoUrl: result }));
           showUploadToast();
+          const targetId = editId || (currentBusiness ? currentBusiness.id : undefined);
+          if (targetId) {
+            try {
+              await updateBusiness(targetId, { logoUrl: result });
+              try { await refreshBusinesses(); } catch {}
+            } catch (e) { console.warn('Failed to persist fallback logo', e); }
+          }
         };
         reader.readAsDataURL(file);
       } catch (e) {}
