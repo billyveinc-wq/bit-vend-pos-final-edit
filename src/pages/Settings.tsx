@@ -793,6 +793,32 @@ const Settings = () => {
     } catch {}
   };
 
+  // Theme helper: hex to HSL
+  const hexToHsl = (hex: string) => {
+    const h = (n: number) => Math.round(n);
+    const hexClean = hex.replace('#', '');
+    const bigint = parseInt(hexClean, 16);
+    const r = ((bigint >> 16) & 255) / 255;
+    const g = ((bigint >> 8) & 255) / 255;
+    const b = (bigint & 255) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let hDeg = 0, s = 0, l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: hDeg = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: hDeg = (b - r) / d + 2; break;
+        case b: hDeg = (r - g) / d + 4; break;
+      }
+      hDeg = hDeg * 60;
+    }
+    return { h: h(hDeg), s: h(s * 100), l: h(l * 100) };
+  };
+
+  // next-themes setter
+  const { theme: currentTheme, setTheme } = useTheme();
+
   useEffect(() => {
     const loadAllSettings = async () => {
       try {
