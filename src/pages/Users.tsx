@@ -61,8 +61,11 @@ const Users = () => {
     role: '',
     status: 'active' as User['status'],
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    companyId: companyId || null
   });
+
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
 
   const AVAILABLE_PAGES = [
     { path: '/dashboard', label: 'Dashboard' },
