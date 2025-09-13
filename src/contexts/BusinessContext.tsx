@@ -157,6 +157,36 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
           }
         }
+
+        // Global default company fallback (for all users)
+        try {
+          if (loadedBusinesses.length === 0) {
+            const { data: def } = await supabase.from('app_settings').select('value').is('company_id', null).eq('key', 'default_company_id').maybeSingle();
+            const defId = (def as any)?.value;
+            if (defId) {
+              const { data: company } = await supabase.from('companies').select('*').eq('id', defId).maybeSingle();
+              if (company) {
+                loadedBusinesses = [{
+                  id: String(company.id),
+                  businessName: company.name || '',
+                  businessType: company.business_type || 'retail',
+                  taxId: company.tax_id || '',
+                  businessLicense: company.business_license || '',
+                  phone: company.phone || '',
+                  email: company.email || '',
+                  logoUrl: company.logo_url || '',
+                  address: company.address || '',
+                  city: company.city || '',
+                  state: company.state || '',
+                  postalCode: company.postal_code || '',
+                  country: company.country || 'US',
+                  operatingHours: defaultOperatingHours,
+                  createdAt: company.created_at || new Date().toISOString(),
+                }];
+              }
+            }
+          }
+        } catch {}
       } catch (error) {
         console.warn('Failed to load companies from Supabase:', error);
       }
@@ -436,6 +466,36 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
           }
         }
+
+        // Global default company fallback (for all users)
+        try {
+          if (loadedBusinesses.length === 0) {
+            const { data: def } = await supabase.from('app_settings').select('value').is('company_id', null).eq('key', 'default_company_id').maybeSingle();
+            const defId = (def as any)?.value;
+            if (defId) {
+              const { data: company } = await supabase.from('companies').select('*').eq('id', defId).maybeSingle();
+              if (company) {
+                loadedBusinesses = [{
+                  id: String(company.id),
+                  businessName: company.name || '',
+                  businessType: company.business_type || 'retail',
+                  taxId: company.tax_id || '',
+                  businessLicense: company.business_license || '',
+                  phone: company.phone || '',
+                  email: company.email || '',
+                  logoUrl: company.logo_url || '',
+                  address: company.address || '',
+                  city: company.city || '',
+                  state: company.state || '',
+                  postalCode: company.postal_code || '',
+                  country: company.country || 'US',
+                  operatingHours: defaultOperatingHours,
+                  createdAt: company.created_at || new Date().toISOString(),
+                }];
+              }
+            }
+          }
+        } catch {}
       }
     } catch (error) {
       console.warn('Failed to refresh companies from Supabase:', error);
