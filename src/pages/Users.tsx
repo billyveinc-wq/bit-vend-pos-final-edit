@@ -172,16 +172,27 @@ const Users = () => {
         } catch (e) { console.warn('Failed to load user subscription', e); }
         // fetch companies owned/linked to the current admin user for selection (deduped)
         try {
+          const map = new Map<string,string>();
+          // companies admin is linked to
           const { data: comps } = await supabase.from('company_users').select('company_id, companies (id, name, created_at)').eq('user_id', uid);
           if (comps && Array.isArray(comps)) {
-            const map = new Map<string,string>();
             (comps as any[]).forEach((row) => {
               const comp = row.companies;
               if (comp && comp.id) map.set(String(comp.id), comp.name || '');
             });
-            const list = Array.from(map.entries()).map(([id,name]) => ({ id, name }));
-            setCompanies(list);
           }
+          // companies created by admin
+          try {
+            const { data: created } = await supabase.from('companies').select('id, name').eq('created_by', uid);
+            if (created && Array.isArray(created)) {
+              (created as any[]).forEach((c) => {
+                if (c && c.id) map.set(String(c.id), c.name || '');
+              });
+            }
+          } catch (innerErr) { console.warn('Failed to fetch created companies', innerErr); }
+
+          const list = Array.from(map.entries()).map(([id,name]) => ({ id, name }));
+          setCompanies(list);
         } catch (e) {
           console.warn('Failed to fetch companies for admin', e);
         }
