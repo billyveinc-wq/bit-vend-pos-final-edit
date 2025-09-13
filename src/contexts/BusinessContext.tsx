@@ -199,14 +199,64 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [currentBusiness]);
 
-  const addBusiness = (businessData: Omit<Business, 'id' | 'createdAt'>) => {
+  const addBusiness = async (businessData: Omit<Business, 'id' | 'createdAt'>) => {
+    let newBusinessId = Date.now().toString();
+
+    // Try to create in Supabase first
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { safeGetSession } = await import('@/integrations/supabase/safeAuth');
+
+      const { data: session } = await safeGetSession();
+      const user = session?.session?.user;
+
+      if (user) {
+        const { data: created, error } = await supabase
+          .from('companies')
+          .insert({
+            name: businessData.businessName,
+            business_type: businessData.businessType,
+            tax_id: businessData.taxId || null,
+            business_license: businessData.businessLicense || null,
+            phone: businessData.phone || null,
+            email: businessData.email || null,
+            logo_url: businessData.logoUrl || null,
+            address: businessData.address || null,
+            city: businessData.city || null,
+            state: businessData.state || null,
+            postal_code: businessData.postalCode || null,
+            country: businessData.country || null,
+          })
+          .select('id')
+          .single();
+
+        if (!error && created) {
+          newBusinessId = String(created.id);
+
+          // Link user to the company
+          await supabase.from('company_users').upsert({
+            company_id: created.id,
+            user_id: user.id,
+            role: 'owner'
+          });
+
+          // Update system_users
+          await supabase.from('system_users').update({
+            company_id: created.id
+          }).eq('id', user.id);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to create company in Supabase:', error);
+    }
+
     const newBusiness: Business = {
       ...businessData,
-      id: Date.now().toString(),
+      id: newBusinessId,
       createdAt: new Date().toISOString(),
       operatingHours: businessData.operatingHours || defaultOperatingHours,
     };
-    
+
     setBusinesses(prev => [...prev, newBusiness]);
     return newBusiness.id;
   };
