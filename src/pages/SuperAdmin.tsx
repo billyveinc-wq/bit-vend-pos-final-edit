@@ -1433,6 +1433,149 @@ const SuperAdmin = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="deleted">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                  Deleted Accounts (30-Day Retention)
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={loadDeletedAccounts}
+                    variant="outline"
+                    disabled={loadingDeletedAccounts}
+                  >
+                    {loadingDeletedAccounts ? 'Loading...' : 'Refresh'}
+                  </Button>
+                  <Button
+                    onClick={handleManualCleanup}
+                    variant="destructive"
+                    disabled={cleanupRunning}
+                  >
+                    {cleanupRunning ? 'Cleaning up...' : 'Run Manual Cleanup'}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <div className="flex gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">30-Day Data Retention Policy</p>
+                    <p className="text-yellow-700 dark:text-yellow-300">
+                      Deleted accounts are retained for 30 days before permanent deletion.
+                      During this period, accounts can be restored with all associated data.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {loadingDeletedAccounts ? (
+                <div className="text-muted-foreground">Loading deleted accounts...</div>
+              ) : deletedAccounts.length === 0 ? (
+                <div className="text-muted-foreground">No deleted accounts found.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-red-500 hover:bg-red-500">
+                      <TableHead className="text-white font-semibold">Email</TableHead>
+                      <TableHead className="text-white font-semibold">Deleted At</TableHead>
+                      <TableHead className="text-white font-semibold">Time Remaining</TableHead>
+                      <TableHead className="text-white font-semibold">Status</TableHead>
+                      <TableHead className="text-white font-semibold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deletedAccounts.map((account) => (
+                      <TableRow key={account.id}>
+                        <TableCell className="text-foreground font-medium">{account.email}</TableCell>
+                        <TableCell className="text-foreground">
+                          {new Date(account.deleted_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-foreground">
+                          <div className="flex items-center gap-2">
+                            {account.days_remaining !== null ? (
+                              <>
+                                {account.days_remaining > 0 ? (
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    {formatTimeRemaining(account.days_remaining)}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="destructive">
+                                    Expired - Pending Cleanup
+                                  </Badge>
+                                )}
+                              </>
+                            ) : (
+                              <Badge variant="outline">Unknown</Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-foreground">
+                          {account.can_restore ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                              Restorable
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">
+                              Cannot Restore
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {account.can_restore && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRestoreAccount(account.user_id)}
+                                className="border-green-500 text-green-600 hover:bg-green-50"
+                              >
+                                Restore Account
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const status = await getAccountDeletionStatus(account.user_id);
+                                  const details = {
+                                    'User ID': account.user_id,
+                                    'Email': account.email,
+                                    'Deleted At': new Date(account.deleted_at).toLocaleString(),
+                                    'Scheduled Cleanup': new Date(account.scheduled_cleanup_at).toLocaleString(),
+                                    'Days Remaining': status.days_remaining || 'Unknown',
+                                    'Can Restore': status.is_deleted && !status.cleanup_completed ? 'Yes' : 'No',
+                                    'Metadata': JSON.stringify(account.metadata || {}, null, 2)
+                                  };
+
+                                  const message = Object.entries(details)
+                                    .map(([key, value]) => `${key}: ${value}`)
+                                    .join('\n');
+
+                                  alert(`Account Deletion Details:\n\n${message}`);
+                                } catch (error) {
+                                  toast.error('Failed to load account details');
+                                }
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="alerts">
           <Card>
             <CardHeader>
