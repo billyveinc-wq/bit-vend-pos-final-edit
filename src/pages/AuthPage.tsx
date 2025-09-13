@@ -725,13 +725,13 @@ const AuthPage = () => {
                         />
                         <Label htmlFor="terms" className="text-sm">
                           I agree to the{' '}
-                          <a href="/terms" className="text-orange-600 hover:underline">
+                          <Link to="/terms" className="text-orange-600 hover:underline">
                             Terms of Service
-                          </a>{' '}
+                          </Link>{' '}
                           and{' '}
-                          <a href="/privacy" className="text-orange-600 hover:underline">
+                          <Link to="/privacy" className="text-orange-600 hover:underline">
                             Privacy Policy
-                          </a>
+                          </Link>
                         </Label>
                       </div>
 
