@@ -495,6 +495,9 @@ const Subscription = () => {
         };
         await supabase.from('user_subscriptions').upsert(payload, { onConflict: 'user_id' });
         await refreshSubscription();
+        // animate selected plan to indicate success
+        setAnimatingPlan(plan.id);
+        setTimeout(() => setAnimatingPlan(null), 1200);
         toast.success(`Subscribed to ${plan.name} successfully`);
         navigate('/dashboard/subscription/manage');
       } catch (err) {
