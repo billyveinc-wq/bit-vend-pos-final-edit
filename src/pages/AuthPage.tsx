@@ -367,7 +367,7 @@ const AuthPage = () => {
             const { count } = await supabase.from('company_users').select('id', { count: 'exact', head: true }).eq('company_id', companyId);
             const isFirst = (count || 0) === 0;
             // Set company_users role accordingly
-            await supabase.from('company_users').upsert({ company_id: companyId, user_id: newUserId, role: isFirst ? 'owner' : 'member' });
+            await supabase.from('company_users').upsert({ company_id: companyId, user_id: newUserId, role: isFirst ? 'owner' : 'member' }, { onConflict: 'company_id,user_id' });
             await supabase.from('system_users').update({ company_id: companyId }).eq('id', newUserId);
             if (isFirst) {
               // Ensure an 'admin' role exists and assign it to the first user
