@@ -411,24 +411,8 @@ const AuthPage = () => {
       // Clear the selected plan from localStorage to prevent future login redirects
       try { localStorage.removeItem('selected-plan'); } catch {}
 
-      if (!selectedPlanNav) {
-        toast.success('Account created! 14-day trial activated.');
-        if (createdCompanyId) {
-          navigate(`/dashboard/settings?section=business&subsection=business-info&edit=${createdCompanyId}`);
-        } else {
-          navigate('/dashboard/settings?section=business&subsection=business-info');
-        }
-      } else if (selectedPlanNav !== 'starter') {
-        toast.success('Account created! Continue to set up billing.');
-        navigate(`/dashboard/subscription?startCheckout=1&plan=${selectedPlanNav}`);
-      } else {
-        toast.success('Account created! 14-day trial activated.');
-        if (createdCompanyId) {
-          navigate(`/dashboard/settings?section=business&subsection=business-info&edit=${createdCompanyId}`);
-        } else {
-          navigate('/dashboard/settings?section=business&subsection=business-info');
-        }
-      }
+      toast.success('Account created! Please sign in to continue.');
+      navigate('/auth?mode=signin');
     } catch (error) {
       console.error('Sign up error:', error);
       toast.error('An unexpected error occurred. Please try again.');
