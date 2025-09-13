@@ -38,14 +38,11 @@ export const useCompany = () => {
 
         // 3) Attach to first company or create a new one
         try {
-          const { data: firstCompany } = await supabase.from('companies').select('id, name').order('id').limit(1).maybeSingle();
-          let cid = firstCompany?.id as number | undefined;
-          if (!cid) {
-            const meta = (su as any)?.user_metadata || {};
-            const fallbackName = meta.company_name || (user.email ? user.email.split('@')[0] + "'s Company" : 'My Company');
-            const { data: created } = await supabase.from('companies').insert({ name: fallbackName }).select('id').single();
-            cid = created?.id;
-          }
+          // Create a brand-new company for this user if none is linked
+          const meta = (su as any)?.user_metadata || {};
+          const fallbackName = meta.company_name || (user.email ? user.email.split('@')[0] + "'s Company" : 'My Company');
+          const { data: created } = await supabase.from('companies').insert({ name: fallbackName }).select('id').single();
+          const cid = created?.id as number | undefined;
           if (cid) {
             const { count } = await supabase.from('company_users').select('id', { count: 'exact', head: true }).eq('company_id', cid);
             const isFirst = (count || 0) === 0;
