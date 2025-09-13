@@ -398,7 +398,7 @@ const Subscription = () => {
   };
 
   return (
-    <div className="space-y-8 p-6 animate-fadeInUp">
+    <div className="space-y-8 p-6 animate-fade">
       {/* Header */}
       <div className="space-y-2 animate-slideInLeft">
         <h1 className="text-3xl font-bold text-foreground">Subscription Plans</h1>
