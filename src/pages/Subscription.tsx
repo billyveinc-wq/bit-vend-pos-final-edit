@@ -108,6 +108,12 @@ const Subscription = () => {
   const navigate = useNavigate();
   const { subscription, refreshSubscription } = useSubscription();
   const [selectedPlan, setSelectedPlan] = useState<string>('standard');
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const select = searchParams.get('select');
+    if (select) setSelectedPlan(select);
+  }, [searchParams]);
   const [selectedPayment, setSelectedPayment] = useState<string>('card');
   const [currentPlan, setCurrentPlan] = useState<string>('starter');
   const [showCvv, setShowCvv] = useState<boolean>(false);
