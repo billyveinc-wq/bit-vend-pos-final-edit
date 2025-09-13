@@ -228,6 +228,7 @@ const Settings = () => {
     // Plan restriction: Starter can only have 1 business
     if (!editId && businesses.length >= 1 && !canUseFeature('multi_branch_support')) {
       // show upgrade modal instead of a simple toast
+      setPendingFeature('multi_branch_support');
       setShowUpgradeModal(true);
       return;
     }
