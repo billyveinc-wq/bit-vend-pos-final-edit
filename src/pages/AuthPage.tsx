@@ -279,20 +279,6 @@ const AuthPage = () => {
       try {
         if (signUpData?.user) {
           await supabase.from('system_users').upsert({ id: signUpData.user.id, email, user_metadata: { full_name: fullName, company_name: companyName, phone }, created_at: new Date().toISOString() });
-          // If this is the very first registered user in the system, grant 'admin' role
-          const { count: usersCount } = await supabase.from('system_users').select('id', { count: 'exact', head: true });
-          if ((usersCount || 0) === 1) {
-            const { data: adminRole } = await supabase.from('roles').select('id').eq('name', 'admin').maybeSingle();
-            let roleId = adminRole?.id as number | undefined;
-            if (!roleId) {
-              const { data: createdRole } = await supabase.from('roles').insert({ name: 'admin', description: 'Administrator' }).select('id').single();
-              roleId = createdRole?.id;
-            }
-            if (roleId) {
-              const { data: existingUR } = await supabase.from('user_roles').select('user_id, role_id').eq('user_id', signUpData.user.id).eq('role_id', roleId).maybeSingle();
-              if (!existingUR) await supabase.from('user_roles').insert({ user_id: signUpData.user.id, role_id: roleId });
-            }
-          }
         }
       } catch (err) {
         console.warn('Failed to upsert new user into system_users', err);
