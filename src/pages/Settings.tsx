@@ -750,9 +750,9 @@ const Settings = () => {
               <Button variant="outline" onClick={handleCancelEdit}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveBusiness} className="bg-save hover:bg-save-hover text-save-foreground">
+              <Button onClick={handleSaveBusiness} disabled={isSavingBusiness} className="bg-save hover:bg-save-hover text-save-foreground">
                 <Save className="h-4 w-4 mr-2" />
-                Save Business
+                {isSavingBusiness ? 'Saving...' : 'Save Business'}
               </Button>
             </div>
           </CardContent>
