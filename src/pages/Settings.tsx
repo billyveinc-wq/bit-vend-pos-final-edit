@@ -285,16 +285,60 @@ const Settings = () => {
     setIsEditingBusiness(false);
   };
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setBusinessForm(prev => ({ ...prev, logoUrl: result }));
+    if (!file) return;
+
+    // Try to upload to Supabase storage and use public URL for persistence
+    try {
+      const mod = await import('@/integrations/supabase/client');
+      const client = mod.supabase;
+
+      // Determine folder path: prefer editing business id, fallback to timestamped temp
+      const folder = editId || (currentBusiness ? currentBusiness.id : `temp-${Date.now()}`);
+      const filePath = `${folder}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+
+      // Upload; ensure bucket name 'company-logos' exists in your Supabase project
+      const { data: uploadData, error: uploadError } = await client.storage.from('company-logos').upload(filePath, file, { cacheControl: '3600', upsert: true });
+      if (uploadError || !uploadData) {
+        // Fallback to data URL preview if storage upload fails
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          setBusinessForm(prev => ({ ...prev, logoUrl: result }));
+          showUploadToast();
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      // Get public URL
+      const { data: publicData } = client.storage.from('company-logos').getPublicUrl(filePath);
+      const publicUrl = (publicData && (publicData as any).publicUrl) || (publicData as any)?.publicURL || null;
+      if (publicUrl) {
+        setBusinessForm(prev => ({ ...prev, logoUrl: publicUrl }));
         showUploadToast();
-      };
-      reader.readAsDataURL(file);
+      } else {
+        // fallback to data URL
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          setBusinessForm(prev => ({ ...prev, logoUrl: result }));
+          showUploadToast();
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      // If anything fails, show preview using data URL
+      try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          setBusinessForm(prev => ({ ...prev, logoUrl: result }));
+          showUploadToast();
+        };
+        reader.readAsDataURL(file);
+      } catch (e) {}
     }
   };
 
