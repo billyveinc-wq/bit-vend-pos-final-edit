@@ -253,7 +253,7 @@ const Topbar: React.FC<TopbarProps> = ({
     <header className={cn(
       'pos-topbar transition-all duration-300',
       collapsed && 'collapsed',
-      'bg-transparent backdrop-blur-md border-border/50'
+      'bg-background/85 border-border/50'
     )}>
       <div className="flex items-center gap-4">
         <Button
