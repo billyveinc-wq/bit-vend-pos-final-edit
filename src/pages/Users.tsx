@@ -665,8 +665,7 @@ const Users = () => {
                     const planId = pendingFeature ? (featurePlanMap[pendingFeature] || 'standard') : 'standard';
                     setShowUpgradeModal(false);
                     setPendingFeature(null);
-                    setSearchParams({ select: planId });
-                    navigate('/dashboard/subscription');
+                    navigate(`/dashboard/subscription?select=${planId}`);
                   }}>Upgrade Plan</Button>
                 </div>
               </div>
