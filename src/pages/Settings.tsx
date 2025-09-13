@@ -50,7 +50,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 const Settings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { businesses, currentBusiness, addBusiness, updateBusiness, deleteBusiness } = useBusiness();
+  const { businesses, currentBusiness, isLoaded, addBusiness, updateBusiness, deleteBusiness, refreshBusinesses } = useBusiness();
   const { subscription, canUseFeature } = useSubscription();
   const { isAdmin } = useAdminAuth();
   
