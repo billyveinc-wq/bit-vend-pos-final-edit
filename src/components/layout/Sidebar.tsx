@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useBusiness } from '@/contexts/BusinessContext';
 import {
   BarChart3,
   Shield,
@@ -58,7 +57,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin } = useAdminAuth();
-  const { currentBusiness } = useBusiness();
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
   const [canManagePayments, setCanManagePayments] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -259,13 +257,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         {!collapsed && (
           <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-90 transition-colors">
             <span className="text-xl flex items-center">
-              {currentBusiness && currentBusiness.logoUrl ? (
-                <img src={currentBusiness.logoUrl} alt={currentBusiness.businessName || 'Business logo'} className="w-10 h-10 rounded-md object-cover mr-2 border" />
-              ) : (
-                <span className="inline-block logo-gradient animate-gradient-fast logo-glow">
-                  Bit Vend
-                </span>
-              )}
+              <span className="inline-block logo-gradient animate-gradient-fast logo-glow">
+                Bit Vend
+              </span>
               <span className="inline-block ml-1 text-white">
                 POS
               </span>
@@ -279,13 +273,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         >
           {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
-        {collapsed && (
-          <div className="absolute left-4 top-6">
-            {currentBusiness && currentBusiness.logoUrl ? (
-              <img src={currentBusiness.logoUrl} alt={currentBusiness.businessName || 'Business logo'} className="w-8 h-8 rounded-md object-cover border" />
-            ) : null}
-          </div>
-        )}
       </div>
 
       {/* Navigation */}
