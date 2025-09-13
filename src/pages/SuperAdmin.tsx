@@ -881,6 +881,67 @@ const SuperAdmin = () => {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Releases dialog */}
+          <Dialog open={releaseDialogOpen} onOpenChange={setReleaseDialogOpen}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Create & Publish App Release</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input value={releaseDraft.title} onChange={(e) => setReleaseDraft(prev => ({ ...prev, title: e.target.value }))} placeholder="Release title" />
+                </div>
+                <div>
+                  <Label>Notes (preview)</Label>
+                  <Textarea value={releaseDraft.notes} onChange={(e) => setReleaseDraft(prev => ({ ...prev, notes: e.target.value }))} placeholder="Release notes will be generated" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button onClick={async () => {
+                    try {
+                      const [pRes, payRes, plansRes] = await Promise.all([
+                        supabase.from('promo_codes').select('id').order('created_at', { ascending: false }).limit(5),
+                        supabase.from('payment_transactions').select('id').order('created_at', { ascending: false }).limit(5),
+                        supabase.from('subscription_plans').select('id')
+                      ]);
+                      const parts: string[] = [];
+                      if (pRes.data && pRes.data.length) parts.push(`${pRes.data.length} recent promo codes created`);
+                      if (payRes.data && payRes.data.length) parts.push(`${payRes.data.length} recent payment transactions`);
+                      parts.push(`${Array.isArray((plansRes as any).data) ? (plansRes as any).data.length : 0} available subscription plans`);
+                      const generated = `<p>Auto-generated release preview:</p><ul>${parts.map(p => `<li>${p}</li>`).join('')}</ul>`;
+                      setReleaseDraft({ title: `Release ${new Date().toISOString()}`, notes: generated });
+                    } catch (e) {
+                      setReleaseDraft({ title: `Release ${new Date().toISOString()}`, notes: '<p>Could not generate preview</p>' });
+                    }
+                  }}>Generate Preview</Button>
+                  <Button onClick={async () => {
+                    try {
+                      const release = { id: `r_${Date.now()}`, title: releaseDraft.title || `Release ${new Date().toISOString()}`, notes: releaseDraft.notes || '', published_at: new Date().toISOString() };
+                      const { data } = await supabase.from('app_settings').select('id, value').is('company_id', null).eq('key', 'published_releases').maybeSingle();
+                      if (data && data.id) {
+                        const arr = Array.isArray(data.value) ? data.value : [];
+                        arr.push(release);
+                        const { error } = await supabase.from('app_settings').update({ value: arr }).eq('id', data.id);
+                        if (error) throw error;
+                      } else {
+                        const { error } = await supabase.from('app_settings').insert({ company_id: null, key: 'published_releases', value: [release] });
+                        if (error) throw error;
+                      }
+                      const { data: refreshed } = await supabase.from('app_settings').select('value').is('company_id', null).eq('key', 'published_releases').maybeSingle();
+                      const val = (refreshed as any)?.value || [];
+                      setPublishedReleases(Array.isArray(val) ? val.reverse() : []);
+                      toast.success('Release published');
+                      setReleaseDialogOpen(false);
+                    } catch (e) {
+                      console.error('Publish failed', e);
+                      toast.error('Failed to publish release');
+                    }
+                  }} className="bg-primary text-primary-foreground">Publish</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
