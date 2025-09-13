@@ -34,10 +34,9 @@ const adminAuth = (req, res, next) => {
 // ===== Admin endpoints =====
 const adminRouter = express.Router();
 
-// Endpoint for users to request deletion of their own account (soft delete by default).
-// This endpoint accepts Authorization: Bearer <access_token> and verifies the token, then
-// checks whether the requester is the first user (is_first_user) and performs a soft delete.
-adminRouter.post('/self-delete', async (req, res) => {
+// Public endpoint for users to request deletion of their own account (soft delete by default).
+// This route verifies the provided bearer token and uses the service role client to perform a safe soft delete.
+app.post('/self-delete', async (req, res) => {
   try {
     const authHeader = req.headers['authorization'] || req.headers['Authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing bearer token' });
