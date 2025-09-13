@@ -120,6 +120,42 @@ const Subscription = () => {
   const [showCvv, setShowCvv] = useState<boolean>(false);
   const [plans, setPlans] = useState<typeof subscriptionPlans>(subscriptionPlans);
   const [promoDetails, setPromoDetails] = useState<{code: string, percent: number, expired: boolean} | null>(null);
+  const [nextBillingDate, setNextBillingDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const computeNextBilling = async () => {
+      try {
+        // If user has a subscription with expires_at, use it
+        if (subscription && (subscription as any).expires_at) {
+          setNextBillingDate(new Date((subscription as any).expires_at));
+          return;
+        }
+        // If subscription has started_at and no expires_at, assume trial of 14 days from started_at
+        if (subscription && (subscription as any).started_at) {
+          const start = new Date((subscription as any).started_at);
+          start.setDate(start.getDate() + 14);
+          setNextBillingDate(start);
+          return;
+        }
+        // Otherwise, fallback to user account creation date + 14 days
+        const { data: { session } } = await safeGetSession();
+        const uid = session?.session?.user?.id;
+        if (!uid) { setNextBillingDate(null); return; }
+        const { data } = await supabase.from('system_users').select('created_at').eq('id', uid).maybeSingle();
+        const createdAt = (data as any)?.created_at;
+        if (createdAt) {
+          const d = new Date(createdAt);
+          d.setDate(d.getDate() + 14);
+          setNextBillingDate(d);
+        } else {
+          setNextBillingDate(null);
+        }
+      } catch (e) {
+        setNextBillingDate(null);
+      }
+    };
+    computeNextBilling();
+  }, [subscription]);
 
   useEffect(() => {
     setCurrentPlan(subscription?.plan_id || 'starter');
