@@ -395,6 +395,13 @@ const Settings = () => {
             try {
               const ok = await updateBusiness(targetId, { logoUrl: result });
               try { await refreshBusinesses(); } catch {}
+              try {
+                const mod2 = await import('@/integrations/supabase/client');
+                const cidNum = parseInt(String(targetId));
+                if (!Number.isNaN(cidNum)) {
+                  await mod2.supabase.from('app_settings').upsert({ company_id: null, key: 'default_company_id', value: cidNum }, { onConflict: 'company_id,key' });
+                }
+              } catch {}
               if (!ok) toast.error('Uploaded image preview set but failed to persist to the company record. Please click "Save Business" to retry.');
             } catch (e) { console.warn('Failed to persist data URL logo to company record', e); }
           }
@@ -414,6 +421,13 @@ const Settings = () => {
             try {
               const ok = await updateBusiness(targetId, { logoUrl: result });
               try { await refreshBusinesses(); } catch {}
+              try {
+                const mod2 = await import('@/integrations/supabase/client');
+                const cidNum = parseInt(String(targetId));
+                if (!Number.isNaN(cidNum)) {
+                  await mod2.supabase.from('app_settings').upsert({ company_id: null, key: 'default_company_id', value: cidNum }, { onConflict: 'company_id,key' });
+                }
+              } catch {}
               if (!ok) toast.error('Uploaded image preview set but failed to persist to the company record. Please click "Save Business" to retry.');
             } catch (e) { console.warn('Failed to persist fallback logo', e); }
           }
