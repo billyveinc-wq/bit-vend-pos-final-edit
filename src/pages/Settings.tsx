@@ -232,46 +232,30 @@ const Settings = () => {
       operatingHours
     };
 
-    // Persist to local context for UI responsiveness
-    if (editId) {
-      updateBusiness(editId, businessData);
-    } else {
-      addBusiness(businessData);
-    }
-
-    // Persist to Supabase companies (with extended columns)
     try {
-      const mod = await import('@/integrations/supabase/client');
-      const { data: existing } = await mod.supabase.from('companies').select('id').order('id').limit(1).maybeSingle();
-      const payload: any = {
-        name: businessForm.businessName,
-        plan_id: null,
-        business_type: businessForm.businessType || null,
-        tax_id: businessForm.taxId || null,
-        business_license: businessForm.businessLicense || null,
-        phone: businessForm.phone || null,
-        email: businessForm.email || null,
-        logo_url: businessForm.logoUrl || null,
-        address: businessForm.address || null,
-        city: businessForm.city || null,
-        state: businessForm.state || null,
-        postal_code: businessForm.postalCode || null,
-        country: businessForm.country || null,
-      };
-      if (existing?.id) {
-        await mod.supabase.from('companies').update(payload).eq('id', existing.id);
+      if (editId) {
+        await updateBusiness(editId, businessData);
       } else {
-        await mod.supabase.from('companies').insert(payload);
+        await addBusiness(businessData);
       }
       toast.success('Business saved');
-    } catch (e) {
-      // Non-blocking: DB may be unavailable
+    } catch (error) {
+      console.error('Failed to save business:', error);
+      toast.error('Failed to save business. Please try again.');
+      return;
     }
 
     // Navigate back to business list
     setSearchParams({ section: 'business', subsection: 'business-info' });
     setIsEditingBusiness(false);
   };
+
+  // Refresh businesses when component mounts or auth changes
+  useEffect(() => {
+    if (isLoaded) {
+      refreshBusinesses();
+    }
+  }, [isLoaded]);
 
   const handleDeleteBusiness = () => {
     if (!editId) return;
