@@ -358,7 +358,17 @@ const Users = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
-        // Remove related public data
+        // Try calling admin server to remove auth user and DB cleanup when available
+        try {
+          await immediateDeleteUserAccount(id);
+          setUsers(prev => prev.filter(user => user.id !== id));
+          toast.success('User deleted successfully (auth + DB).');
+          return;
+        } catch (adminErr) {
+          console.warn('Admin deletion unavailable or failed, falling back to DB-only delete', adminErr);
+        }
+
+        // Fallback: Remove related public data via Supabase
         await supabase.from('user_subscriptions').delete().eq('user_id', id);
         await supabase.from('user_promotions').delete().eq('user_id', id);
         await supabase.from('company_users').delete().eq('user_id', id);
@@ -368,6 +378,7 @@ const Users = () => {
         setUsers(prev => prev.filter(user => user.id !== id));
         toast.success('User deleted successfully!');
       } catch (e) {
+        console.error('Failed to delete user', e);
         toast.error('Failed to delete user');
       }
     }
