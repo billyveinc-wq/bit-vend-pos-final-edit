@@ -133,6 +133,8 @@ const Topbar: React.FC<TopbarProps> = ({
   const [releases, setReleases] = useState<any[]>([]);
   const [previewRelease, setPreviewRelease] = useState<any | null>(null);
   const [showReleaseDialog, setShowReleaseDialog] = useState(false);
+  const [notiOpen, setNotiOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const fontMap: Record<typeof fontFamilyKey, string> = {
     sans: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif',
     serif: 'Times New Roman, Times, Georgia, serif',
