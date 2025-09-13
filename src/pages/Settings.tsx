@@ -365,8 +365,11 @@ const Settings = () => {
         const targetId = editId || (currentBusiness ? currentBusiness.id : undefined);
         if (targetId) {
           try {
-            await updateBusiness(targetId, { logoUrl: publicUrl });
+            const ok = await updateBusiness(targetId, { logoUrl: publicUrl });
             try { await refreshBusinesses(); } catch {}
+            if (!ok) {
+              toast.error('Uploaded image preview set but failed to persist to the company record. Please click "Save Business" to retry.');
+            }
           } catch (e) { console.warn('Failed to persist logo to company record', e); }
         }
 
