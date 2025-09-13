@@ -601,6 +601,11 @@ const SuperAdmin = () => {
     loadRegistrations();
   }, []);
 
+  // Load deleted accounts on mount
+  useEffect(() => {
+    loadDeletedAccounts();
+  }, []);
+
   const generatePromoCode = async () => {
     for (let i = 0; i < 5; i++) {
       const num = Math.floor(Math.random() * 10000);
