@@ -19,6 +19,8 @@ export function sanitizeCompanyName(input?: string | null) {
   s = s.replace(/\bcompany\b\s*$/i, '').trim();
   // remove trailing possessive if exists
   s = s.replace(/('s|’s)\s*$/i, '').trim();
+  // remove trailing 'pos' if still present (e.g., 'aviatrixpos')
+  s = s.replace(/pos\s*$/i, '').trim();
   // collapse multiple spaces again
   s = s.replace(/\s+/g, ' ');
   // Title-case each word
