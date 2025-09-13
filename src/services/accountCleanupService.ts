@@ -6,6 +6,21 @@
 const ADMIN_SERVER_URL = import.meta.env.VITE_ADMIN_SERVER_URL || 'http://localhost:8787';
 const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY || 'change-me';
 
+/**
+ * Checks if the admin server is available
+ */
+export async function checkAdminServerHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${ADMIN_SERVER_URL}/admin/list-users`, {
+      method: 'GET',
+      headers: { 'x-admin-key': ADMIN_API_KEY },
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
 export interface CleanupResult {
   ok: boolean;
   database_cleanup_count: number;
