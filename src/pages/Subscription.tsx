@@ -529,20 +529,20 @@ const Subscription = () => {
         <p className="text-muted-foreground">Choose the perfect plan for your business needs</p>
       </div>
 
-      {/* Trial banner */}
-      {isOnTrial && trialExpiresAt && (
-        <Card className="border-2 border-primary animate-slideInLeft" style={{ animationDelay: '0.05s' }}>
+      {/* Trial banner: show when we have an expiry timestamp and not expired */}
+      {(expiryMs && !trialExpired) && (
+        <Card className="animate-slideInLeft bg-muted/5" style={{ animationDelay: '0.05s' }}>
           <CardContent>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <div className="text-sm text-muted-foreground">Free trial active</div>
-                <div className="text-lg font-semibold">Trial ends on {format(trialExpiresAt, 'MMM dd, yyyy HH:mm')}</div>
+                <div className="text-lg font-semibold">Trial ends on {trialExpiresAt ? format(trialExpiresAt, 'MMM dd, yyyy HH:mm') : ''}</div>
                 <div className="text-sm mt-1">
-                  <span className="font-mono"><Countdown expiryMs={expiryMs} /></span>
+                  <span className="font-mono text-sm"><Countdown expiryMs={expiryMs} /></span>
                 </div>
               </div>
-              <div>
-                <Button onClick={() => navigate('/dashboard/subscription')}>Manage Subscription</Button>
+              <div className="flex-shrink-0">
+                <Button className="whitespace-nowrap min-w-[140px]" onClick={() => navigate('/dashboard/subscription')}>Manage Subscription</Button>
               </div>
             </div>
           </CardContent>
