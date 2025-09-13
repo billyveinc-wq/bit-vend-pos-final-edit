@@ -313,13 +313,14 @@ const Settings = () => {
       }
 
       // Get public URL
-      const { data: publicData } = client.storage.from('company-logos').getPublicUrl(filePath);
-      const publicUrl = (publicData && (publicData as any).publicUrl) || (publicData as any)?.publicURL || null;
+      const { data: publicData, error: publicError } = client.storage.from('company-logos').getPublicUrl(filePath);
+      const publicUrl = publicData ? (publicData as any).publicURL || (publicData as any).publicUrl : null;
+      if (publicError) console.warn('Failed to get public URL', publicError);
       if (publicUrl) {
         setBusinessForm(prev => ({ ...prev, logoUrl: publicUrl }));
         showUploadToast();
       } else {
-        // fallback to data URL
+        // fallback to data URL preview if public URL not available
         const reader = new FileReader();
         reader.onload = (e) => {
           const result = e.target?.result as string;
