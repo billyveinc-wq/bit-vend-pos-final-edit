@@ -40,7 +40,10 @@ export const useCompany = () => {
         try {
           // Create a brand-new company for this user if none is linked
           const meta = (su as any)?.user_metadata || {};
-          const fallbackName = meta.company_name || (user.email ? user.email.split('@')[0] + "'s Company" : 'My Company');
+          const { sanitizeCompanyName } = await import('@/lib/utils');
+          const emailBase = user.email ? user.email.split('@')[0] : '';
+          const raw = meta.company_name || emailBase || 'My Company';
+          const fallbackName = sanitizeCompanyName(raw) || 'My Company';
           // avoid creating duplicates: try to find existing company with same name (case-insensitive)
           let cid: number | undefined;
           try {
