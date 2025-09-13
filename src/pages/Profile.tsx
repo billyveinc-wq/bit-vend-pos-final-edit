@@ -84,6 +84,35 @@ const Profile: React.FC = () => {
     load();
   }, []);
 
+  // Handlers for deletion
+  const handleSoftDelete = async () => {
+    try {
+      const { data: s } = await safeGetSession();
+      const token = s?.session?.access_token;
+      if (!token) { toast.error('Not authenticated'); return; }
+      const res = await fetch('/admin/self-delete', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ immediate: false }) });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json?.error || 'Failed to request deletion'); return; }
+      toast.success('Account scheduled for deletion (30 days)');
+      setDeleteOpen(false);
+    } catch (e: any) { console.error(e); toast.error('Failed to request deletion'); }
+  };
+
+  const handleHardDelete = async () => {
+    try {
+      const { data: s } = await safeGetSession();
+      const token = s?.session?.access_token;
+      if (!token) { toast.error('Not authenticated'); return; }
+      const res = await fetch('/admin/self-delete', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ immediate: true }) });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json?.error || 'Failed to delete'); return; }
+      toast.success('Account deleted');
+      // Sign out client and redirect
+      try { await supabase.auth.signOut(); } catch {}
+      window.location.href = '/';
+    } catch (e: any) { console.error(e); toast.error('Failed to delete'); }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
