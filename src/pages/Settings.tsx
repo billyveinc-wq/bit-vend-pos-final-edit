@@ -553,6 +553,34 @@ const Settings = () => {
                     onChange={handleLogoUpload}
                     className="mb-2 h-auto w-auto max-w-xs text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-secondary file:text-secondary-foreground"
                   />
+                  {isAdmin && (currentBusiness || editId) && (
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm" onClick={async () => {
+                        const cid = editId || (currentBusiness ? currentBusiness.id : undefined);
+                        if (!cid) { toast.error('No company selected'); return; }
+                        if (!confirm('Link all system users to this company? This will add company membership for all system users.')) return;
+                        try {
+                          const { supabase: client } = await import('@/integrations/supabase/client');
+                          // fetch all system users
+                          const { data: users } = await client.from('system_users').select('id').not('id', 'is', null);
+                          if (!users || users.length === 0) { toast('No users found'); return; }
+                          // upsert company_users for each
+                          for (const u of users) {
+                            try {
+                              await client.from('company_users').upsert({ company_id: parseInt(cid), user_id: u.id, role: 'member' }, { onConflict: 'company_id,user_id' });
+                              // also set system_users.company_id if empty
+                              await client.from('system_users').update({ company_id: parseInt(cid) }).eq('id', u.id).is('company_id', null);
+                            } catch (e) {}
+                          }
+                          await refreshBusinesses();
+                          toast.success('All users linked to company');
+                        } catch (e) {
+                          console.error(e);
+                          toast.error('Failed to link users');
+                        }
+                      }}>Link all users to this company</Button>
+                    </div>
+                  )}
                   {businessForm.logoUrl && (
                     <Button
                       type="button"
