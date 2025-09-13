@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import { safeGetSession } from '@/integrations/supabase/safeAuth';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface User {
   id: string;
@@ -118,6 +119,7 @@ const Users = () => {
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserPlan, setCurrentUserPlan] = useState<string | null>(null);
+  const { isAdmin } = useAdminAuth();
 
   // Ensure form defaults to current company when available
   useEffect(() => {
@@ -170,29 +172,32 @@ const Users = () => {
           const { data: subData } = await supabase.from('user_subscriptions').select('plan_id, status').eq('user_id', uid).eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle();
           setCurrentUserPlan((subData as any)?.plan_id || null);
         } catch (e) { console.warn('Failed to load user subscription', e); }
-        // fetch companies owned/linked to the current admin user for selection (deduped)
+        // fetch companies for selection
         try {
-          const map = new Map<string,string>();
-          // companies admin is linked to
-          const { data: comps } = await supabase.from('company_users').select('company_id, companies (id, name, created_at)').eq('user_id', uid);
-          if (comps && Array.isArray(comps)) {
-            (comps as any[]).forEach((row) => {
-              const comp = row.companies;
-              if (comp && comp.id) map.set(String(comp.id), comp.name || '');
-            });
-          }
-          // companies created by admin
-          try {
-            const { data: created } = await supabase.from('companies').select('id, name').eq('created_by', uid);
-            if (created && Array.isArray(created)) {
-              (created as any[]).forEach((c) => {
-                if (c && c.id) map.set(String(c.id), c.name || '');
+          if (isAdmin) {
+            const { data: allComps } = await supabase.from('companies').select('id, name').order('created_at');
+            const list = (allComps || []).map((c: any) => ({ id: String(c.id), name: c.name || '' }));
+            setCompanies(list);
+          } else {
+            const map = new Map<string,string>();
+            const { data: comps } = await supabase.from('company_users').select('company_id, companies (id, name, created_at)').eq('user_id', uid);
+            if (comps && Array.isArray(comps)) {
+              (comps as any[]).forEach((row) => {
+                const comp = row.companies;
+                if (comp && comp.id) map.set(String(comp.id), comp.name || '');
               });
             }
-          } catch (innerErr) { console.warn('Failed to fetch created companies', innerErr); }
-
-          const list = Array.from(map.entries()).map(([id,name]) => ({ id, name }));
-          setCompanies(list);
+            try {
+              const { data: created } = await supabase.from('companies').select('id, name').eq('created_by', uid);
+              if (created && Array.isArray(created)) {
+                (created as any[]).forEach((c) => {
+                  if (c && c.id) map.set(String(c.id), c.name || '');
+                });
+              }
+            } catch (innerErr) { console.warn('Failed to fetch created companies', innerErr); }
+            const list = Array.from(map.entries()).map(([id,name]) => ({ id, name }));
+            setCompanies(list);
+          }
         } catch (e) {
           console.warn('Failed to fetch companies for admin', e);
         }
@@ -220,7 +225,7 @@ const Users = () => {
       }
     };
     load();
-  }, []);
+  }, [isAdmin]);
 
   const roles = [
     { id: 'admin', name: 'Administrator', permissions: ['all'] },
