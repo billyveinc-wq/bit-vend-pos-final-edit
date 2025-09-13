@@ -94,9 +94,14 @@ const SuperAdmin = () => {
   const [systemUsers] = useState<SystemUser[]>([]);
 
   // Tabs and registrations state
-  const [activeTab, setActiveTab] = useState<'promo' | 'registrations' | 'system'>('promo');
+  const [activeTab, setActiveTab] = useState<'promo' | 'registrations' | 'system' | 'deleted'>('promo');
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+
+  // Deleted accounts state
+  const [deletedAccounts, setDeletedAccounts] = useState<any[]>([]);
+  const [loadingDeletedAccounts, setLoadingDeletedAccounts] = useState(false);
+  const [cleanupRunning, setCleanupRunning] = useState(false);
 
   const [systemUsersList, setSystemUsersList] = useState<any[]>([]);
   const [loadingSystemUsers, setLoadingSystemUsers] = useState(false);
