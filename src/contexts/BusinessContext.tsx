@@ -50,26 +50,141 @@ const defaultBusiness: Business | null = null;
 export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [currentBusiness, setCurrentBusinessState] = useState<Business | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
+  // Load companies from Supabase and localStorage
   useEffect(() => {
-    const savedBusinesses = localStorage.getItem('pos-businesses');
-    const savedCurrentId = localStorage.getItem('pos-current-business-id');
-    
-    if (savedBusinesses) {
+    const loadBusinesses = async () => {
+      let loadedBusinesses: Business[] = [];
+
+      // First try to load from Supabase
       try {
-        const parsed = JSON.parse(savedBusinesses);
-        setBusinesses(parsed);
-        if (savedCurrentId) {
-          const current = parsed.find((b: Business) => b.id === savedCurrentId);
-          setCurrentBusinessState(current || null);
-        } else {
-          setCurrentBusinessState(null);
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { safeGetSession } = await import('@/integrations/supabase/safeAuth');
+
+        const { data: session } = await safeGetSession();
+        const user = session?.session?.user;
+
+        if (user) {
+          // Get user's companies from company_users table
+          const { data: userCompanies } = await supabase
+            .from('company_users')
+            .select(`
+              company_id,
+              role,
+              companies (
+                id,
+                name,
+                business_type,
+                tax_id,
+                business_license,
+                phone,
+                email,
+                logo_url,
+                address,
+                city,
+                state,
+                postal_code,
+                country,
+                created_at
+              )
+            `)
+            .eq('user_id', user.id);
+
+          if (userCompanies && userCompanies.length > 0) {
+            loadedBusinesses = userCompanies
+              .filter(uc => uc.companies)
+              .map(uc => {
+                const company = uc.companies as any;
+                return {
+                  id: String(company.id),
+                  businessName: company.name || '',
+                  businessType: company.business_type || 'retail',
+                  taxId: company.tax_id || '',
+                  businessLicense: company.business_license || '',
+                  phone: company.phone || '',
+                  email: company.email || '',
+                  logoUrl: company.logo_url || '',
+                  address: company.address || '',
+                  city: company.city || '',
+                  state: company.state || '',
+                  postalCode: company.postal_code || '',
+                  country: company.country || 'US',
+                  operatingHours: defaultOperatingHours,
+                  createdAt: company.created_at || new Date().toISOString(),
+                } as Business;
+              });
+          }
+
+          // If no companies found, check if user has a company_id in system_users
+          if (loadedBusinesses.length === 0) {
+            const { data: systemUser } = await supabase
+              .from('system_users')
+              .select('company_id')
+              .eq('id', user.id)
+              .maybeSingle();
+
+            if (systemUser?.company_id) {
+              const { data: company } = await supabase
+                .from('companies')
+                .select('*')
+                .eq('id', systemUser.company_id)
+                .maybeSingle();
+
+              if (company) {
+                loadedBusinesses = [{
+                  id: String(company.id),
+                  businessName: company.name || '',
+                  businessType: company.business_type || 'retail',
+                  taxId: company.tax_id || '',
+                  businessLicense: company.business_license || '',
+                  phone: company.phone || '',
+                  email: company.email || '',
+                  logoUrl: company.logo_url || '',
+                  address: company.address || '',
+                  city: company.city || '',
+                  state: company.state || '',
+                  postalCode: company.postal_code || '',
+                  country: company.country || 'US',
+                  operatingHours: defaultOperatingHours,
+                  createdAt: company.created_at || new Date().toISOString(),
+                }];
+              }
+            }
+          }
         }
       } catch (error) {
-        console.error('Error loading businesses from localStorage:', error);
+        console.warn('Failed to load companies from Supabase:', error);
       }
-    }
+
+      // Fallback to localStorage if no companies found in database
+      if (loadedBusinesses.length === 0) {
+        const savedBusinesses = localStorage.getItem('pos-businesses');
+        if (savedBusinesses) {
+          try {
+            loadedBusinesses = JSON.parse(savedBusinesses);
+          } catch (error) {
+            console.error('Error loading businesses from localStorage:', error);
+          }
+        }
+      }
+
+      setBusinesses(loadedBusinesses);
+
+      // Set current business
+      const savedCurrentId = localStorage.getItem('pos-current-business-id');
+      if (savedCurrentId) {
+        const current = loadedBusinesses.find((b: Business) => b.id === savedCurrentId);
+        setCurrentBusinessState(current || null);
+      } else if (loadedBusinesses.length > 0) {
+        // Auto-select first business if none selected
+        setCurrentBusinessState(loadedBusinesses[0]);
+      }
+
+      setIsLoaded(true);
+    };
+
+    loadBusinesses();
   }, []);
 
   // Save to localStorage when businesses change
