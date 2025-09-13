@@ -94,28 +94,30 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             .eq('user_id', user.id);
 
           if (userCompanies && userCompanies.length > 0) {
-            loadedBusinesses = userCompanies
-              .filter(uc => uc.companies)
-              .map(uc => {
-                const company = uc.companies as any;
-                return {
-                  id: String(company.id),
-                  businessName: company.name || '',
-                  businessType: company.business_type || 'retail',
-                  taxId: company.tax_id || '',
-                  businessLicense: company.business_license || '',
-                  phone: company.phone || '',
-                  email: company.email || '',
-                  logoUrl: company.logo_url || '',
-                  address: company.address || '',
-                  city: company.city || '',
-                  state: company.state || '',
-                  postalCode: company.postal_code || '',
-                  country: company.country || 'US',
-                  operatingHours: defaultOperatingHours,
-                  createdAt: company.created_at || new Date().toISOString(),
-                } as Business;
-              });
+            const byId = new Map<string, Business>();
+            for (const uc of userCompanies) {
+              if (!uc || !uc.companies) continue;
+              const company = uc.companies as any;
+              const b: Business = {
+                id: String(company.id),
+                businessName: company.name || '',
+                businessType: company.business_type || 'retail',
+                taxId: company.tax_id || '',
+                businessLicense: company.business_license || '',
+                phone: company.phone || '',
+                email: company.email || '',
+                logoUrl: company.logo_url || '',
+                address: company.address || '',
+                city: company.city || '',
+                state: company.state || '',
+                postalCode: company.postal_code || '',
+                country: company.country || 'US',
+                operatingHours: defaultOperatingHours,
+                createdAt: company.created_at || new Date().toISOString(),
+              };
+              byId.set(b.id, b);
+            }
+            loadedBusinesses = Array.from(byId.values());
           }
 
           // If no companies found, check if user has a company_id in system_users
@@ -240,7 +242,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             company_id: created.id,
             user_id: user.id,
             role: 'owner'
-          });
+          }, { onConflict: 'company_id,user_id' });
 
           // Update system_users
           await supabase.from('system_users').update({
@@ -341,28 +343,30 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .eq('user_id', user.id);
 
         if (userCompanies && userCompanies.length > 0) {
-          loadedBusinesses = userCompanies
-            .filter(uc => uc.companies)
-            .map(uc => {
-              const company = uc.companies as any;
-              return {
-                id: String(company.id),
-                businessName: company.name || '',
-                businessType: company.business_type || 'retail',
-                taxId: company.tax_id || '',
-                businessLicense: company.business_license || '',
-                phone: company.phone || '',
-                email: company.email || '',
-                logoUrl: company.logo_url || '',
-                address: company.address || '',
-                city: company.city || '',
-                state: company.state || '',
-                postalCode: company.postal_code || '',
-                country: company.country || 'US',
-                operatingHours: defaultOperatingHours,
-                createdAt: company.created_at || new Date().toISOString(),
-              } as Business;
-            });
+          const byId = new Map<string, Business>();
+          for (const uc of userCompanies) {
+            if (!uc || !uc.companies) continue;
+            const company = uc.companies as any;
+            const b: Business = {
+              id: String(company.id),
+              businessName: company.name || '',
+              businessType: company.business_type || 'retail',
+              taxId: company.tax_id || '',
+              businessLicense: company.business_license || '',
+              phone: company.phone || '',
+              email: company.email || '',
+              logoUrl: company.logo_url || '',
+              address: company.address || '',
+              city: company.city || '',
+              state: company.state || '',
+              postalCode: company.postal_code || '',
+              country: company.country || 'US',
+              operatingHours: defaultOperatingHours,
+              createdAt: company.created_at || new Date().toISOString(),
+            };
+            byId.set(b.id, b);
+          }
+          loadedBusinesses = Array.from(byId.values());
         }
 
         // If no companies found, check if user has a company_id in system_users
