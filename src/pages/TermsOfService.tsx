@@ -200,9 +200,14 @@ const TermsOfService = () => {
           </Card>
 
           {/* Prohibited Uses */}
-          <Card>
+          <Card className={`border-l-4 border-l-red-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-red-50/50 to-orange-50/50 dark:from-red-950/20 dark:to-orange-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '600ms'}}>
             <CardHeader>
-              <CardTitle>6. Prohibited Uses</CardTitle>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                6. Prohibited Uses
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>You may not use BitVend for:</p>
@@ -220,9 +225,14 @@ const TermsOfService = () => {
           </Card>
 
           {/* Limitation of Liability */}
-          <Card>
+          <Card className={`border-l-4 border-l-yellow-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-yellow-50/50 to-orange-50/50 dark:from-yellow-950/20 dark:to-orange-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '700ms'}}>
             <CardHeader>
-              <CardTitle>7. Limitation of Liability</CardTitle>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
+                  <Shield className="h-5 w-5" />
+                </div>
+                7. Limitation of Liability
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
@@ -238,9 +248,14 @@ const TermsOfService = () => {
           </Card>
 
           {/* Service Availability */}
-          <Card>
+          <Card className={`border-l-4 border-l-indigo-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-r from-indigo-50/50 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/20 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{animationDelay: '800ms'}}>
             <CardHeader>
-              <CardTitle>8. Service Availability and Modifications</CardTitle>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
+                  <Shield className="h-5 w-5" />
+                </div>
+                8. Service Availability and Modifications
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
