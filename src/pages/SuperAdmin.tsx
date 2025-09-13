@@ -34,6 +34,15 @@ import { Sentry } from '@/integrations/sentry';
 import { runUptimeCheckNow } from '@/monitoring/uptime';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { isAllowedAdminEmail } from '@/lib/admin';
+import {
+  softDeleteUserAccount,
+  restoreUserAccount,
+  getAccountDeletionStatus,
+  runAccountCleanup,
+  formatTimeRemaining,
+  canRestoreAccount,
+  type DeletionStatus
+} from '@/services/accountCleanupService';
 
 interface SystemUser {
   id: number;
