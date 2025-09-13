@@ -182,6 +182,34 @@ const Profile: React.FC = () => {
                 <Label className="text-xs text-muted-foreground">Bio</Label>
                 <div className="font-medium whitespace-pre-wrap">{form.bio || '-'}</div>
               </div>
+
+              {/* Self-delete section for first user */}
+              {isFirstUser && (
+                <div className="mt-6 border-t pt-4">
+                  <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Delete your account and all associated companies and users you created. This action is irreversible.</p>
+                  <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                    <div className="flex items-center gap-2">
+                      <Button variant="destructive" onClick={() => setDeleteOpen(true)}>Delete Account</Button>
+                    </div>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Confirm Account Deletion</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <p className="text-sm">Type <strong>DELETE</strong> to confirm permanent deletion of your account and all its data, or choose soft-delete to mark for removal in 30 days.</p>
+                        <Input placeholder="Type DELETE to confirm" value={confirmText} onChange={(e)=>setConfirmText(e.target.value)} />
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                          <Button variant="destructive" onClick={handleHardDelete} disabled={confirmText !== 'DELETE'}>Delete Now</Button>
+                          <Button onClick={handleSoftDelete}>Soft Delete (30 days)</Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
+
             </div>
           )}
         </CardContent>
