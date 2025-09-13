@@ -67,13 +67,6 @@ const Users = () => {
 
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
 
-  // Ensure form defaults to current company when available
-  useEffect(() => {
-    if (companyId && formData.companyId == null) {
-      setFormData(prev => ({ ...prev, companyId }));
-    }
-  }, [companyId]);
-
   const AVAILABLE_PAGES = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/dashboard/checkout', label: 'POS (Checkout)' },
