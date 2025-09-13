@@ -421,12 +421,23 @@ const Users = () => {
           <p className="text-muted-foreground">Manage system users and their access permissions</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2" onClick={() => resetForm()}>
+            <div>
+            <Button className="gap-2" onClick={() => {
+              // Enforce plan limits: starter/trial only allow 1 user
+              const allowed = canUseFeature('multi_user_accounts', false);
+              if (!allowed && users.length >= 1) {
+                setPendingFeature('multi_user_accounts');
+                setShowUpgradeModal(true);
+                return;
+              }
+              resetForm();
+              setIsDialogOpen(true);
+            }}>
               <Plus size={16} />
               Add User
             </Button>
-          </DialogTrigger>
+          </div>
+
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
