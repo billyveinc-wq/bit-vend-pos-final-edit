@@ -36,10 +36,11 @@ const PricingPage = () => {
         'Basic inventory & sales tracking',
         'M-Pesa payments enabled',
         'Simple reports',
-        'Email support'
+        'Email support',
+        'Add one extra user (cashier)'
       ],
       limitations: [
-        'Single user only',
+        'Single primary user + one extra cashier',
         'Basic features only'
       ]
     },
