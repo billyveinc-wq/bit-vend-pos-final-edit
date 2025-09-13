@@ -592,8 +592,7 @@ const Subscription = () => {
               className={cn(
                 "relative cursor-pointer transition-all duration-300 hover:shadow-lg animate-fade",
                 isCurrentPlan && "border-success bg-success/5",
-                isSelected && !isCurrentPlan && "border-primary bg-primary/5",
-                plan.popular && "ring-2 ring-orange-500 shadow-xl scale-105"
+                isSelected && !isCurrentPlan && "border-primary bg-primary/5"
               )}
               onClick={() => !isCurrentPlan && handlePlanSelect(plan.id)}
             >
